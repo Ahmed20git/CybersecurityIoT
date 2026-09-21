@@ -1,0 +1,44 @@
+# Local credentials; keep only a reviewed, placeholder-only example.
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+
+# Operating system and editor debris.
+.DS_Store
+._*
+Thumbs.db
+~$*
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Python environments, caches and generated build files.
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+build/
+dist/
+*.egg-info/
+.ipynb_checkpoints/
+
+# Local experiment output. Retain published evidence separately with a manifest.
+/artifacts/local/
+/outputs/
+/tmp/
+/logs/
+docs/research_basis.md
+docs/review_and_decisions.md
+docs/week_04_tasks.md
+AGENTS.md
+docs/prompts_history.md
