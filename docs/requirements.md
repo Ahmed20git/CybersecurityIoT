@@ -10,7 +10,7 @@ The research question is whether a provenance- and state-aware deterministic med
 
 Schedule update from PROMPT-002–PROMPT-003: Week 4 is September 21–25, 2026; the Week 4 gate is September 25. The submission window is Week 13, November 23–27, with exact submission day/time pending. Target a complete candidate in Week 10, joint review in Week 11 and internal completion by November 20 in Week 12. This user instruction supersedes the source contract's Weeks 14–15 delivery timing without changing its technical scope, safety criteria or final experimental design. See the [dated plan](project_plan.md) and [Week 4 assignments](week_04_tasks.md).
 
-Each record has a stable ID, one accountable owner, basis, required behavior and an acceptance check. The other collaborator is the reviewer; both review the threat model, cost assumptions and security-sensitive changes. **Ahamed** below means the collaborator named **Ahmed AlAli** in the contract, pending name confirmation. **Simon** means Simon Kebede Darota (`simonkb`). Ownership is taken from the actual two-column contract table, not the order of flattened text, and is separate from Git authorship.
+Each record has a stable ID, one accountable owner, basis, required behavior and an acceptance check. The other collaborator is the reviewer; both review the threat model, cost assumptions and security-sensitive changes. Ownership is taken from the actual two-column contract table, not the order of flattened text, and is separate from Git authorship.
 
 Basis and priority:
 
