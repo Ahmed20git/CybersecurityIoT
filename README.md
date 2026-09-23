@@ -19,7 +19,7 @@ EffectShield is a research project on deterministic runtime enforcement between 
 
 | Collaborator | Contract responsibility |
 | --- | --- |
-| Ahamed, named Ahmed AlAli in the contract | Simulator, device state machines, typed schema, mediator, agent integration and rule tests |
+| Ahmed AlAli | Simulator, device state machines, typed schema, mediator, agent integration and rule tests |
 | Simon Kebede Darota (`simonkb`) | Scenario corpus, attacks, baselines, independent grader, experiment runner, analysis and reproducibility |
 | Both | Threat model, cost assumptions, security reviews, interpretation, report and demonstration |
 
