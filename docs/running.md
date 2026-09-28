@@ -67,6 +67,7 @@ The prompt should start with `(.venv)`.
 
 ```bash
 python examples/hand_run.py                        # example scenario with a printed state trace
+python examples/attack_demo.py                     # two attacks that succeed without the mediator
 python -m pytest                                   # all tests
 python -m pytest -v tests/unit/test_simulator.py   # one test file, one line per behaviour
 python -m pytest -v tests/security                 # trust-boundary tests
