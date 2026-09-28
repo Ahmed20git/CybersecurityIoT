@@ -48,7 +48,7 @@ Each command creates a separate evidence directory under ignored `artifacts/loca
 - [Development and verification log](docs/development_log.md)
 - [Source research contract](docs/reference/EffectShield_Revised_Research_Project_Contract.docx)
 
-Local working notes include `docs/baseline_tasks.md`, `docs/review_and_decisions.md`, `docs/research_basis.md`, `docs/prompts_history.md` and `AGENTS.md`. They retain the existing ignore choices. The tracked guides above contain the reproducible commands and current integration status.
+The [open decisions](docs/requirements.md#open-decisions) identify pending research and live-run approvals. The [project plan](docs/project_plan.md) records the timeline and owner responsibilities.
 
 ## Responsibilities and schedule
 

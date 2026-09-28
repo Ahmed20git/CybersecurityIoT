@@ -1,6 +1,6 @@
 # EffectShield interfaces: WP-02 and WP-03
 
-Status: **implemented for review, 2026-09-23**. This covers WP-02 (state, action and context contracts) and WP-03 (deterministic simulator and trusted gateway) from the [project plan](project_plan.md). Nothing here is a mediator policy: rules 1–8 are enforced in WP-07 to WP-09. Choices marked **Proposed** fill gaps left open by D04, D05 and D07. Both collaborators should review them before the mediator relies on them.
+Status: **implemented for review, 2026-09-23**. This covers WP-02 (state, action and context contracts) and WP-03 (deterministic simulator and trusted gateway) from the [project plan](project_plan.md). Mediator rules 1–8 are planned in WP-07 to WP-09. Choices marked **Proposed** fill gaps left open by D04, D05 and D07 in the [open decisions](requirements.md#open-decisions). Both collaborators should review them before the mediator relies on them.
 
 ## Module map
 
@@ -100,9 +100,8 @@ mypy                    # strict, src/ only
 PYTHONPATH=src python examples/hand_run.py
 ```
 
-## Not in this change
+## Related work
 
-- Mediator rules 1–8, repair and escalation (WP-07 to WP-09).
-- The agent adapter and the direct baseline executor (WP-05).
-- The grader, scenarios, attack builder and run ledger (Simon's WP-04 and WP-06).
-- Full LOG-02 run records.
+- Mediator rules 1–8, repair and escalation remain planned in WP-07 to WP-09.
+- The implemented agent adapter, baseline executor, scenarios, attack builder, independent grader and run ledger are documented in the [evaluation guide](evaluation_guide.md).
+- Full LOG-02 records will include mediator decisions and repairs when those components are implemented.

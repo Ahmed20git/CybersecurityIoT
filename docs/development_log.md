@@ -1,10 +1,10 @@
 # Observable AI assistance and verification log
 
-Editorial update, September 28 (PROMPT-008): historical path references below use the current functional names. Original wording and source revisions remain in Git. Disposable offline verification outputs and backup copies have been removed at Simon's request; the outcomes and limitations remain recorded here. Verbatim prompts and the source contract are preserved.
+Editorial update, September 28: historical path references below use the current functional names. Original wording and source revisions remain in Git. Disposable offline verification outputs and backup copies have been removed at Simon's request; the outcomes and limitations remain recorded here. Verbatim prompts and the source contract are preserved.
 
 ## 2026-09-21 — Simon's baseline evaluation tooling
 
-This entry records observable assistance, artifacts and verification for PROMPT-004 in [the prompt history](prompts_history.md). The full attached prompt and Simon's note are preserved there with capture time `2026-09-21T16:40:07+04:00`. Simon and Ahmed remain the designated human project authors; this log discloses AI assistance and does not assign a Git identity or claim human approval. Hidden reasoning, system/developer instructions and credentials are excluded.
+This entry records observable assistance, artifacts and verification for the baseline evaluation work requested on September 21, captured at `2026-09-21T16:40:07+04:00`. This log discloses AI assistance without assigning Git authorship or claiming human approval. Hidden reasoning, system/developer instructions and credentials are excluded. Decision IDs used below are defined in the tracked [requirements](requirements.md#open-decisions).
 
 ### Scope and repository inspection
 
@@ -30,7 +30,6 @@ Two clarification questions were raised: whether Ahmed's interfaces exist elsewh
 | `tests/unit/`, `tests/integration/`, `tests/support_backends.py`, `tests/__init__.py` | Unit and integration checks with static test doubles; no provider calls |
 | `docs/evaluation_interface.md`, `docs/evaluation_guide.md`, this file | Provisional Ahmed handoff, exact commands, blockers, evidence layout, review groups and AI-use/verification record |
 | `README.md`, `docs/project_plan.md` | Current implementation stage and links while preserving the agreed calendar |
-| Local ignored `AGENTS.md`, `docs/baseline_tasks.md`, `docs/review_and_decisions.md`, `docs/prompts_history.md` | Authorized scope, current status, pending decisions and full user instructions; not force-added |
 
 Independent assistant reviews checked the mutation boundary, full-trace grading, freeze integrity, failure accounting and final handoff consistency. These reviews are AI assistance, not Simon's or Ahmed's acceptance. Source files and documents contain the reviewable generated outputs.
 
@@ -45,7 +44,7 @@ PYTHONPATH=src python3 -m unittest discover -s tests -v
 git diff --check
 ```
 
-The final unit/integration run passed **101 tests** in 6.676 seconds. Its disposable raw output has since been removed under PROMPT-008. Ruff lint and formatting checks passed for 23 Python files. Tests exercise payload confinement, exact JSON types, every committed transition, unsafe effects followed by recovery, malformed/incomplete traces, deterministic reset, cross-run isolation, partial failures/timeouts, retry denominators, unknown usage, usage monotonicity, reserved-event rejection, evidence tampering, approval bindings and freeze reuse prevention.
+The final unit/integration run passed **101 tests** in 6.676 seconds. Its disposable raw output has since been removed under Simon's September 28 cleanup request. Ruff lint and formatting checks passed for 23 Python files. Tests exercise payload confinement, exact JSON types, every committed transition, unsafe effects followed by recovery, malformed/incomplete traces, deterministic reset, cross-run isolation, partial failures/timeouts, retry denominators, unknown usage, usage monotonicity, reserved-event rejection, evidence tampering, approval bindings and freeze reuse prevention.
 
 Earlier verification exposed and corrected two seed issues. Adding an unsupported-seed constraint invalidated a synthetic freeze fixture that used seed `0` with status `unsupported`; that fixture now uses `null`. A new regression test then exposed the missing opposite constraint: a supported seed cannot be left unspecified. The validator now requires its explicit integer value. The earlier failing outputs were kept separately during verification and have since been removed with the disposable logs; the failure descriptions remain in this record. Earlier test runs and review also led to stricter canonical comparisons, monotonic usage, durable event delivery and frozen-connector binding.
 
@@ -60,7 +59,7 @@ python3 scripts/evaluate.py verify-evidence artifacts/local/evaluation/rehearsal
 
 Each workflow retained 33 attempts, with 30/30 clean fixture goal completions and 3/3 matched action changes in both measures. Each evidence audit passed with 170 hashed files and 33 run records. All three gate statuses remained `unassessable`. These numbers are authored fixture expectations, not measured model performance. Cost/token/call values are explicitly synthetic zeros. Reports include actual local runtime latency, invocation, source/configuration hashes, run IDs and ledger paths.
 
-After the final seed-validation correction, the offline workflow and audit were repeated successfully against the final source: 33 attempts, 170 verified files and the same fixture outcomes. Earlier disposable output was retained during verification and has since been removed under PROMPT-008. Rehearsal separation and accounting were also exercised by the passing final integration tests.
+After the final seed-validation correction, the offline workflow and audit were repeated successfully against the final source: 33 attempts, 170 verified files and the same fixture outcomes. Earlier disposable output was retained during verification and has since been removed under Simon's September 28 cleanup request. Rehearsal separation and accounting were also exercised by the passing final integration tests.
 
 Final documentation checks passed for all 11 Markdown files, existing local links, balanced code fences, whitespace and valid JSON configuration/scenario/fixture files. Git whitespace checks passed, the index remained empty, and generated evidence, the local environment and caches remained ignored. These checks do not claim that ignored local documents are published to GitHub.
 
@@ -78,13 +77,13 @@ The [handoff guide](evaluation_guide.md) gives the one-command offline workflow,
 
 ## 2026-09-28 — Native integration and functional organization
 
-PROMPT-005 authorizes integration, functional naming and local commits. PROMPT-006 extends scope to the missing baseline agent adapter. PROMPT-007 delegates provider/model selection. All three user messages and replies are preserved in the local prompt history with capture timestamps. The September 22 message was not saved, as requested.
+Simon authorized integration, functional naming and local commits, then extended the scope to the missing baseline agent adapter and delegated provider/model selection. The user instructions were recorded with capture timestamps. The September 22 message was not saved, as requested.
 
 ### Repository preservation and naming
 
-Fetched `origin` and inspected `origin/simulator` at `78c8e1c`. It contains Ahmed's WP-02/WP-03 commits and descends from the latest main branch; it contains no agent adapter. Work proceeds on local `evaluation-integration` based on that history. A checksummed temporary backup of the 41 original local source/document files was used while switching branches and was subsequently removed under PROMPT-008. Git now supplies the committed source history. Existing author history and Git configuration were preserved.
+Fetched `origin` and inspected `origin/simulator` at `78c8e1c`. It contains Ahmed's WP-02/WP-03 commits and descends from the latest main branch; it contains no agent adapter. Work proceeds on local `evaluation-integration` based on that history. A checksummed temporary backup of the 41 original local source/document files was used while switching branches and was subsequently removed under Simon's September 28 cleanup request. Git now supplies the committed source history. Existing author history and Git configuration were preserved.
 
-Active prose uses Simon and Ahmed. Functional names replace the provisional calendar-based paths: `scripts/evaluate.py`, `configs/evaluation/`, `scenarios/development/`, `fixtures/evaluation/`, `docs/evaluation_interface.md` and `docs/evaluation_guide.md`. Tests are organized by unit, integration and security behavior. The existing locally ignored task notes were renamed `docs/baseline_tasks.md`, with the ignore rule updated. Historical user prompts and the source contract remain unchanged. Superseded disposable verification outputs were later removed under PROMPT-008.
+Active prose uses Simon and Ahmed. Functional names replace the provisional calendar-based paths: `scripts/evaluate.py`, `configs/evaluation/`, `scenarios/development/`, `fixtures/evaluation/`, `docs/evaluation_interface.md` and `docs/evaluation_guide.md`. Tests are organized by unit, integration and security behavior. Local task notes were renamed by function, with their ignore rule updated. Historical user prompts and the source contract remain unchanged. Superseded disposable verification outputs were later removed under Simon's September 28 cleanup request.
 
 ### Integration changes
 
@@ -127,7 +126,7 @@ The complete commands below were also executed and their evidence audits passed,
 .venv/bin/python scripts/evaluate.py verify-evidence artifacts/local/evaluation/baseline-verified
 ```
 
-Each mode produced the intended 30/30 clean completions and 3/3 matched authored action changes, including three unsafe attacked runs. These are deterministic fixture expectations, not empirical language-model results. All live gate criteria remained unassessable. The disposable test output and pre-integration source backup have since been removed under PROMPT-008; the verification outcomes and commits are recorded here.
+Each mode produced the intended 30/30 clean completions and 3/3 matched authored action changes, including three unsafe attacked runs. These are deterministic fixture expectations, not empirical language-model results. All live gate criteria remained unassessable. The disposable test output and pre-integration source backup have since been removed under Simon's September 28 cleanup request; the verification outcomes and commits are recorded here.
 
 The final timeout regression verifies that the exact converted provider request is durably recorded through the runner before a simulated blocked network operation is killed. The API implementation uses that same acknowledged event path before count and generation requests. This is offline evidence of the logging behavior; real provider availability, latency and account access remain untested.
 
@@ -149,11 +148,11 @@ The branch preserves `origin/simulator` and `origin/main` as ancestors. No remot
 
 Before final handoff, the simulator branch advanced to `ee8a0db` with `008fa4c` (its own explicit nesting fix) and `ee8a0db` (setup guide). Those commits are merged with their history preserved. The overlapping temporary 16-container parser fix is superseded by Ahmed's native 4-container limit and `NESTING_TOO_DEEP` error code. Both sets of string-boundary regressions are retained. README/setup instructions now cover the combined functional commands, pinned tools and local integration branch. The final verification below supersedes the pre-merge test count while retaining that earlier record.
 
-After resolving the concurrent updates, **346 tests and 95 subtests passed** in 11.85 seconds; all 55 Python files pass Ruff lint/format, all 33 source files pass strict mypy, and Git whitespace checks pass. The complete bounded-agent workflow was repeated at `artifacts/local/evaluation/baseline-merged-verified`: 33 attempts, no invalid traces and a passing 170-file evidence audit. The disposable post-merge output has since been removed under PROMPT-008. All live criteria remain unassessable. The merge commit preserves both collaborators' histories and the combined tree is the handoff target.
+After resolving the concurrent updates, **346 tests and 95 subtests passed** in 11.85 seconds; all 55 Python files pass Ruff lint/format, all 33 source files pass strict mypy, and Git whitespace checks pass. The complete bounded-agent workflow was repeated at `artifacts/local/evaluation/baseline-merged-verified`: 33 attempts, no invalid traces and a passing 170-file evidence audit. The disposable post-merge output has since been removed under Simon's September 28 cleanup request. All live criteria remain unassessable. The merge commit preserves both collaborators' histories and the combined tree is the handoff target.
 
 ## 2026-09-28 — Repository cleanup and functional naming
 
-PROMPT-008 requests Git-based source history without backup trees or cached prior code. Removed the temporary integration backup, superseded offline run bundles and tool caches. No actual live experiment, approval record or official freeze existed in those outputs. The source contract, verbatim prompt history, curated fixtures and all existing commits remain intact.
+Simon requested Git-based source history without backup trees or cached prior code. Removed the temporary integration backup, superseded offline run bundles and tool caches. No actual live experiment, approval record or official freeze existed in those outputs. The source contract, verbatim prompt history, curated fixtures and all existing commits remain intact.
 
 Renamed the remaining test credential variable to `EFFECTSHIELD_TEST_API_KEY`; the redaction behavior is unchanged. Normalized historical documentation paths and active calendar labels to functional terminology, kept the timeline in the project plan and updated its integrated implementation status. README and the evaluation guide now distinguish disposable verification output from retained research evidence. The local working instructions and decision notes follow the same policy.
 
@@ -179,3 +178,15 @@ The final ancestry check detected two further fetched simulator commits, `89d285
 `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python examples/attack_demo.py` ran successfully: both authored attacks produced the expected simulated door effects, including unauthorized door operations in the hidden-instruction case. This is a scripted mechanics demonstration, not measured model susceptibility. Ruff lint and format pass for the expanded set of 56 Python files. No retained output or backup tree was created.
 
 After integrating the demonstration, the full suite again passed **346 tests and 95 subtests** in 12.82 seconds with caches disabled. The prior strict mypy check remains applicable because the 33 package source files are unchanged. The final repository checks confirm functional names, valid document links, the preserved contract hash and no backup/cache directories or retained disposable run bundles.
+
+## 2026-09-28 — Documentation that works from GitHub
+
+Simon requested self-contained tracked requirements and a clear dated plan, without navigation into local-only files. The requirements now include the definitions for all 16 decision IDs and the ten research-source entries alongside the existing 89 requirements. The plan contains the dated owner assignments, timeline, phase dependencies and baseline gate/fallback criteria. Conversational prompt IDs and local-note dependencies were removed from those documents.
+
+README and the runtime/evaluation guides now link to tracked requirements and planning sections. The historical log's link to the local prompt record was removed; the original user wording remains preserved locally. Existing ignore rules, source code, scenarios, configuration and research thresholds are unchanged. This edit does not grant protocol approval or establish a live gate result.
+
+Verification checks repository links against Git-tracked membership and Markdown anchors, rather than whether files happen to exist on the current machine. It also checks requirement ownership, decision/source definitions, dates, tables, fences and whitespace. The completed results are recorded below. No runtime tests are needed for this documentation-only change, and no caches or backup copies are created.
+
+Documentation verification passed for **all eight tracked Markdown files**, including **43 repository links and nine section anchors** checked against the Git file list, 33 tables, balanced fences and whitespace. All 89 requirement IDs and owners are preserved. Only GOV-02 and GOV-03 wording changed within the requirement rows, to describe the shared decision table and local prompt-history obligation without pointing readers to unpublished files. All other requirement rows are unchanged. The 16 decision definitions, ten research entries, ten calendar weeks, ten daily owner tasks and 14 work packages were verified; a separate review checked the milestone weekdays and requirement/dependency mappings.
+
+The tracked documents contain no references to ignored working-note filenames or conversational prompt IDs. The update is committed as one documentation group covering the requirements, plan, README, runtime/evaluation guides and this verification log. No runtime tests were run because no executable behavior changed. No files were force-added, no ignore rules were changed and nothing was pushed.

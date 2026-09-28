@@ -1,25 +1,25 @@
 # EffectShield research requirements
 
-Version 0.3, updated 2026-09-28. Status: **requirements register for human review; baseline implementation has local verification and commits, while formal acceptance and live protocol decisions remain open**. This register defines the system, research protocol, ownership and required evidence. Implementation and verification records are in the [development log](development_log.md); their existence does not approve every research choice or authorize all remaining components.
+Version 0.4 · Updated September 28, 2026.
 
-## Basis and reading guide
+EffectShield evaluates whether a deterministic mediator between a language-model agent and a simulated smart home reduces unsafe effects and attacker success while preserving useful task completion. The simulator contains a light, fan, thermostat, door and presence sensor. All device effects remain simulated.
 
-The working source is the [revised contract](reference/EffectShield_Revised_Research_Project_Contract.docx), found at `../Project/EffectShield_Revised_Research_Project_Contract.docx`. SHA-256: `043926d05c021b523d672c5ec743270bdf9b9c9779307bc03bd748f2abfead2a`. Its use as the authoritative version awaits confirmation in D01 of the [decision register](review_and_decisions.md). The originally supplied `~$...docx` is a Word lock file, not the contract. The earlier proposal was checked for differences; the working revised contract supersedes its baseline checkpoint. The schedule comparison is retained in the [project plan](project_plan.md).
+This register defines 89 requirements, their accountable owners and acceptance evidence. Each owner implements or coordinates the requirement; the other collaborator reviews it. Both review security-sensitive changes, the threat model, cost assumptions and result interpretation.
 
-The research question is whether a provenance- and state-aware deterministic mediator reduces unsafe effects and attacker success while retaining useful authorized task completion at measured latency and model cost. Scope is a Python simulator with a light, fan, thermostat, door and presence sensor. There is no real device integration, general autonomous agent platform, learned safety classifier, LLM judge or validated physical model in this contract.
+The baseline implementation is integrated and verified offline. Formal acceptance, live evaluation and later mediator work remain pending. Verification results are recorded in the [development log](development_log.md); dates and delivery milestones are in the [project plan](project_plan.md).
 
-The user's schedule in PROMPT-002–PROMPT-003 supersedes the source contract's delivery timing without changing its technical scope, safety criteria or final experimental design. The [dated plan](project_plan.md) is the authority for the original baseline deadline, candidate, joint-review, internal-completion and submission milestones; the exact external submission time remains pending. The original baseline deadline has passed without an assessable live gate result and has not been moved. See the [baseline assignments](baseline_tasks.md). Editorial update: schedule labels are centralized in the plan; requirement IDs, owners and acceptance obligations are preserved.
+## Reading the requirements
 
-Each record has a stable ID, one accountable owner, basis, required behavior and an acceptance check. The other collaborator is the reviewer; both review the threat model, cost assumptions and security-sensitive changes. Ownership is taken from the actual two-column contract table, not the order of flattened text, and is separate from Git authorship.
+The [revised research contract](reference/EffectShield_Revised_Research_Project_Contract.docx) provides the working scope. Confirmation of its authoritative status remains D01 below. Its SHA-256 is `043926d05c021b523d672c5ec743270bdf9b9c9779307bc03bd748f2abfead2a`.
 
-Basis and priority:
+Each row contains an ID, owner, basis, required behavior and acceptance evidence. Basis labels mean:
 
-- **U**: explicit user instruction; required.
-- **C**: revised contract obligation; required if this is the authoritative contract.
-- **D**: proposed engineering or scientific detail derived from the contract; requires review before becoming a mandatory acceptance condition.
-- **R01–R10**: primary research or official documentation in [research basis](research_basis.md). These support a design rationale, not a claim of novelty or certification.
+- **C:** working contract obligation.
+- **U:** agreed project workflow requirement.
+- **D:** proposed engineering or research detail requiring review before acceptance.
+- **R01–R10:** supporting publications and official documentation listed under [Research sources](#research-sources).
 
-The register began with status `Draft` for every record. Record subsequent `Approved`, `In progress`, `Verified` and `Accepted` states only with links to the human decision, task/commit and verification evidence; the implemented baseline does not imply blanket acceptance. A future test described here is not evidence of a passing implementation. Phase codes P0–P6 and common dependencies are defined in the [project plan](project_plan.md). Open decisions D01–D16 must be resolved before affected work; no numeric target is implied where the contract supplies none.
+Acceptance checks specify what must be demonstrated; they do not claim that an implementation has passed. Record `Draft`, `Approved`, `In progress`, `Verified` or `Accepted` only with the corresponding decision and evidence. Phase codes P0–P6 are defined in the project plan. Dependencies D01–D16 are defined under [Open decisions](#open-decisions); their unresolved parts must be settled before dependent work.
 
 ## Governance and scope
 
@@ -28,8 +28,8 @@ Purpose: preserve a reviewable research process and an accurate history. Phase P
 | ID | Owner | Basis | Requirement | Acceptance evidence |
 | --- | --- | --- | --- | --- |
 | GOV-01 | Simon | U | Work on one selected requirement or coherent component at a time and review requirements before implementation. | Each work item names scope, requirement IDs, dependencies and acceptance checks; subsequent phases are selected by the user. |
-| GOV-02 | Simon | U | Ask about uncertainty affecting scope, behavior, experiments or ownership and record the answer before dependent work. | Decision register distinguishes open questions, proposals and dated human decisions; blocked work is identified. |
-| GOV-03 | Simon | U | Append every user project prompt and clarification to `docs/prompts_history.md` with actual capture date, time and timezone. | Initial prompt is preserved; later prompts are appended; secrets use explicit redaction markers; runtime model prompts have separate records. |
+| GOV-02 | Simon | U | Ask about uncertainty affecting scope, behavior, experiments or ownership and record the answer before dependent work. | The open-decisions table below distinguishes proposals and confirmed decisions; dated updates identify dependent work that remains pending. |
+| GOV-03 | Simon | U | Maintain a local project prompt history containing every user project prompt and clarification, with actual capture date, time and timezone. | Initial prompt is preserved; later prompts are appended; secrets use explicit redaction markers; runtime model prompts have separate records. |
 | GOV-04 | Simon | U | Obtain human review of the actual changes and verification before committing; keep commits coherent by category, component or requirement. | Review package includes diff/files, results and proposed commit groups; no commit is made before the user's approval of it. |
 | GOV-05 | Simon | U | Preserve accurate attribution to Simon and Ahmed; never invent identities or AI co-author entries. | Intended Git author/committer is confirmed before a commit; requirement ownership does not cause impersonation; assistance remains documented. |
 | GOV-06 | Ahmed | U; R07 | Keep credentials in environment configuration and out of tracked source, examples, logs and prompts. | Real `.env` variants are ignored; example files contain placeholders only; missing required credentials produce a sanitized error before a model call. |
@@ -233,6 +233,46 @@ Tests will mirror behaviors through `tests/unit`, `tests/integration`, `tests/se
 | Pair responsibilities | Owner column throughout, GOV-05, DEL-04 |
 | Schedule and fallback | DEL-01–DEL-03 and project plan P0–P6 |
 | Safety and claim boundary | GOV-10, DAT-09, DEL-04 |
-| User's incremental work, prompt logging, review and Git instructions | GOV-01–GOV-09 and AGENTS.md |
+| Incremental work, prompt logging, review and Git workflow | GOV-01–GOV-09 |
 
 Coverage means the contract has been decomposed for review. It does not resolve the open design decisions, prove scientific novelty or demonstrate that the future system satisfies these requirements.
+
+## Open decisions
+
+The following table defines every decision ID used in this register and the evaluation configuration. Confirmed choices remain recorded alongside their unresolved parts. Implementation and local commits do not constitute protocol approval or a live gate result.
+
+| ID | Decision and current status | Lead / resolve before |
+| --- | --- | --- |
+| D01 | **Pending:** confirm the tracked revised contract as the authoritative source. The requirement ownership in this register is established. | Simon / formal requirements acceptance |
+| D02 | **Calendar confirmed:** use the milestones in the [project plan](project_plan.md). The exact external submission day and time remain pending. | Simon / submission |
+| D03 | **Provider selected:** OpenAI `gpt-4.1-mini-2025-04-14` through Responses; Python 3.11 or later. Record unsupported seed control and tariff-derived cost as estimated. Confirm hosted-inference permission, account access, supported development platforms and a spending limit before live use; the current limit is zero. Credentials come from the environment. | Both; Ahmed coordinates / live inference |
+| D04 | **Baseline implemented; semantic review pending:** approve device states and operations, door entry/egress and lock/open behavior, light/fan modes, read-only presence, Celsius precision, setpoint semantics, unsafe initial states and recovery tasks. Current formats are in the [runtime interfaces](interfaces.md). | Ahmed / protocol acceptance and dependent enforcement |
+| D05 | **Pending:** approve the independent representation of task authority, protected canonical facts and attacker-writable fields; define instruction-provenance enforcement and its ablation boundary. An agent's assertions or a cited observation cannot establish authority. The implemented message-only mutation and trusted request scope remain subject to joint semantic review. | Both; Ahmed leads / authorization and provenance enforcement |
+| D06 | **Pending:** fix the sensor TTL, units, equality boundary, clock advance and conflict rules. Define which effects need fresh observations and handling of missing or future timestamps. | Ahmed / freshness enforcement |
+| D07 | **Pending:** define event-ID scope, monotonicity, retention, consumption point, blocked-use behavior, allowed evidence reuse and reset semantics. Distinguish observation ingestion from action authorization. | Ahmed / replay enforcement |
+| D08 | **Pending:** select task-preserving repair templates, ambiguity handling, maximum repair length and transaction semantics. Repairs must not invent permission or presence, and all candidate effects must be revalidated. | Both; Ahmed leads / repair implementation |
+| D09 | **Draft baseline protocol:** 10 benign tasks, one matched attacked variant, three repetitions, executed-sequence comparison and an 80% action-change threshold (requiring 3/3 matched changes). These values and the bounds in [gate configuration](../configs/evaluation/gate.json) are unapproved. Agree proposed-versus-executed action change, prompts, continuation behavior, limits and reliability before measurement. The contract's benign-completion threshold remains at least 70%. | Simon / baseline freeze and live gate |
+| D10 | **Pending:** approve metric populations, action-versus-run units, task relevance in false blocks, attack-family allocation, stale/replay and mixed-family reporting, and missing-outcome rules. Review the proposed metric dictionary above. | Simon / grading acceptance and final freeze |
+| D11 | **Pending:** decide whether the 432-run ceiling includes pilots, retries and additional end-to-end ablations. Two extra full end-to-end ablations would raise the total to 720. Freeze replay source conditions, eligible trace selection, source run IDs, sequential-versus-fixed-state semantics and conflict handling after divergence. | Both; Simon leads / budgeted experiments |
+| D12 | **Pending:** freeze bootstrap interval method, replicate count, seed, task weighting, missing-data and multiplicity policies. Preserve whole-task pairing and the contract's two-sided 95% interval criterion. | Simon / analysis implementation and final freeze |
+| D13 | **Pending:** specify the retained evidence location, access, retention period, artifact manifest, professor's delivery package and release license. Disposable verification output is distinct from research evidence; neither contains credentials. | Simon / retained experiment collection and release |
+| D14 | **Gate disposition pending:** the original baseline deadline has elapsed without an assessable live result. Review the contract fallback of three devices, 12 tasks, one attack family and deterministic blocking without repair; jointly select retained devices and family before later enforcement work. No reduced scope or revised deadline has been approved. | Both / next enforcement phase |
+| D15 | **Local integration commits authorized and completed:** use coherent component commits and preserve attribution. Record both human security reviews when they occur; those reviews remain pending. | Both / acceptance of security-sensitive changes |
+| D16 | **Logging scope established:** retain user prompts locally and record observable assistance, changed files, checks and limitations in the tracked development log. Confirm any additional institutional disclosure rules. Runtime model messages belong in experiment records; hidden reasoning and system instructions are excluded. | Simon / institutional disclosure and submission |
+
+## Research sources
+
+These references support design choices; project-specific scope, counts and thresholds come from the contract and this register. They do not establish novelty, certification or a security guarantee for EffectShield.
+
+| ID | Source |
+| --- | --- |
+| R01 | [InjecAgent: Benchmarking Indirect Prompt Injections in Tool-Integrated Large Language Model Agents](https://arxiv.org/abs/2403.02691v3), v3, August 2024 |
+| R02 | [Defeating Prompt Injections by Design](https://arxiv.org/html/2503.18813v2), CaMeL, v2, June 2025 |
+| R03 | [Progent: Securing AI Agents with Privilege Control](https://arxiv.org/html/2504.11703v3), v3, May 2026 |
+| R04 | [Shield Synthesis: Runtime Enforcement for Reactive Systems](https://arxiv.org/html/1501.02573), 2015 |
+| R05 | [AgentDojo: A Dynamic Environment to Evaluate Prompt Injection Attacks and Defenses for LLM Agents](https://arxiv.org/html/2406.13352v3), v3, November 2024 |
+| R06 | [Application of the hierarchical bootstrap to multi-level data in neuroscience](https://arxiv.org/abs/2007.07797), 2020; [SciPy bootstrap documentation](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.bootstrap.html), accessed September 2026 |
+| R07 | [NIST SP 800-218, Secure Software Development Framework Version 1.1](https://csrc.nist.gov/pubs/sp/800/218/final), February 2022 |
+| R08 | [JSON Schema object reference](https://json-schema.org/understanding-json-schema/reference/object), accessed September 2026 |
+| R09 | [RFC 9449, OAuth 2.0 Demonstrating Proof of Possession, section 11.1](https://www.rfc-editor.org/rfc/rfc9449.html#section-11.1), September 2023 |
+| R10 | [Preserving Statistical Validity in Adaptive Data Analysis](https://arxiv.org/abs/1411.2664), initially November 2014 |

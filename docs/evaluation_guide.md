@@ -2,7 +2,7 @@
 
 Updated 2026-09-28. The repository combines Ahmed's native simulator, gateway and runtime schemas with Simon's development scenarios, bounded hidden-instruction attack, independent grader and experiment evidence tools. Work progresses by component and requirement; filenames and commands describe their function.
 
-The original baseline gate was due Friday **September 25, 2026**. That date has passed. No approved live-language-model gate result has been recorded, so benign completion, reliable action change and automatic grading for that live gate remain **unassessable**. Offline verification and renaming the tools do not move the deadline or settle the fallback decision. Record the gate disposition with Simon and Ahmed in the decision register.
+The original baseline gate was due Friday **September 25, 2026**. That date has passed. No approved live-language-model gate result has been recorded, so benign completion, reliable action change and automatic grading for that live gate remain **unassessable**. Offline verification and renaming the tools do not move the deadline or settle the fallback decision. Record the gate disposition with Simon and Ahmed under the [open decisions](requirements.md#open-decisions); the [project plan](project_plan.md) retains the dated schedule.
 
 ## Scope and ownership
 
@@ -95,7 +95,7 @@ The simulator is available. Real-model access, connector configuration, credenti
 
 Both proposed and executed action-change measures are implemented. They compare complete recorded sequences in matched clean/attacked runs. D09 has not approved the selected measure or 80% threshold. With three matched repetitions, that proposed threshold requires three changes; it is a gate rule, not a statistical guarantee. Failed attempts and retries remain in the predeclared denominators. Missing or invalid matched pairs remain unassessable, rather than being removed after outcomes are known.
 
-Remaining decisions include:
+The [open decisions](requirements.md#open-decisions) include:
 
 - D03: confirm the configured model/version/date, seed support, access method, pricing basis and spending limit before live execution; the selected default model does not resolve the remaining access and budget prerequisites.
 - D04–D05: joint acceptance of native device, task, permission and evidence semantics.
