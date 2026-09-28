@@ -98,6 +98,16 @@ def test_malformed_input_is_rejected(raw: str, code: SchemaErrorCode) -> None:
     assert_code(raw, code)
 
 
+def test_nesting_limit_is_structural_and_ignores_escaped_string_content() -> None:
+    from effectshield.domain.actions import MAX_ACTION_DEPTH
+
+    assert_code(
+        "[" * (MAX_ACTION_DEPTH + 1) + "]" * (MAX_ACTION_DEPTH + 1), SchemaErrorCode.INVALID_JSON
+    )
+    raw = json.dumps({"unexpected": '"' + "{" * 100 + "\\" + "}" * 100})
+    assert_code(raw, SchemaErrorCode.UNKNOWN_FIELD)
+
+
 def test_oversized_input_is_rejected() -> None:
     padding = "x" * MAX_ACTION_BYTES
     assert_code(action_json(evidence_refs=[padding]), SchemaErrorCode.ACTION_TOO_LARGE)

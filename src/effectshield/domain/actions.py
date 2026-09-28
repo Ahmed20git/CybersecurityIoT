@@ -34,6 +34,7 @@ from effectshield.domain.errors import ActionSchemaError, SchemaErrorCode
 
 SCHEMA_VERSION = "1.0"
 MAX_ACTION_BYTES = 4096
+MAX_ACTION_DEPTH = 16
 MAX_EVIDENCE_REFS = 8
 EVIDENCE_REF_PATTERN = re.compile(r"obs-[0-9]{6,12}")
 
@@ -100,6 +101,29 @@ def _finite_float(text: str) -> float:
     return value
 
 
+def _check_nesting(text: str) -> None:
+    """Bound JSON structure independently of the interpreter recursion limit."""
+    depth = 0
+    quoted = False
+    escaped = False
+    for character in text:
+        if quoted:
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == '"':
+                quoted = False
+        elif character == '"':
+            quoted = True
+        elif character in "[{":
+            depth += 1
+            if depth > MAX_ACTION_DEPTH:
+                raise ActionSchemaError(SchemaErrorCode.INVALID_JSON, "excessive JSON nesting")
+        elif character in "]}":
+            depth -= 1
+
+
 def parse_action(raw: str | bytes) -> ActionProposal:
     """Parse and validate raw agent output into an :class:`ActionProposal`.
 
@@ -125,6 +149,7 @@ def parse_action(raw: str | bytes) -> ActionProposal:
             SchemaErrorCode.ACTION_TOO_LARGE, f"{len(encoded)} bytes > {MAX_ACTION_BYTES}"
         )
 
+    _check_nesting(text)
     try:
         decoded = json.loads(
             text,
