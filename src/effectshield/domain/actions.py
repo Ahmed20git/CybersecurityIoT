@@ -34,8 +34,11 @@ from effectshield.domain.errors import ActionSchemaError, SchemaErrorCode
 
 SCHEMA_VERSION = "1.0"
 MAX_ACTION_BYTES = 4096
-MAX_ACTION_DEPTH = 16
 MAX_EVIDENCE_REFS = 8
+# The valid schema nests at most two levels (action -> parameters/evidence_refs).
+# Checked explicitly because the interpreter's own JSON recursion limit
+# differs between Python versions.
+MAX_JSON_DEPTH = 4
 EVIDENCE_REF_PATTERN = re.compile(r"obs-[0-9]{6,12}")
 
 _REQUIRED_FIELDS = frozenset({"schema_version", "device", "operation", "parameters"})
@@ -101,29 +104,6 @@ def _finite_float(text: str) -> float:
     return value
 
 
-def _check_nesting(text: str) -> None:
-    """Bound JSON structure independently of the interpreter recursion limit."""
-    depth = 0
-    quoted = False
-    escaped = False
-    for character in text:
-        if quoted:
-            if escaped:
-                escaped = False
-            elif character == "\\":
-                escaped = True
-            elif character == '"':
-                quoted = False
-        elif character == '"':
-            quoted = True
-        elif character in "[{":
-            depth += 1
-            if depth > MAX_ACTION_DEPTH:
-                raise ActionSchemaError(SchemaErrorCode.INVALID_JSON, "excessive JSON nesting")
-        elif character in "]}":
-            depth -= 1
-
-
 def parse_action(raw: str | bytes) -> ActionProposal:
     """Parse and validate raw agent output into an :class:`ActionProposal`.
 
@@ -149,7 +129,12 @@ def parse_action(raw: str | bytes) -> ActionProposal:
             SchemaErrorCode.ACTION_TOO_LARGE, f"{len(encoded)} bytes > {MAX_ACTION_BYTES}"
         )
 
-    _check_nesting(text)
+    depth = _max_nesting_depth(text)
+    if depth > MAX_JSON_DEPTH:
+        raise ActionSchemaError(
+            SchemaErrorCode.NESTING_TOO_DEEP, f"depth {depth} > {MAX_JSON_DEPTH}"
+        )
+
     try:
         decoded = json.loads(
             text,
@@ -165,6 +150,28 @@ def parse_action(raw: str | bytes) -> ActionProposal:
         raise ActionSchemaError(SchemaErrorCode.INVALID_JSON, "malformed JSON") from exc
 
     return action_from_object(decoded)
+
+
+def _max_nesting_depth(text: str) -> int:
+    """Deepest ``[``/``{`` nesting outside string literals, without parsing."""
+    depth = deepest = 0
+    in_string = escaped = False
+    for char in text:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+        elif char == '"':
+            in_string = True
+        elif char in "[{":
+            depth += 1
+            deepest = max(deepest, depth)
+        elif char in "]}":
+            depth -= 1
+    return deepest
 
 
 def action_from_object(obj: object) -> ActionProposal:

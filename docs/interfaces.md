@@ -46,7 +46,7 @@ Status: **implemented for review, 2026-09-23**. This covers WP-02 (state, action
 
 `parse_action` rejects, with stable `SchemaErrorCode`s:
 
-- input over 4096 bytes, invalid UTF-8, malformed JSON or nesting deeper than 16 containers (bounded explicitly across Python versions)
+- input over 4096 bytes, invalid UTF-8, malformed JSON or nesting deeper than 4 containers (bounded explicitly across Python versions)
 - duplicate keys, `NaN`/`Infinity` and overflowing numbers
 - unknown or missing fields, including any agent-asserted `identity`, `source`, timestamp, event ID or request ID (SIM-06)
 - unknown devices or operations, and operations the device does not support

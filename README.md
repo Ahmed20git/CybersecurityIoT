@@ -6,7 +6,7 @@ The simulator, trusted gateway and typed runtime records are integrated with the
 
 ## Run locally
 
-Python 3.11 or later is required. Runtime code uses the standard library.
+Python 3.11 or later is required. Runtime code uses the standard library. See [setup and troubleshooting](docs/running.md) for Windows, macOS/Linux and editor instructions.
 
 ```sh
 python3 -m venv .venv
@@ -39,6 +39,8 @@ Each command creates a separate evidence directory under ignored `artifacts/loca
 | `tests/` | Unit, integration and security checks |
 
 ## Documentation
+
+- [Setup and troubleshooting](docs/running.md)
 
 - [Evaluation commands and integration status](docs/evaluation_guide.md)
 - [Runtime interfaces](docs/interfaces.md) and [evaluation records](docs/evaluation_interface.md)

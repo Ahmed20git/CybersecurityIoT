@@ -142,3 +142,9 @@ Authorized implementation commits on `evaluation-integration`:
 | Documentation commit containing this entry | Functional organization, current interfaces, status and verification record |
 
 The branch preserves `origin/simulator` and `origin/main` as ancestors. No remote push, model spend, official freeze or live gate was performed. The configured human Git identity was used without modification; AI assistance is disclosed here without an AI co-author trailer.
+
+### Concurrent simulator updates
+
+Before final handoff, the simulator branch advanced to `ee8a0db` with `008fa4c` (its own explicit nesting fix) and `ee8a0db` (setup guide). Those commits are merged with their history preserved. The overlapping temporary 16-container parser fix is superseded by Ahmed's native 4-container limit and `NESTING_TOO_DEEP` error code. Both sets of string-boundary regressions are retained. README/setup instructions now cover the combined functional commands, pinned tools and local integration branch. The final verification below supersedes the pre-merge test count while retaining that earlier record.
+
+After resolving the concurrent updates, **346 tests and 95 subtests passed** in 11.85 seconds; all 55 Python files pass Ruff lint/format, all 33 source files pass strict mypy, and Git whitespace checks pass. The complete bounded-agent workflow was repeated at `artifacts/local/evaluation/baseline-merged-verified`: 33 attempts, no invalid traces and a passing 170-file evidence audit. The post-merge test output is retained in `artifacts/local/integration-backup/combined-tests-merged.txt`. All live criteria remain unassessable. The merge commit preserves both collaborators' histories and the combined tree is the handoff target.
