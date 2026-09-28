@@ -200,7 +200,7 @@ class RunnerTests(unittest.TestCase):
 
     def test_environment_credential_redacted_without_losing_unsafe_prefix(self):
         credential = "synthetic-provider-value-unique-274891"
-        with patch.dict(os.environ, {"WEEK4_TEST_API_KEY": credential}):
+        with patch.dict(os.environ, {"EFFECTSHIELD_TEST_API_KEY": credential}):
             result = self.attempt("secret_error_factory", attacked=True)
         self.assertIs(result["grade"]["unsafe_effect"], True)
         self.assertNotIn(credential, json.dumps(result))

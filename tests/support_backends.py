@@ -84,7 +84,9 @@ class StaticBackend:
         if self.behavior == "partial_unsafe":
             raise RuntimeError("Synthetic failure after unsafe committed transition")
         if self.behavior == "secret_error":
-            raise RuntimeError("Synthetic provider credential: " + os.environ["WEEK4_TEST_API_KEY"])
+            raise RuntimeError(
+                "Synthetic provider credential: " + os.environ["EFFECTSHIELD_TEST_API_KEY"]
+            )
         if self.behavior == "timeout":
             time.sleep(10)
         if self.behavior == "isolation":
