@@ -6,10 +6,12 @@ EffectShield is a research project on deterministic runtime enforcement between 
 
 ## Quick start
 
+See [running the code](docs/running.md) for Windows, macOS/Linux and VS Code setup and troubleshooting.
+
 ```bash
 pip install -e ".[dev]"
 python -m pytest
-PYTHONPATH=src python examples/hand_run.py
+python examples/hand_run.py
 ```
 
 ## Project documents
@@ -17,6 +19,7 @@ PYTHONPATH=src python examples/hand_run.py
 - [Detailed requirements and acceptance criteria](docs/requirements.md)
 - [Phases, ownership and verification gates](docs/project_plan.md)
 - [WP-02/WP-03 interfaces and trust boundary](docs/interfaces.md)
+- [How to set up and run the code](docs/running.md)
 - [Week 4 tasks for Simon and Ahmed](docs/week_04_tasks.md)
 - [Research evidence and design implications](docs/research_basis.md)
 - [Open decisions, review record and proposed commits](docs/review_and_decisions.md)
