@@ -90,9 +90,20 @@ def test_round_trip_through_to_dict() -> None:
             '"parameters":{"setpoint_c":1e400}}',
             SchemaErrorCode.NON_FINITE_NUMBER,
         ),
-        ("[" * 2000 + "]" * 2000, SchemaErrorCode.INVALID_JSON),
+        ("[" * 2000 + "]" * 2000, SchemaErrorCode.NESTING_TOO_DEEP),
+        ('{"a": [[[[1]]]]}', SchemaErrorCode.NESTING_TOO_DEEP),
     ],
-    ids=["text", "array", "null", "dup-key", "nan", "infinity", "overflow", "deep-nesting"],
+    ids=[
+        "text",
+        "array",
+        "null",
+        "dup-key",
+        "nan",
+        "infinity",
+        "overflow",
+        "deep-nesting",
+        "moderate-nesting",
+    ],
 )
 def test_malformed_input_is_rejected(raw: str, code: SchemaErrorCode) -> None:
     assert_code(raw, code)
@@ -101,6 +112,16 @@ def test_malformed_input_is_rejected(raw: str, code: SchemaErrorCode) -> None:
 def test_oversized_input_is_rejected() -> None:
     padding = "x" * MAX_ACTION_BYTES
     assert_code(action_json(evidence_refs=[padding]), SchemaErrorCode.ACTION_TOO_LARGE)
+
+
+def test_brackets_inside_strings_do_not_count_as_nesting() -> None:
+    raw = action_json(device="light", operation="turn_on", parameters={})
+    raw = raw[:-1] + ', "evidence_refs": []}'
+    assert parse_action(raw).device is DeviceId.LIGHT
+    assert_code(
+        action_json(device='[[[[[[{{{{{\\"', operation="turn_on", parameters={}),
+        SchemaErrorCode.UNKNOWN_DEVICE,
+    )
 
 
 def test_invalid_utf8_bytes_are_rejected() -> None:

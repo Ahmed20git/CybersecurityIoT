@@ -10,6 +10,7 @@ class SchemaErrorCode(StrEnum):
 
     INVALID_ENCODING = "invalid_encoding"
     ACTION_TOO_LARGE = "action_too_large"
+    NESTING_TOO_DEEP = "nesting_too_deep"
     INVALID_JSON = "invalid_json"
     DUPLICATE_KEY = "duplicate_key"
     NON_FINITE_NUMBER = "non_finite_number"
