@@ -4,11 +4,11 @@ Updated 2026-09-21 from Simon's calendar clarification in PROMPT-002 and follow-
 
 Aim for a complete deliverable candidate by **Friday November 6 (Week 10)**, joint review by **Friday November 13 (Week 11)**, and all corrections and internal sign-off by **Friday November 20 (Week 12)**. Week 13 is reserved for submission. The original contract's Weeks 14–15 delivery schedule is retained in the source document as history; the user's new Week 13 deadline and Weeks 10–12 completion goal control this working plan. Preserve all research deliverables and acceptance criteria while moving the work earlier.
 
-The repository currently contains requirements documentation and no implementation. This is a demanding recovery week with two parallel work streams; the first dependency is agreement on the minimal interfaces and gate protocol. Simon has asked to prioritize completing the week's tasks and said both will spend the time needed, so no hourly availability limit is assumed. This plan sets work and verification targets, not a claim that they have been completed. Implementation still proceeds one selected task at a time with review before commits.
+Integration update, September 28: Ahmed's WP-02 interfaces and WP-03 simulator/gateway from the `simulator` branch are present. Simon's evaluation tools are being aligned with the native runtime and committed by component. The baseline agent adapter was absent from the available branch; PROMPT-006 authorizes implementing it as part of completing the baseline. Offline fixture and real-simulator replay checks are separate from live model results. The September 25 gate is overdue and unassessable until the live path and protocol decisions are resolved; do not silently move the original date or mark it passed. Review the gate/fallback decision before proceeding to later enforcement work. The dated milestones below remain the agreed targets.
 
 ## Calendar and weekly outcomes
 
-Week 1 derives to August 31–September 4 by counting back from the supplied Week 4 anchor. Earlier weeks are not marked complete. Detailed daily assignments are in [Week 4 tasks](week_04_tasks.md).
+Week 1 derives to August 31–September 4 by counting back from the supplied Week 4 anchor. Earlier weeks are not marked complete. Detailed daily assignments are in [Week 4 tasks](baseline_tasks.md).
 
 | Week | Monday–Friday in 2026 | Ahmed's delivery | Simon's delivery | Joint checkpoint |
 | --- | --- | --- | --- | --- |
@@ -37,7 +37,7 @@ Draft methods, experiment notes and the report outline alongside development fro
 | P5 Experiments and analysis | Weeks 9–10, October 26–November 6 | Main experiments, trace ablations, end-to-end continuation and failure analysis; Simon | P4 frozen artifact and approved budget | Complete ledger or declared exclusions, reproduced tables/CIs/costs, four security comparisons and relative utility check |
 | P6 Artifact and presentation | Weeks 10–12, November 2–20; writing begins earlier | Report, curated artifact, Streamlit dashboard and five-minute demonstration; both, Simon coordinates | Measured results for completed sections; final sign-off requires P5 exit | Complete candidate November 6 target, joint review November 13, final internal sign-off November 20 |
 
-P1 and P2 overlap through agreed interfaces so Simon can build the grader against fixtures while Ahmed builds the simulator. P4 remains a mandatory gate before final experiments. Final artifact acceptance in P6 depends on P5 results, although report and dashboard preparation can overlap. Ahmed is listed as Ahamed in the earlier requirements register; these labels refer to the same planned ownership lane, with full author identity still confirmed before commits.
+P1 and P2 overlap through agreed interfaces so Simon can build the grader against fixtures while Ahmed builds the simulator. P4 remains a mandatory gate before final experiments. Final artifact acceptance in P6 depends on P5 results, although report and dashboard preparation can overlap.
 
 ## Work packages and dependency order
 
@@ -46,27 +46,27 @@ Each row is a candidate work package to select in a later conversation. Each end
 | Work package | Phase | Owner | Requirement IDs | Depends on | Verification focus |
 | --- | --- | --- | --- | --- | --- |
 | WP-01 Confirm source, roles and immediate threat-model decisions | P0 | Simon | GOV-01–GOV-05, GOV-10 | D02 calendar confirmed; resolve D01 and baseline portions of D03–D05 | Source, scope and decision review |
-| WP-02 Agree state/action/context contracts | P1 | Ahamed | SIM-04–SIM-06, OBS-01–OBS-02 | WP-01; baseline state/trust portions of D04–D05 | Reviewed state tables and schema examples; full TTL/replay/repair choices wait for their rule tasks |
-| WP-03 Build deterministic simulator and gateway | P1 | Ahamed | SIM-01–SIM-03, SIM-07–SIM-09, OBS-07 | WP-02 | State transitions, reset isolation, no bypasses |
+| WP-02 Agree state/action/context contracts | P1 | Ahmed | SIM-04–SIM-06, OBS-01–OBS-02 | WP-01; baseline state/trust portions of D04–D05 | Reviewed state tables and schema examples; full TTL/replay/repair choices wait for their rule tasks |
+| WP-03 Build deterministic simulator and gateway | P1 | Ahmed | SIM-01–SIM-03, SIM-07–SIM-09, OBS-07 | WP-02 | State transitions, reset isolation, no bypasses |
 | WP-04 Define development tasks and independent grader | P2 | Simon | DAT-02–DAT-05, EXP-01–EXP-03 | WP-02; D09 and gate grading portions of D10; integrate WP-03 when ready | Hand-labelled full-trace outcomes and allowed attack mutations; repair fixtures added with WP-09 |
-| WP-05 Add bounded agent adapter and condition configurations | P2 | Ahamed | AGT-01, AGT-04, AGT-06 | WP-03; D03/D09 | Offline fake-model integration and stop conditions |
+| WP-05 Add bounded agent adapter and condition configurations | P2 | Ahmed | AGT-01, AGT-04, AGT-06 | WP-03; D03/D09 | Offline fake-model integration and stop conditions |
 | WP-06 Run and review Week 4 gate | P2 | Simon | AGT-02–AGT-03, EXP-08, DEL-01–DEL-02 | WP-04–WP-05; gate portions of D09–D11/D13 | Benign completion, reliably changed action, automatic grade and reproducibility for the baseline; other conditions completed in P3 |
-| WP-07 Add schema, authorization and provenance enforcement | P3 | Ahamed | OBS-03–OBS-04, MED-01–MED-04 | WP-06; D05 | Spoofed authority, task scope and payload truth cases |
-| WP-08 Add time and replay enforcement | P3 | Ahamed | OBS-05–OBS-06, MED-05–MED-06 | WP-07; D06–D07 | TTL boundaries, duplicates, consumption and resets |
-| WP-09 Add state, sequence and task-preserving repair rules | P3 | Ahamed | MED-07–MED-13 | WP-07–WP-08; D04/D08 | Door/temperature/order fixtures, atomicity and repair revalidation |
+| WP-07 Add schema, authorization and provenance enforcement | P3 | Ahmed | OBS-03–OBS-04, MED-01–MED-04 | WP-06; D05 | Spoofed authority, task scope and payload truth cases |
+| WP-08 Add time and replay enforcement | P3 | Ahmed | OBS-05–OBS-06, MED-05–MED-06 | WP-07; D06–D07 | TTL boundaries, duplicates, consumption and resets |
+| WP-09 Add state, sequence and task-preserving repair rules | P3 | Ahmed | MED-07–MED-13 | WP-07–WP-08; D04/D08 | Door/temperature/order fixtures, atomicity and repair revalidation |
 | WP-10 Integrate pilot and review failures | P3 | Simon | DAT-06, AGT-05, QA-01–QA-03 | WP-09 and independent grader | Full paths, all eight rules, safe/unsafe and useful/useless repairs |
 | WP-11 Freeze final scenarios and protocol | P4 | Simon | DAT-01, DAT-07–DAT-09, EXP-04, EXP-09, STA-01–STA-09 | WP-10; D10–D13 | Splits, hashes, denominators, run count, paired synthetic analysis |
 | WP-12 Execute main experiments and trace ablations | P5 | Simon | EXP-05–EXP-08, LOG-01–LOG-07 | WP-11; approved budget | Ledger completeness, matching, variant isolation, actual cost |
 | WP-13 Analyze and independently reproduce evidence | P5 | Simon | EXP-10, STA-01–STA-09, QA-04 | WP-12 | Bootstrap pairing, failure analysis, reproducible tables |
 | WP-14 Prepare report, dashboard and demonstration | P6 | Simon | DEL-03–DEL-04 | WP-13 | Claim checks, artifact navigation and timed demo |
 
-GOV-06–GOV-09 and QA-05 apply throughout. Logging begins with the first integration, not after experiments. Ahamed owns runtime action/state emission (LOG-02); Simon owns record assembly, experiment accounting and analysis. Both approve security-sensitive interfaces, threat model, cost assumptions and the interpretation of results.
+GOV-06–GOV-09 and QA-05 apply throughout. Logging begins with the first integration, not after experiments. Ahmed owns runtime action/state emission (LOG-02); Simon owns record assembly, experiment accounting and analysis. Both approve security-sensitive interfaces, threat model, cost assumptions and the interpretation of results.
 
 ## Week 4 gate and fallback
 
 Before measuring the gate, freeze its development task set, repetition count, baseline configuration and the exact criterion for an attack to “reliably” change an action. The contract supplies **at least 70%** benign task completion but does not supply those other details. The gate is not a license to inspect final test tasks.
 
-The gate review is **Friday September 25, 2026**. See the [daily owner assignments and evidence checklist](week_04_tasks.md). Offline fixtures establish software behavior but do not establish language-model benign completion or a reliable injection effect. If provider access or another required dependency prevents measurement, record the gate as unassessable/not met and review fallback; do not mark it passed.
+The gate review is **Friday September 25, 2026**. See the [daily owner assignments and evidence checklist](baseline_tasks.md). Offline fixtures establish software behavior but do not establish language-model benign completion or a reliable injection effect. If provider access or another required dependency prevents measurement, record the gate as unassessable/not met and review fallback; do not mark it passed.
 
 If the gate is missed, retain the contract's fallback: **three devices, 12 tasks, one attack family, deterministic blocking without repair**. D14 selects the retained devices and family. Preserve all security checks applicable to the retained operations and revise the coverage map openly. With the same two forms, three conditions and three repetitions, 12 tasks imply 216 main runs; this is arithmetic for planning, not a separate approved budget. Do not quietly weaken the hypothesis thresholds or re-label the reduced study as the original full benchmark.
 

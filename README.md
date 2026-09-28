@@ -1,39 +1,61 @@
 # EffectShield
 
-EffectShield is a research project on deterministic runtime enforcement between a tool-using language-model agent and a simulated smart home. It will evaluate whether provenance and state checks reduce unsafe effects and attack success while retaining useful task completion at measured cost.
+EffectShield studies whether deterministic checks between a tool-using language-model agent and a simulated smart home reduce unsafe effects while preserving useful task completion.
 
-**Current stage:** Week 4 implementation. WP-02 (typed contracts) and WP-03 (deterministic simulator and trusted gateway) are implemented for review; see [interfaces](docs/interfaces.md). The mediator, agent integration, grader and experiments have not been implemented yet.
+The simulator, trusted gateway and typed runtime records are integrated with the development scenarios, bounded payload attacks, independent grader and experiment runner. A recorded-proposal replay exercises the actual simulator. The bounded baseline agent adapter uses the same runtime and supports a scripted test model plus a separate OpenAI connector. Live gate results require a reviewed provider, model, budget and protocol; offline results do not establish model performance.
 
-## Quick start
+## Run locally
 
-```bash
-pip install -e ".[dev]"
-python -m pytest
-PYTHONPATH=src python examples/hand_run.py
+Python 3.11 or later is required. Runtime code uses the standard library.
+
+```sh
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements-dev.txt
+.venv/bin/python -m pip install -e .
+.venv/bin/python scripts/evaluate.py offline
+.venv/bin/python scripts/evaluate.py simulator-replay
+.venv/bin/python scripts/evaluate.py baseline
 ```
 
-## Project documents
+Each command creates a separate evidence directory under ignored `artifacts/local/evaluation/`, containing traces, automatic grades, a run ledger, configuration and a report. The replay command executes recorded proposals through the real simulator and gateway; `baseline` also exercises the bounded agent using scripted model responses. All three commands run without live model calls.
 
-- [Detailed requirements and acceptance criteria](docs/requirements.md)
-- [Phases, ownership and verification gates](docs/project_plan.md)
-- [WP-02/WP-03 interfaces and trust boundary](docs/interfaces.md)
-- [Week 4 tasks for Simon and Ahmed](docs/week_04_tasks.md)
-- [Research evidence and design implications](docs/research_basis.md)
-- [Open decisions, review record and proposed commits](docs/review_and_decisions.md)
-- [User prompt history](docs/prompts_history.md)
-- [Revised research contract](docs/reference/EffectShield_Revised_Research_Project_Contract.docx)
-- [Working instructions](AGENTS.md)
+```sh
+.venv/bin/python -m pytest
+.venv/bin/ruff check src tests scripts examples
+.venv/bin/ruff format --check src tests scripts examples
+.venv/bin/mypy
+```
 
-## Responsibilities
+## Organization
 
-| Collaborator | Contract responsibility |
+| Location | Purpose |
 | --- | --- |
-| Ahmed AlAli | Simulator, device state machines, typed schema, mediator, agent integration and rule tests |
-| Simon Kebede Darota (`simonkb`) | Scenario corpus, attacks, baselines, independent grader, experiment runner, analysis and reproducibility |
-| Both | Threat model, cost assumptions, security reviews, interpretation, report and demonstration |
+| `src/effectshield/domain/` | Typed states, actions, trusted context and errors |
+| `src/effectshield/simulator/`, `gateway/`, `environment.py` | State transitions, complete history, trusted observations and isolated runs |
+| `src/effectshield/agent/` | Bounded proposal loop and isolated model clients |
+| `src/effectshield/scenarios.py`, `attacks.py`, `grading.py` | Development data, bounded mutations and independent outcome checks |
+| `src/effectshield/experiments/` | Execution, replay, evidence, summaries and protocol freezing |
+| `scenarios/development/`, `fixtures/evaluation/`, `configs/evaluation/` | Versioned tasks, labelled fixtures and draft gate settings |
+| `tests/` | Unit, integration and security checks |
 
-The contract identity mapping awaits confirmation before attribution changes. **Current week: September 21–25, 2026 (Week 4)**, with the baseline gate on **Friday September 25**. Aim for a complete candidate in Week 10 (November 2–6), joint review in Week 11 (November 9–13), and **internal completion by November 20 (Week 12)**. The submission window is **November 23–27 (Week 13)**; the exact submission day/time is not yet recorded. The user's clarified schedule supersedes the source contract's later delivery window.
+## Documentation
 
-## Working approach
+- [Evaluation commands and integration status](docs/evaluation_guide.md)
+- [Runtime interfaces](docs/interfaces.md) and [evaluation records](docs/evaluation_interface.md)
+- [Requirements](docs/requirements.md) and [project plan](docs/project_plan.md)
+- [Development and verification log](docs/development_log.md)
+- [Source research contract](docs/reference/EffectShield_Revised_Research_Project_Contract.docx)
 
-Choose one reviewed requirement or small component at a time. Agree on its behavior, implement it, verify it and review the concrete changes before committing. Keep credentials in environment configuration and preserve requirement IDs in task and commit descriptions. No real smart-home devices or accounts are in scope.
+Local working notes include `docs/baseline_tasks.md`, `docs/review_and_decisions.md`, `docs/research_basis.md`, `docs/prompts_history.md` and `AGENTS.md`. They retain the existing ignore choices. The tracked guides above contain the reproducible commands and current integration status.
+
+## Responsibilities and schedule
+
+| Owner | Responsibility |
+| --- | --- |
+| Ahmed | Simulator, gateway, typed runtime interfaces, agent integration and enforcement |
+| Simon | Scenarios, attacks, independent grading, experiments, analysis and reproducibility |
+| Both | Interface and security reviews, interpretation, report and demonstration |
+
+The original baseline checkpoint was September 25, 2026. As of September 28, no verified live gate result is available; its status remains unassessable pending model access and protocol decisions. The project plan preserves that checkpoint and records the outstanding work. Target a complete candidate by November 6, joint review by November 13 and internal completion by November 20. Submission remains November 23–27, with its exact due time pending.
+
+Implement and verify one coherent component at a time. Keep credentials in environment configuration, retain research evidence and commit related source, tests and documentation together. No real devices or smart-home accounts are used.
