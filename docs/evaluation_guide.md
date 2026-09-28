@@ -65,7 +65,7 @@ python3 scripts/evaluate.py simulator-replay --output artifacts/local/evaluation
 python3 scripts/evaluate.py verify-evidence artifacts/local/evaluation/replay-review
 ```
 
-Existing directories are never overwritten. Choose a new output path for another run and retain earlier evidence. `verify-evidence` checks file hashes, ledger completeness, start/finish identity, trace/record consistency, independent regrading and the regenerated summary. It supports integrity review, not authenticated proof of a live experiment.
+Existing directories are never overwritten. Choose a new output path for another run. For disposable offline verification, use a temporary directory, audit it and remove it after recording the result in the development log. Retain actual research runs, including failed attempts, according to the approved evidence protocol. Source history belongs in Git; do not keep backup source trees or tool caches. `verify-evidence` checks file hashes, ledger completeness, start/finish identity, trace/record consistency, independent regrading and the regenerated summary. It supports integrity review, not authenticated proof of a live experiment.
 
 ## Rehearsal and live integration
 
@@ -75,7 +75,7 @@ Fixture rehearsal is explicitly separate from official gate measurement:
 python3 scripts/evaluate.py rehearsal --output artifacts/local/evaluation/rehearsal-review
 ```
 
-The [evaluation interface](evaluation_interface.md) defines the native snapshots, action/history records and streaming events required from a real model connector. Once the actual module exists and the necessary model, semantics and evidence decisions are approved, pass its reviewed `module:factory` through `rehearsal --backend`. The factory must match `backend_approval.module` in the reviewed configuration and, for official execution, reside under the frozen `src/effectshield/` tree.
+The [evaluation interface](evaluation_interface.md) defines the native snapshots, action/history records and streaming events required from a real model connector. Once access, budget, semantics and evidence decisions are approved, pass the existing connector’s reviewed `module:factory` through `rehearsal --backend`. The factory must match `backend_approval.module` in the reviewed configuration and, for official execution, reside under the frozen `src/effectshield/` tree.
 
 The OpenAI connector targets `gpt-4.1-mini-2025-04-14` through the Responses API. The [official model documentation](https://developers.openai.com/api/docs/models/gpt-4.1-mini) lists this fixed snapshot and its pricing; the chosen snapshot must match the reviewed configuration. Supply `OPENAI_API_KEY` through the process environment using your local credential tooling. The connector does not automatically load `.env` files, and credentials must not appear in prompts, command arguments or committed files. The spending budget remains zero until explicitly approved.
 
@@ -134,7 +134,7 @@ python3 scripts/evaluate.py verify-evidence artifacts/local/evaluation/gate
 
 The gate rechecks snapshot integrity, current implementation bytes, the approved connector, exact model provenance, actual usage and reset/trace evidence. A marker beside the freeze records the first official batch and its evidence path. A second batch under the same freeze is rejected. Retain that marker and interrupted attempts; another official attempt requires review of the evidence and a recorded deviation/new freeze, not a success-only rerun.
 
-Freezes bind native evaluation schemas, task/attack labels, protocol, grader fixtures, interface and package source. Later edits require a reviewed new freeze. Historical artifacts retain their original bytes and identifiers; the earlier provisional formats are not silently rewritten. Use the corresponding preserved implementation when auditing evidence in a superseded format.
+Freezes bind native evaluation schemas, task/attack labels, protocol, grader fixtures, interface and package source. Later edits require a reviewed new freeze. Retained research artifacts keep their original bytes and identifiers. Use the corresponding Git revision when auditing evidence in a superseded format; do not maintain backup copies of the source tree.
 
 ## Evidence layout
 

@@ -60,4 +60,4 @@ Local working notes include `docs/baseline_tasks.md`, `docs/review_and_decisions
 
 The original baseline checkpoint was September 25, 2026. As of September 28, no verified live gate result is available; its status remains unassessable pending model access and protocol decisions. The project plan preserves that checkpoint and records the outstanding work. Target a complete candidate by November 6, joint review by November 13 and internal completion by November 20. Submission remains November 23–27, with its exact due time pending.
 
-Implement and verify one coherent component at a time. Keep credentials in environment configuration, retain research evidence and commit related source, tests and documentation together. No real devices or smart-home accounts are used.
+Implement and verify one coherent component at a time. Keep credentials in environment configuration, retain research evidence and commit related source, tests and documentation together. Use Git for source history; remove disposable verification outputs and tool caches after checks instead of keeping backup copies. No real devices or smart-home accounts are used.

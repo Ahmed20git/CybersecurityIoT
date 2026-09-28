@@ -1,14 +1,16 @@
 # EffectShield phased project plan
 
-Updated 2026-09-21 from Simon's calendar clarification in PROMPT-002 and follow-up in PROMPT-003. **We are in Week 4, Monday September 21 to Friday September 25, 2026.** The submission window is Week 13, **November 23–27**; its exact submission day/time remains unconfirmed. Simon agreed to keep that window and **Friday November 20** as the internal completion date. All dates use Asia/Dubai.
+Updated 2026-09-28; calendar established from Simon's September 21 clarification in PROMPT-002 and follow-up in PROMPT-003. **Week 4 ran from Monday September 21 to Friday September 25, 2026.** The submission window is Week 13, **November 23–27**; its exact submission day/time remains unconfirmed. Simon agreed to keep that window and **Friday November 20** as the internal completion date. All dates use Asia/Dubai.
 
-Aim for a complete deliverable candidate by **Friday November 6 (Week 10)**, joint review by **Friday November 13 (Week 11)**, and all corrections and internal sign-off by **Friday November 20 (Week 12)**. Week 13 is reserved for submission. The original contract's Weeks 14–15 delivery schedule is retained in the source document as history; the user's new Week 13 deadline and Weeks 10–12 completion goal control this working plan. Preserve all research deliverables and acceptance criteria while moving the work earlier.
+Aim for a complete deliverable candidate by **Friday November 6 (Week 10)**, joint review by **Friday November 13 (Week 11)**, and all corrections and internal sign-off by **Friday November 20 (Week 12)**. Week 13 is reserved for submission. The earlier proposal's Week 5 gate is superseded by the revised contract's Week 4 gate. The original contract's Weeks 14–15 delivery schedule is retained in the source document as history; the user's new Week 13 deadline and Weeks 10–12 completion goal control this working plan. Preserve all research deliverables and acceptance criteria while moving the work earlier.
 
-Integration update, September 28: Ahmed's WP-02 interfaces and WP-03 simulator/gateway from the `simulator` branch are present. Simon's evaluation tools are being aligned with the native runtime and committed by component. The baseline agent adapter was absent from the available branch; PROMPT-006 authorizes implementing it as part of completing the baseline. Offline fixture and real-simulator replay checks are separate from live model results. The September 25 gate is overdue and unassessable until the live path and protocol decisions are resolved; do not silently move the original date or mark it passed. Review the gate/fallback decision before proceeding to later enforcement work. The dated milestones below remain the agreed targets.
+Integration update, September 28: Ahmed's WP-02 interfaces and WP-03 simulator/gateway are integrated with Simon's evaluation tools on `evaluation-integration`, including the latest `simulator` fixes. The missing WP-05 bounded baseline adapter and OpenAI connector were implemented under PROMPT-006 and committed by component. The integrated implementation passed 346 tests and 95 subtests, lint, formatting, type checks and offline evidence audits; a committed-only export also passed. WP-04/WP-05 have offline implementation evidence, while WP-06's live gate remains unassessable. OpenAI `gpt-4.1-mini-2025-04-14` is selected under PROMPT-007; credentials, a spending limit and the live protocol are still pending. The September 25 gate is overdue; do not silently move the original date or mark it passed. Review the gate/fallback decision before proceeding to later enforcement work. The dated milestones below remain the agreed targets.
+
+Repository organization update from PROMPT-008: calendar labels belong in this plan; code and active documentation use functional names. Git contains source history. Local backup copies, disposable verification bundles and tool caches are removed after verification; actual research evidence follows its approved retention protocol.
 
 ## Calendar and weekly outcomes
 
-Week 1 derives to August 31–September 4 by counting back from the supplied Week 4 anchor. Earlier weeks are not marked complete. Detailed daily assignments are in [Week 4 tasks](baseline_tasks.md).
+Week 1 derives to August 31–September 4 by counting back from the supplied Week 4 anchor. Earlier weeks are not marked complete. The dated owner assignments below link to the detailed [baseline tasks](baseline_tasks.md).
 
 | Week | Monday–Friday in 2026 | Ahmed's delivery | Simon's delivery | Joint checkpoint |
 | --- | --- | --- | --- | --- |
@@ -24,6 +26,18 @@ Week 1 derives to August 31–September 4 by counting back from the supplied Wee
 | 13 | November 23–27 | Support submission and presentation as required | Coordinate submission of the reviewed artifact/report | External deadline window only; exact submission date/time pending |
 
 Draft methods, experiment notes and the report outline alongside development from Week 5, using reviewed facts and leaving results empty until measured. Do not wait until Week 10 to begin writing. If a pilot or freeze gate slips, use the Weeks 10–12 margin and update the plan visibly; do not reduce testing, alter thresholds or use final data for tuning to preserve a date.
+
+## Week 4 daily assignments
+
+These are the original September 21–25 commitments, retained for schedule accountability. The functional task IDs and complete acceptance evidence are in the [baseline task notes](baseline_tasks.md). Implemented software and passing offline checks do not mark the live rehearsal, freeze, gate or human reviews complete.
+
+| Original date | Ahmed | Simon | Shared checkpoint |
+| --- | --- | --- | --- |
+| Monday September 21 | BASE-A01: state/action/context interfaces | BASE-S01: development tasks, attack and draft gate protocol | Shared schema and a hand-worked request/action/trace/grade example |
+| Tuesday September 22 | BASE-A02: simulator, clock, gateway, reset and trace tests | BASE-S02: fixtures, independent grader and bounded payload mutation | Native trace reproduces hand-assigned outcomes |
+| Wednesday September 23 | BASE-A03: bounded agent adapter and offline checks | BASE-S03: runner, ledger, messages and accounting | One-command offline integration with trace, grade and summary |
+| Thursday September 24 | BASE-A04: integration fixes and approved live baseline | BASE-S04: rehearsal, accounting review and protocol freeze | Reviewed live path and frozen gate readiness |
+| Friday September 25 | BASE-A05: independent setup/replay and tally review | BASE-S05: frozen gate execution and complete report | Joint gate assessment and next-scope/fallback decision |
 
 ## Phase gates
 

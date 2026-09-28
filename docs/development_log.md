@@ -1,6 +1,8 @@
 # Observable AI assistance and verification log
 
-## 2026-09-21 — Simon's Week 4 evaluation tooling
+Editorial update, September 28 (PROMPT-008): historical path references below use the current functional names. Original wording and source revisions remain in Git. Disposable offline verification outputs and backup copies have been removed at Simon's request; the outcomes and limitations remain recorded here. Verbatim prompts and the source contract are preserved.
+
+## 2026-09-21 — Simon's baseline evaluation tooling
 
 This entry records observable assistance, artifacts and verification for PROMPT-004 in [the prompt history](prompts_history.md). The full attached prompt and Simon's note are preserved there with capture time `2026-09-21T16:40:07+04:00`. Simon and Ahmed remain the designated human project authors; this log discloses AI assistance and does not assign a Git identity or claim human approval. Hidden reasoning, system/developer instructions and credentials are excluded.
 
@@ -8,7 +10,7 @@ This entry records observable assistance, artifacts and verification for PROMPT-
 
 The assistant inspected the repository, working instructions, preserved research contract, requirements, dated plan, decision register, Git status and available code. The repository had planning documents but no simulator, gateway, runtime schema, agent adapter or existing implementation tests. The user's commit `569258d` was preserved. Existing ignore choices, including the locally ignored prompt history and decision register, were preserved.
 
-Simon authorized W4-S01–S05 and explicitly reserved Ahmed's components for Ahmed. The implementation therefore uses a provisional evaluation record format and authored static trace fixtures. It does not implement a simulator or model adapter. Joint integration can only be tested once Ahmed supplies those components.
+Simon authorized his five baseline evaluation tasks and explicitly reserved Ahmed's components for Ahmed. The implementation therefore uses a provisional evaluation record format and authored static trace fixtures. It does not implement a simulator or model adapter. Joint integration can only be tested once Ahmed supplies those components.
 
 Two clarification questions were raised: whether Ahmed's interfaces exist elsewhere, and whether D09 should use proposed or executed action changes. No answers to those questions were available when this implementation was prepared. The runner supports both measurements; executed changes, three repetitions and an 80% reliability threshold remain proposals. No approval, official freeze, credentials, paid inference or live gate result was manufactured.
 
@@ -17,18 +19,18 @@ Two clarification questions were raised: whether Ahmed's interfaces exist elsewh
 | Files | Observable output |
 | --- | --- |
 | `pyproject.toml`, `requirements-dev.txt`, package `__init__.py` files | Python 3.11+ project metadata, standard-library runtime and pinned Ruff development tool |
-| `src/effectshield/scenarios.py`, `scenarios/week4/development.json` | Validated development suite: ten clean tasks spanning five devices plus one matched attacked variant, with stable IDs, initial state, requests, observations, completion/policy predicates and run fields |
+| `src/effectshield/scenarios.py`, `scenarios/development/baseline.json` | Validated development suite: ten clean tasks spanning five devices plus one matched attacked variant, with stable IDs, initial state, requests, observations, completion/policy predicates and run fields |
 | `src/effectshield/attacks.py` | Bounded mutation of explicitly allowed payload text; protected labels, envelope identity/time/IDs, permissions and initial state remain unchanged |
-| `src/effectshield/grading.py`, `fixtures/week4/grader_cases.json` | Independent complete-trace grading and ten hand-labelled fixtures; unsafe intermediate effects remain failures after recovery; recorded repairs require safe task completion |
-| `fixtures/week4/runs.json`, `src/effectshield/experiments/backends.py` | Explicit static trace replay for offline tests, plus a loader for Ahmed's future trusted connector |
+| `src/effectshield/grading.py`, `fixtures/evaluation/grader_cases.json` | Independent complete-trace grading and ten hand-labelled fixtures; unsafe intermediate effects remain failures after recovery; recorded repairs require safe task completion |
+| `fixtures/evaluation/runs.json`, `src/effectshield/experiments/backends.py` | Explicit static trace replay for offline tests, plus a loader for Ahmed's future trusted connector |
 | `src/effectshield/experiments/runner.py`, `storage.py` | Spawned-process attempts, exact reset check, durable event acknowledgement, separate proposed/committed actions, all-attempt ledger, retries/timeouts/bounds, actual/unknown usage distinction and secret redaction |
 | `src/effectshield/experiments/report.py`, `checks.py`, `audit.py` | Fixture self-check, summaries, both action-change measures, missing/failure accounting, three gate statuses and read-only integrity/regrading checks |
-| `src/effectshield/experiments/freeze.py`, `configs/week4/gate.json` | Draft protocol, approval-bound hashes/snapshots and verification, source/input binding and one official batch per freeze |
-| `src/effectshield/experiments/cli.py`, `scripts/week4.py` | Offline, rehearsal, approval-hashes, freeze, gate and evidence-verification commands |
-| `tests/test_scenarios.py`, `test_attacks.py`, `test_grading.py`, `test_runner.py`, `test_report.py`, `test_freeze.py`, `test_audit.py`, `support_backends.py`, `__init__.py` | Unit and integration checks with static test doubles; no provider calls |
-| `docs/week4_interface.md`, `docs/week4_implementation.md`, this file | Provisional Ahmed handoff, exact commands, blockers, evidence layout, review groups and AI-use/verification record |
+| `src/effectshield/experiments/freeze.py`, `configs/evaluation/gate.json` | Draft protocol, approval-bound hashes/snapshots and verification, source/input binding and one official batch per freeze |
+| `src/effectshield/experiments/cli.py`, `scripts/evaluate.py` | Offline, rehearsal, approval-hashes, freeze, gate and evidence-verification commands |
+| `tests/unit/`, `tests/integration/`, `tests/support_backends.py`, `tests/__init__.py` | Unit and integration checks with static test doubles; no provider calls |
+| `docs/evaluation_interface.md`, `docs/evaluation_guide.md`, this file | Provisional Ahmed handoff, exact commands, blockers, evidence layout, review groups and AI-use/verification record |
 | `README.md`, `docs/project_plan.md` | Current implementation stage and links while preserving the agreed calendar |
-| Local ignored `AGENTS.md`, `docs/week_04_tasks.md`, `docs/review_and_decisions.md`, `docs/prompts_history.md` | Authorized scope, current status, pending decisions and full user instructions; not force-added |
+| Local ignored `AGENTS.md`, `docs/baseline_tasks.md`, `docs/review_and_decisions.md`, `docs/prompts_history.md` | Authorized scope, current status, pending decisions and full user instructions; not force-added |
 
 Independent assistant reviews checked the mutation boundary, full-trace grading, freeze integrity, failure accounting and final handoff consistency. These reviews are AI assistance, not Simon's or Ahmed's acceptance. Source files and documents contain the reviewable generated outputs.
 
@@ -43,28 +45,28 @@ PYTHONPATH=src python3 -m unittest discover -s tests -v
 git diff --check
 ```
 
-The final unit/integration run passed **101 tests** in 6.676 seconds. Its complete output is retained locally at `artifacts/local/week4/unit-test-output-final.txt`. Ruff lint and formatting checks passed for 23 Python files. Tests exercise payload confinement, exact JSON types, every committed transition, unsafe effects followed by recovery, malformed/incomplete traces, deterministic reset, cross-run isolation, partial failures/timeouts, retry denominators, unknown usage, usage monotonicity, reserved-event rejection, evidence tampering, approval bindings and freeze reuse prevention.
+The final unit/integration run passed **101 tests** in 6.676 seconds. Its disposable raw output has since been removed under PROMPT-008. Ruff lint and formatting checks passed for 23 Python files. Tests exercise payload confinement, exact JSON types, every committed transition, unsafe effects followed by recovery, malformed/incomplete traces, deterministic reset, cross-run isolation, partial failures/timeouts, retry denominators, unknown usage, usage monotonicity, reserved-event rejection, evidence tampering, approval bindings and freeze reuse prevention.
 
-Earlier verification exposed and corrected two seed issues. Adding an unsupported-seed constraint invalidated a synthetic freeze fixture that used seed `0` with status `unsupported`; that fixture now uses `null`. A new regression test then exposed the missing opposite constraint: a supported seed cannot be left unspecified. The validator now requires its explicit integer value. Both earlier failing outputs remain in `unit-test-output.txt` and `unit-test-output-verified.txt`; they were not replaced with the passing output. Earlier test runs and review also led to stricter canonical comparisons, monotonic usage, durable event delivery and frozen-connector binding.
+Earlier verification exposed and corrected two seed issues. Adding an unsupported-seed constraint invalidated a synthetic freeze fixture that used seed `0` with status `unsupported`; that fixture now uses `null`. A new regression test then exposed the missing opposite constraint: a supported seed cannot be left unspecified. The validator now requires its explicit integer value. The earlier failing outputs were kept separately during verification and have since been removed with the disposable logs; the failure descriptions remain in this record. Earlier test runs and review also led to stricter canonical comparisons, monotonic usage, durable event delivery and frozen-connector binding.
 
-The complete CLI workflows were exercised using static data:
+The complete CLI workflows were exercised using static data. Equivalent commands with the current functional names are:
 
 ```sh
-python3 scripts/week4.py offline --output artifacts/local/week4/offline-final-verification
-python3 scripts/week4.py verify-evidence artifacts/local/week4/offline-final-verification
-python3 scripts/week4.py rehearsal --output artifacts/local/week4/rehearsal-final-verification
-python3 scripts/week4.py verify-evidence artifacts/local/week4/rehearsal-final-verification
+python3 scripts/evaluate.py offline --output artifacts/local/evaluation/offline-final-verification
+python3 scripts/evaluate.py verify-evidence artifacts/local/evaluation/offline-final-verification
+python3 scripts/evaluate.py rehearsal --output artifacts/local/evaluation/rehearsal-final-verification
+python3 scripts/evaluate.py verify-evidence artifacts/local/evaluation/rehearsal-final-verification
 ```
 
 Each workflow retained 33 attempts, with 30/30 clean fixture goal completions and 3/3 matched action changes in both measures. Each evidence audit passed with 170 hashed files and 33 run records. All three gate statuses remained `unassessable`. These numbers are authored fixture expectations, not measured model performance. Cost/token/call values are explicitly synthetic zeros. Reports include actual local runtime latency, invocation, source/configuration hashes, run IDs and ledger paths.
 
-After the final seed-validation correction, the offline workflow and audit were repeated successfully at `artifacts/local/week4/offline-verified-v2` to bind evidence to the final source: 33 attempts, 170 verified files and the same fixture outcomes. Earlier evidence was retained. Rehearsal separation and accounting were also exercised by the passing final integration tests.
+After the final seed-validation correction, the offline workflow and audit were repeated successfully against the final source: 33 attempts, 170 verified files and the same fixture outcomes. Earlier disposable output was retained during verification and has since been removed under PROMPT-008. Rehearsal separation and accounting were also exercised by the passing final integration tests.
 
 Final documentation checks passed for all 11 Markdown files, existing local links, balanced code fences, whitespace and valid JSON configuration/scenario/fixture files. Git whitespace checks passed, the index remained empty, and generated evidence, the local environment and caches remained ignored. These checks do not claim that ignored local documents are published to GitHub.
 
 ### Remaining work and review status
 
-| Week 4 live criterion | Status | Reason |
+| Baseline live criterion | Status | Reason |
 | --- | --- | --- |
 | At least 70% benign completion | Unassessable | No approved live model run |
 | Reliably action-changing attack | Unassessable | D09 is pending and no live attack measurement exists |
@@ -80,9 +82,9 @@ PROMPT-005 authorizes integration, functional naming and local commits. PROMPT-0
 
 ### Repository preservation and naming
 
-Fetched `origin` and inspected `origin/simulator` at `78c8e1c`. It contains Ahmed's WP-02/WP-03 commits and descends from the latest main branch; it contains no agent adapter. Work proceeds on local `evaluation-integration` based on that history. A checksummed backup of all 41 original local source/document files was created at `artifacts/local/integration-backup` before switching branches; original implementation artifacts retain their bytes. Existing author history and Git configuration were preserved.
+Fetched `origin` and inspected `origin/simulator` at `78c8e1c`. It contains Ahmed's WP-02/WP-03 commits and descends from the latest main branch; it contains no agent adapter. Work proceeds on local `evaluation-integration` based on that history. A checksummed temporary backup of the 41 original local source/document files was used while switching branches and was subsequently removed under PROMPT-008. Git now supplies the committed source history. Existing author history and Git configuration were preserved.
 
-Active prose uses Simon and Ahmed. Functional names replace the provisional calendar-based paths: `scripts/evaluate.py`, `configs/evaluation/`, `scenarios/development/`, `fixtures/evaluation/`, `docs/evaluation_interface.md` and `docs/evaluation_guide.md`. Tests are organized by unit, integration and security behavior. The existing locally ignored task notes were renamed `docs/baseline_tasks.md`, with the ignore rule updated. Historical user prompts, source contract and old evidence remain unchanged.
+Active prose uses Simon and Ahmed. Functional names replace the provisional calendar-based paths: `scripts/evaluate.py`, `configs/evaluation/`, `scenarios/development/`, `fixtures/evaluation/`, `docs/evaluation_interface.md` and `docs/evaluation_guide.md`. Tests are organized by unit, integration and security behavior. The existing locally ignored task notes were renamed `docs/baseline_tasks.md`, with the ignore rule updated. Historical user prompts and the source contract remain unchanged. Superseded disposable verification outputs were later removed under PROMPT-008.
 
 ### Integration changes
 
@@ -98,7 +100,7 @@ Review also corrected native request-field logging, malformed provider-response 
 
 ### Research status
 
-The original September 25 baseline checkpoint has passed. No frozen live gate result exists, so all three live criteria remain unassessable. Provider/model selection and implementation/commit authorization do not supply credentials, a spending cap, joint semantic/protocol acceptance or freeze approval. The budget remains zero. The team must record its gate/fallback disposition before later enforcement work; this integration does not silently change the schedule or select a reduced study.
+The original September 25 baseline checkpoint date has elapsed. No frozen live gate result exists, so all three live criteria remain unassessable. Provider/model selection and implementation/commit authorization do not supply credentials, a spending cap, joint semantic/protocol acceptance or freeze approval. The budget remains zero. The team must record its gate/fallback disposition before later enforcement work; this integration does not silently change the schedule or select a reduced study.
 
 Source/data, tests, configuration, dependency pins, placeholder-only environment example and tracked guides are the reviewable outputs. Prompt history and existing private planning notes retain their local ignore choices. No credentials, environments, caches, backups or generated run bundles are included in commits.
 
@@ -125,7 +127,7 @@ The complete commands below were also executed and their evidence audits passed,
 .venv/bin/python scripts/evaluate.py verify-evidence artifacts/local/evaluation/baseline-verified
 ```
 
-Each mode produced the intended 30/30 clean completions and 3/3 matched authored action changes, including three unsafe attacked runs. These are deterministic fixture expectations, not empirical language-model results. All live gate criteria remained unassessable. The full test output is retained at `artifacts/local/integration-backup/combined-tests-final.txt`; earlier checks and the pre-integration source backup remain available locally.
+Each mode produced the intended 30/30 clean completions and 3/3 matched authored action changes, including three unsafe attacked runs. These are deterministic fixture expectations, not empirical language-model results. All live gate criteria remained unassessable. The disposable test output and pre-integration source backup have since been removed under PROMPT-008; the verification outcomes and commits are recorded here.
 
 The final timeout regression verifies that the exact converted provider request is durably recorded through the runner before a simulated blocked network operation is killed. The API implementation uses that same acknowledged event path before count and generation requests. This is offline evidence of the logging behavior; real provider availability, latency and account access remain untested.
 
@@ -147,4 +149,25 @@ The branch preserves `origin/simulator` and `origin/main` as ancestors. No remot
 
 Before final handoff, the simulator branch advanced to `ee8a0db` with `008fa4c` (its own explicit nesting fix) and `ee8a0db` (setup guide). Those commits are merged with their history preserved. The overlapping temporary 16-container parser fix is superseded by Ahmed's native 4-container limit and `NESTING_TOO_DEEP` error code. Both sets of string-boundary regressions are retained. README/setup instructions now cover the combined functional commands, pinned tools and local integration branch. The final verification below supersedes the pre-merge test count while retaining that earlier record.
 
-After resolving the concurrent updates, **346 tests and 95 subtests passed** in 11.85 seconds; all 55 Python files pass Ruff lint/format, all 33 source files pass strict mypy, and Git whitespace checks pass. The complete bounded-agent workflow was repeated at `artifacts/local/evaluation/baseline-merged-verified`: 33 attempts, no invalid traces and a passing 170-file evidence audit. The post-merge test output is retained in `artifacts/local/integration-backup/combined-tests-merged.txt`. All live criteria remain unassessable. The merge commit preserves both collaborators' histories and the combined tree is the handoff target.
+After resolving the concurrent updates, **346 tests and 95 subtests passed** in 11.85 seconds; all 55 Python files pass Ruff lint/format, all 33 source files pass strict mypy, and Git whitespace checks pass. The complete bounded-agent workflow was repeated at `artifacts/local/evaluation/baseline-merged-verified`: 33 attempts, no invalid traces and a passing 170-file evidence audit. The disposable post-merge output has since been removed under PROMPT-008. All live criteria remain unassessable. The merge commit preserves both collaborators' histories and the combined tree is the handoff target.
+
+## 2026-09-28 — Repository cleanup and functional naming
+
+PROMPT-008 requests Git-based source history without backup trees or cached prior code. Removed the temporary integration backup, superseded offline run bundles and tool caches. No actual live experiment, approval record or official freeze existed in those outputs. The source contract, verbatim prompt history, curated fixtures and all existing commits remain intact.
+
+Renamed the remaining test credential variable to `EFFECTSHIELD_TEST_API_KEY`; the redaction behavior is unchanged. Normalized historical documentation paths and active calendar labels to functional terminology, kept the timeline in the project plan and updated its integrated implementation status. README and the evaluation guide now distinguish disposable verification output from retained research evidence. The local working instructions and decision notes follow the same policy.
+
+The committed-only export of `bebeddd` had already passed 346 tests and 95 subtests, a 33-attempt scripted baseline and a 170-file evidence audit. That temporary export and its disposable output have been removed. Cleanup verification and commit grouping follow below. No paid inference, live gate result or push is implied.
+
+Cleanup verification: **346 tests and 95 subtests passed** in 13.22 seconds with bytecode writing and the pytest cache disabled. Ruff lint/format passed for all 55 Python files; mypy passed for all 33 source files with its cache directed to the null device. The longer renamed test variable initially exceeded the line limit; formatting corrected it and both Ruff checks then passed. The scripted baseline completed 33 attempts, and its audit verified 170 files before the temporary output directory was removed. All live gate criteria remain unassessable.
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/ruff check --no-cache src tests scripts examples
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/ruff format --check --no-cache src tests scripts examples
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/mypy --cache-dir=/dev/null
+```
+
+The baseline and `verify-evidence` commands used a Python `TemporaryDirectory` for their output. No new source backup or persistent verification bundle was created. Commit grouping separates functional test naming from documentation and repository workflow. Existing author history and branch ancestry are preserved.
+
+Documentation verification passed for 13 Markdown files (local links, balanced fences and prose whitespace); all 89 requirement IDs and owners are unchanged. Active tracked files contain no calendar-specific baseline labels outside the project plan. The native domain, simulator, gateway and environment still match `origin/simulator`. The functional test naming commit is `4f475b8`; the documentation/workflow changes are in the commit containing this entry.
