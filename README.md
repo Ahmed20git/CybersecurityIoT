@@ -19,6 +19,14 @@ python3 -m venv .venv
 
 Each command creates a separate evidence directory under ignored `artifacts/local/evaluation/`, containing traces, automatic grades, a run ledger, configuration and a report. The replay command executes recorded proposals through the real simulator and gateway; `baseline` also exercises the bounded agent using scripted model responses. All three commands run without live model calls.
 
+To visualize a saved run, replace `PATH_TO_RUN` with the `output` directory printed by the command:
+
+```sh
+python3 scripts/evaluate.py visualize PATH_TO_RUN
+```
+
+Open the returned HTML file in your browser. It shows batch totals, every attempt, matched clean/attacked runs and a step-by-step device replay. It works offline without a web server or extra dependencies. See the [viewer instructions](docs/evaluation_guide.md#visualize-saved-evidence) for output paths and interpretation.
+
 ```sh
 .venv/bin/python -m pytest
 .venv/bin/ruff check src tests scripts examples

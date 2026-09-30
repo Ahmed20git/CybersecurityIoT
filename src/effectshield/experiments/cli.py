@@ -54,6 +54,11 @@ def main(argv: list[str] | None = None) -> int:
     verify.add_argument("path", type=Path)
     evidence = commands.add_parser("verify-evidence")
     evidence.add_argument("path", type=Path)
+    visualize = commands.add_parser(
+        "visualize", help="View saved evidence in an offline HTML report"
+    )
+    visualize.add_argument("path", type=Path)
+    visualize.add_argument("--output", type=Path, help="New .html path outside the evidence bundle")
     commands.add_parser("check-grader")
     args = parser.parse_args(argv)
     try:
@@ -70,6 +75,10 @@ def main(argv: list[str] | None = None) -> int:
             result = verify_freeze(args.path)
         elif args.command == "verify-evidence":
             result = verify_evidence(args.path)
+        elif args.command == "visualize":
+            from .visualize import write_visualization
+
+            result = write_visualization(args.path, args.output)
         elif args.command == "check-grader":
             result = grader_selfcheck(ROOT / "fixtures/evaluation/grader_cases.json")
         else:

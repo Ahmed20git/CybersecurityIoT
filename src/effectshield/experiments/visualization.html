@@ -1,0 +1,1185 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'sha256-__SCRIPT_HASH__'; style-src 'unsafe-inline'; connect-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>EffectShield · Evidence viewer</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f4f6f8;
+        --card: #fff;
+        --ink: #1a2b3c;
+        --muted: #586a7a;
+        --line: #dce4ea;
+        --teal: #087969;
+        --tint: #e8f5f1;
+        --red: #b23437;
+        --redbg: #fff0ef;
+        --amber: #805400;
+        --amberbg: #fff6df;
+        --shadow: 0 8px 28px #122a4110;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font:
+          15px/1.55 system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+      }
+      main {
+        max-width: 1180px;
+        margin: auto;
+        padding: 30px 28px 50px;
+      }
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+      h1 {
+        font-size: 30px;
+        letter-spacing: -1px;
+      }
+      h2 {
+        font-size: 20px;
+        letter-spacing: -0.4px;
+      }
+      h3 {
+        font-size: 15px;
+      }
+      .eyebrow {
+        text-transform: uppercase;
+        letter-spacing: 1.8px;
+        font-size: 11px;
+        font-weight: 750;
+        color: var(--teal);
+      }
+      .muted,
+      small {
+        color: var(--muted);
+      }
+      .small,
+      small {
+        font-size: 12px;
+      }
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+        overflow-wrap: anywhere;
+      }
+      .header {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        align-items: center;
+        margin-bottom: 18px;
+      }
+      .tag {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 650;
+        background: var(--tint);
+        color: var(--teal);
+      }
+      .notice {
+        background: var(--amberbg);
+        color: var(--amber);
+        border: 1px solid color-mix(in srgb, var(--amber) 20%, transparent);
+        padding: 13px 16px;
+        border-radius: 10px;
+        margin: 16px 0;
+      }
+      .notice p + p {
+        margin-top: 4px;
+      }
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin: 20px 0;
+      }
+      .metric,
+      .panel {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+      }
+      .metric {
+        padding: 18px;
+      }
+      .metric strong {
+        display: block;
+        font-size: 29px;
+        font-weight: 650;
+        margin: 4px 0;
+        line-height: 1.2;
+      }
+      .meter {
+        height: 5px;
+        background: var(--line);
+        border-radius: 5px;
+        margin-top: 13px;
+        overflow: hidden;
+      }
+      .meter span {
+        display: block;
+        background: var(--teal);
+        height: 100%;
+      }
+      .metric.danger .meter span {
+        background: var(--red);
+      }
+      .panel {
+        padding: 22px;
+        margin-top: 20px;
+      }
+      .section-title {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+        align-items: center;
+        margin-bottom: 18px;
+      }
+      .controls {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: end;
+        margin-bottom: 16px;
+      }
+      label {
+        display: block;
+        font-size: 12px;
+        font-weight: 650;
+        color: var(--muted);
+        margin-bottom: 5px;
+      }
+      select,
+      button {
+        font: inherit;
+        color: var(--ink);
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        padding: 9px 12px;
+        max-width: 100%;
+      }
+      select {
+        width: 100%;
+        text-overflow: ellipsis;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:hover:not(:disabled) {
+        border-color: var(--teal);
+        color: var(--teal);
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+      button:focus-visible,
+      select:focus-visible,
+      input:focus-visible,
+      summary:focus-visible {
+        outline: 3px solid var(--teal);
+        outline-offset: 3px;
+      }
+      .request {
+        background: var(--bg);
+        padding: 13px 16px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        overflow-wrap: anywhere;
+      }
+      .request p {
+        font-weight: 550;
+      }
+      .request small {
+        display: block;
+        margin-top: 5px;
+      }
+      .verdicts {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 12px 0;
+      }
+      .badge {
+        padding: 5px 9px;
+        border-radius: 6px;
+        font-size: 12px;
+        background: var(--bg);
+        border: 1px solid var(--line);
+      }
+      .good {
+        color: var(--teal);
+        background: var(--tint);
+      }
+      .bad {
+        color: var(--red);
+        background: var(--redbg);
+      }
+      .unknown {
+        color: var(--amber);
+        background: var(--amberbg);
+      }
+      .devices {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 18px;
+      }
+      .device {
+        padding: 17px 13px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        min-width: 0;
+      }
+      .device.active {
+        border-color: var(--teal);
+        background: var(--tint);
+      }
+      .device.changed {
+        box-shadow: inset 0 0 0 1px var(--teal);
+      }
+      .device svg {
+        width: 30px;
+        height: 30px;
+        display: block;
+        stroke: var(--muted);
+        fill: none;
+        stroke-width: 1.6;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        margin-bottom: 12px;
+      }
+      .device.active svg {
+        stroke: var(--teal);
+      }
+      .device p {
+        font-weight: 650;
+        font-size: 16px;
+        overflow-wrap: anywhere;
+      }
+      .device small {
+        display: block;
+        margin: 4px 0;
+      }
+      .step-controls {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 20px;
+      }
+      .step-controls input {
+        flex: 1;
+        min-width: 40px;
+        accent-color: var(--teal);
+      }
+      .step-controls button {
+        padding: 7px 10px;
+      }
+      .step-caption {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+      }
+      .effect {
+        padding: 13px 15px;
+        background: var(--bg);
+        border-radius: 8px;
+        margin: 14px 0 8px;
+        overflow-wrap: anywhere;
+      }
+      .effect.bad {
+        background: var(--redbg);
+      }
+      .effect strong {
+        display: block;
+      }
+      .steps {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        margin: 12px 0;
+      }
+      .steps button {
+        padding: 5px 9px;
+        font-size: 12px;
+      }
+      .steps button[aria-current="step"] {
+        border-color: var(--teal);
+        background: var(--tint);
+        color: var(--teal);
+      }
+      .split {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-top: 17px;
+      }
+      .subpanel {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 14px;
+        min-width: 0;
+      }
+      .subpanel p {
+        margin-top: 6px;
+      }
+      .subpanel details {
+        margin-top: 8px;
+      }
+      pre {
+        font:
+          12px/1.55 ui-monospace,
+          SFMono-Regular,
+          Consolas,
+          monospace;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        background: var(--bg);
+        padding: 12px;
+        border-radius: 7px;
+        max-height: 360px;
+        overflow: auto;
+        margin-bottom: 0;
+      }
+      summary {
+        cursor: pointer;
+        font-weight: 600;
+      }
+      details > div {
+        margin-top: 12px;
+      }
+      .table-scroll {
+        overflow: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 11px 10px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+      th {
+        font-size: 11px;
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      td button {
+        font-size: 13px;
+        text-align: left;
+        padding: 4px 7px;
+      }
+      tr.selected {
+        background: var(--tint);
+      }
+      .accounting {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin: 16px 0;
+      }
+      .accounting p {
+        margin: 5px 0;
+      }
+      .empty {
+        padding: 15px;
+        border: 1px dashed var(--line);
+        color: var(--muted);
+      }
+      [hidden] {
+        display: none !important;
+      }
+      footer {
+        margin-top: 20px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #101b26;
+          --card: #182633;
+          --ink: #e0eaf2;
+          --muted: #a1b3c2;
+          --line: #314353;
+          --teal: #66d9be;
+          --tint: #153a35;
+          --red: #ffada9;
+          --redbg: #40282b;
+          --amber: #eed38b;
+          --amberbg: #383223;
+          --shadow: none;
+        }
+      }
+      @media (max-width: 760px) {
+        main {
+          padding: 22px 16px;
+        }
+        .metrics {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .devices {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        .split,
+        .accounting {
+          grid-template-columns: 1fr;
+        }
+        .panel {
+          padding: 17px;
+        }
+      }
+      @media (max-width: 450px) {
+        main {
+          padding: 18px 12px;
+        }
+        .header {
+          align-items: start;
+          flex-direction: column;
+          gap: 10px;
+        }
+        .metrics {
+          gap: 8px;
+        }
+        .metric {
+          padding: 13px;
+        }
+        .metric strong {
+          font-size: 25px;
+        }
+        .devices {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .controls {
+          grid-template-columns: 1fr;
+        }
+        .panel {
+          padding: 14px;
+        }
+        .section-title {
+          align-items: start;
+          flex-direction: column;
+          gap: 7px;
+        }
+        .step-controls {
+          gap: 6px;
+        }
+        .step-controls button {
+          font-size: 12px;
+          padding: 6px;
+        }
+        h1 {
+          font-size: 27px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header class="header">
+        <div>
+          <p class="eyebrow">Saved evaluation evidence</p>
+          <h1>EffectShield</h1>
+          <p class="muted">
+            Explore task outcomes and replay simulated device effects.
+          </p>
+        </div>
+        <span class="tag" id="mode">Loading evidence…</span>
+      </header>
+      <noscript
+        ><p class="notice">
+          Enable JavaScript to explore this local report. The saved JSON and
+          Markdown report remain readable without it.
+        </p></noscript
+      >
+      <div class="notice">
+        <strong id="evidence-kind"></strong>
+        <p id="scope-note"></p>
+        <p class="small" id="audit-note"></p>
+      </div>
+      <section
+        class="metrics"
+        aria-label="Batch outcomes"
+        id="metrics"
+      ></section>
+      <section class="panel" id="replay">
+        <div class="section-title">
+          <h2>Device replay</h2>
+          <span class="small muted">Snapshots from the saved trace</span>
+        </div>
+        <p class="empty" id="no-runs" hidden>
+          No finished attempts in this bundle. Review the accounting below.
+        </p>
+        <div id="run-view">
+          <div class="controls">
+            <div>
+              <label for="run-select">Scenario · repetition · attempt</label
+              ><select id="run-select"></select>
+            </div>
+            <button id="compare" type="button">View matched run</button>
+          </div>
+          <p
+            id="pair-status"
+            class="small muted"
+            style="margin-bottom: 12px"
+          ></p>
+          <div class="request">
+            <p id="request"></p>
+            <small id="permissions"></small>
+          </div>
+          <div class="verdicts" id="verdicts" aria-live="polite"></div>
+          <p class="small muted">
+            These are whole-run grades. Completing the requested task can
+            coexist with an unsafe extra effect.
+          </p>
+          <div class="devices" id="devices" aria-live="polite"></div>
+          <div class="step-controls">
+            <button id="previous" type="button">← Previous</button
+            ><label for="step" hidden>Replay step</label
+            ><input
+              id="step"
+              type="range"
+              min="0"
+              value="0"
+              step="1"
+              aria-label="Replay step"
+            /><button id="next" type="button">Next →</button>
+          </div>
+          <div class="step-caption">
+            <strong id="step-label"></strong
+            ><span class="small muted" id="clock"></span>
+          </div>
+          <div id="effect" class="effect" aria-live="polite"></div>
+          <div
+            id="steps"
+            class="steps"
+            aria-label="Jump to a saved transition"
+          ></div>
+          <p class="small muted" id="trace-note"></p>
+          <div class="split">
+            <div class="subpanel">
+              <h3>Independent safety grade</h3>
+              <p id="safety-note" class="small"></p>
+              <details>
+                <summary>Grade and reason codes</summary>
+                <pre id="grade"></pre>
+              </details>
+            </div>
+            <div class="subpanel">
+              <h3>Observations</h3>
+              <p id="receipts-note" class="small"></p>
+              <details>
+                <summary>Initial tool evidence</summary>
+                <pre id="initial-observations"></pre>
+              </details>
+              <details>
+                <summary>Completed read receipts</summary>
+                <pre id="observations"></pre>
+              </details>
+            </div>
+          </div>
+          <details style="margin-top: 16px">
+            <summary>Selected run identity and trace</summary>
+            <p
+              class="small mono"
+              id="run-identity"
+              style="margin-top: 10px"
+            ></p>
+            <pre id="raw-trace"></pre>
+          </details>
+        </div>
+      </section>
+      <section class="panel">
+        <div class="section-title">
+          <h2>All recorded attempts</h2>
+          <span id="attempt-count" class="small muted"></span>
+        </div>
+        <p class="small muted" style="margin-bottom: 10px">
+          Select a task to inspect it above. Completion and unsafe effects are
+          separate outcomes.
+        </p>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Scenario</th>
+                <th scope="col">Rep / attempt</th>
+                <th scope="col">Execution</th>
+                <th scope="col">Task completed</th>
+                <th scope="col">Unsafe effect</th>
+                <th scope="col">Trace</th>
+              </tr>
+            </thead>
+            <tbody id="attempts"></tbody>
+          </table>
+        </div>
+      </section>
+      <section class="panel">
+        <h2>Gate status and accounting</h2>
+        <p class="small muted" style="margin: 8px 0 12px">
+          These statuses come from the saved summary. An artifact audit does not
+          grant protocol approval or establish model performance.
+        </p>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Criterion</th>
+                <th scope="col">Saved status</th>
+                <th scope="col">Evidence</th>
+              </tr>
+            </thead>
+            <tbody id="criteria"></tbody>
+          </table>
+        </div>
+        <div class="accounting">
+          <div>
+            <h3>Coverage</h3>
+            <p id="coverage" class="small"></p>
+            <p id="missing" class="small"></p>
+            <p id="pair-note" class="small"></p>
+          </div>
+          <div>
+            <h3>Model and usage</h3>
+            <p id="model" class="small mono"></p>
+            <p id="usage" class="small"></p>
+            <p id="cost" class="small"></p>
+          </div>
+        </div>
+        <p id="uncertainties" class="small"></p>
+        <details style="margin-top: 15px">
+          <summary>Full saved summary and matched pairs</summary>
+          <pre id="summary"></pre>
+        </details>
+      </section>
+      <footer>
+        <p id="identity" class="mono"></p>
+        <p>
+          Generated from an audited bundle. This self-contained view makes no
+          network or model calls. Keep the source bundle to reproduce the audit;
+          this HTML is a derived view, not an evidence manifest or the final
+          research dashboard.
+        </p>
+      </footer>
+    </main>
+    <script id="evidence-data" type="application/json">__EVIDENCE_DATA__</script>
+    <script id="viewer-script">
+      "use strict";
+      (() => {
+        const data = JSON.parse(
+          document.getElementById("evidence-data").textContent,
+        );
+        const { summary, audit, runs } = data;
+        const $ = (id) => document.getElementById(id);
+        const set = (id, value) => {
+          $(id).textContent = value;
+        };
+        const pretty = (value) => JSON.stringify(value, null, 2);
+        const known = (value) =>
+          value === true ? "Yes" : value === false ? "No" : "Unknown";
+        const el = (tag, text, className) => {
+          const node = document.createElement(tag);
+          if (text !== undefined) node.textContent = text;
+          if (className) node.className = className;
+          return node;
+        };
+        const object = (value) =>
+          value && typeof value === "object" && !Array.isArray(value)
+            ? value
+            : {};
+        const array = (value) => (Array.isArray(value) ? value : []);
+        const display = (value) =>
+          value == null
+            ? "Unknown"
+            : typeof value === "object"
+              ? JSON.stringify(value)
+              : String(value);
+        const ratio = (a, b) => `${a ?? "?"} / ${b ?? "?"}`;
+        const metric = (
+          title,
+          value,
+          note,
+          numerator,
+          denominator,
+          danger = false,
+        ) => {
+          const card = el("div", undefined, `metric${danger ? " danger" : ""}`);
+          card.append(
+            el("span", title, "small muted"),
+            el("strong", value),
+            el("span", note, "small muted"),
+          );
+          const track = el("div", undefined, "meter"),
+            fill = el("span");
+          fill.style.width =
+            denominator > 0 && numerator != null
+              ? `${Math.max(0, Math.min(100, (numerator / denominator) * 100))}%`
+              : "0%";
+          track.append(fill);
+          card.append(track);
+          $("metrics").append(card);
+        };
+        const clean = summary.criteria.benign_completion,
+          grading = summary.criteria.automatic_grading;
+        const changes = summary.criteria.reliable_action_change;
+        const offline =
+          runs.length > 0 &&
+          runs.every((run) => run.record.backend_kind === "fixture");
+        const scripted =
+          offline &&
+          runs.every(
+            (run) => run.record.model_config.provider === "scripted-model",
+          );
+        set(
+          "mode",
+          `${scripted ? "Scripted model" : offline ? "Offline fixtures / replay" : "Saved evaluation"} · ${summary.mode}`,
+        );
+        set(
+          "evidence-kind",
+          scripted
+            ? "Scripted integration results"
+            : offline
+              ? "Offline software evidence"
+              : "Recorded evaluation results",
+        );
+        set(
+          "scope-note",
+          offline
+            ? "These outcomes demonstrate the recorded software path. They do not measure live model performance or attack reliability."
+            : "Use the recorded backend, freeze and criterion statuses below to assess this batch. Replay does not run the model again.",
+        );
+        set(
+          "audit-note",
+          `Verified at generation: ${audit.runs} runs and ${audit.files} evidence files; grades and summary recomputed. Official live evidence: ${known(summary.official_live_evidence)}.`,
+        );
+        metric(
+          "Clean task completion",
+          ratio(clean.successes, clean.total),
+          "Saved clean-run outcomes",
+          clean.successes,
+          clean.total,
+        );
+        metric(
+          "Automatically graded",
+          grading.graded_attempts,
+          `${grading.invalid_traces} invalid / incomplete traces`,
+          grading.graded_attempts,
+          summary.attempts,
+        );
+        metric(
+          `${changes.measurement} action changes`,
+          ratio(changes.successes, changes.total),
+          `${changes.unassessable} unassessable matched pairs`,
+          changes.successes,
+          changes.total,
+        );
+        metric(
+          "Attempts with unsafe effects",
+          summary.unsafe_attempts,
+          `Across ${summary.attempts} attempts; unknown grades are separate`,
+          summary.unsafe_attempts,
+          summary.attempts,
+          true,
+        );
+        set(
+          "attempt-count",
+          `${summary.attempts} attempts · ${summary.retries} retries`,
+        );
+        set(
+          "coverage",
+          `${summary.planned_runs} planned runs · ${summary.attempts} recorded attempts · ${summary.failures.length} failures. Execution statuses: ${JSON.stringify(summary.status_counts)}.`,
+        );
+        set(
+          "missing",
+          `${summary.missing_runs.length} missing planned runs. Invalid or incomplete traces: ${grading.invalid_traces}.`,
+        );
+        set(
+          "pair-note",
+          "Action changes use the saved matched pairs, including repetition and attempt. Repetitions are not independent attack scenarios.",
+        );
+        const model = summary.protocol.model;
+        set(
+          "model",
+          `${model.provider ?? "Unknown provider"} / ${model.version ?? "Unknown version"}`,
+        );
+        const usageValue = (item) =>
+          item.total == null
+            ? `unknown (${item.known_subtotal} known; ${item.unknown_runs} runs unaccounted)`
+            : String(item.total);
+        set(
+          "usage",
+          `Reported calls: ${usageValue(summary.usage.calls)} · input tokens: ${usageValue(summary.usage.input_tokens)} · output tokens: ${usageValue(summary.usage.output_tokens)}.`,
+        );
+        set(
+          "cost",
+          `Cost: ${usageValue(summary.usage.cost)} ${summary.usage.currency}. Accounting: ${summary.usage.cost_statuses.join(", ") || "unknown"}. Synthetic amounts are fixture values; estimates are not invoices.`,
+        );
+        set(
+          "uncertainties",
+          summary.uncertainties.join(" ") ||
+            "No additional summary uncertainties recorded.",
+        );
+        set("summary", pretty(summary));
+        set(
+          "identity",
+          `Batch ${summary.batch_id} · revision ${summary.code_revision ?? "unknown"} · freeze ${summary.freeze_id ?? "none"}`,
+        );
+        for (const [name, criterion] of Object.entries(summary.criteria)) {
+          const row = el("tr");
+          const evidence =
+            "successes" in criterion
+              ? `${ratio(criterion.successes, criterion.total)}; configured threshold ${criterion.threshold * 100}%`
+              : `${criterion.graded_attempts} graded; ${criterion.invalid_traces} invalid; fixture self-check ${known(criterion.known_fixture_selfcheck)}`;
+          row.append(
+            el("td", name.replaceAll("_", " ")),
+            el("td", criterion.status),
+            el("td", evidence),
+          );
+          $("criteria").append(row);
+        }
+        let selected = runs.findIndex(
+          (run) => run.record.variant === "attacked",
+        );
+        if (selected < 0) selected = 0;
+        let frame = 0;
+        const actionLabel = (action) =>
+          action
+            ? `${action.device}.${action.operation}${Object.keys(action.parameters || {}).length ? " " + JSON.stringify(action.parameters) : ""}`
+            : "No action";
+        const icons = {
+          light: ["M9 21h6M10 24h4M8 15c-5-7 1-13 6-11s7 6 2 11l-1 3H9z"],
+          fan: [
+            "M15 14c-3-9 5-12 7-7 2 4-2 6-7 7M15 14c9 0 11 9 5 10-4 1-5-4-5-10M15 14c-6 7-13 2-10-2 2-4 6-2 10 2",
+          ],
+          thermostat: [
+            "M12 17V6a3 3 0 0 1 6 0v11a6 6 0 1 1-6 0M15 10v11M22 8h3M22 12h3",
+          ],
+          door: ["M7 27V4h17v23M4 27h23M18 16h1"],
+          presence_sensor: [
+            "M10 9a5 5 0 1 0 10 0 5 5 0 1 0-10 0M6 26c0-11 18-11 18 0M3 8v7M27 8v7",
+          ],
+        };
+        const names = {
+          light: "Light",
+          fan: "Fan",
+          thermostat: "Thermostat",
+          door: "Door",
+          presence_sensor: "Presence",
+        };
+        const icon = (name) => {
+          const svg = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "svg",
+          );
+          svg.setAttribute("viewBox", "0 0 30 30");
+          svg.setAttribute("aria-hidden", "true");
+          for (const d of icons[name] || []) {
+            const path = document.createElementNS(svg.namespaceURI, "path");
+            path.setAttribute("d", d);
+            svg.append(path);
+          }
+          return svg;
+        };
+        const pairedRun = (record) => {
+          const pair = summary.matched_pairs.find(
+            (item) =>
+              item.clean_run_id === record.run_id ||
+              item.attacked_run_id === record.run_id,
+          );
+          return pair
+            ? runs.findIndex(
+                (run) =>
+                  run.record.run_id ===
+                  (pair.clean_run_id === record.run_id
+                    ? pair.attacked_run_id
+                    : pair.clean_run_id),
+              )
+            : -1;
+        };
+        function drawFrame() {
+          const { trace, record } = runs[selected],
+            transitions = array(trace.transitions);
+          const hasStep = frame > 0;
+          const step = object(hasStep ? transitions[frame - 1] : null);
+          const state = object(hasStep ? step.after : trace.initial_state);
+          $("step").value = String(frame);
+          $("previous").disabled = frame === 0;
+          $("next").disabled = frame === transitions.length;
+          set(
+            "step-label",
+            frame === 0
+              ? "Initial snapshot"
+              : `Step ${frame} of ${transitions.length}`,
+          );
+          set(
+            "clock",
+            `State version ${display(state.state_version)} · simulator time ${display(state.time_ms)} ms`,
+          );
+          $("devices").replaceChildren();
+          for (const name of [
+            "light",
+            "fan",
+            "thermostat",
+            "door",
+            "presence_sensor",
+          ]) {
+            const device = object(state.devices)[name];
+            const active =
+              device &&
+              (device.power === "on" ||
+                device.present === true ||
+                device.lock === "unlocked");
+            const before = object(object(step.before).devices)[name];
+            const changed =
+              hasStep &&
+              before &&
+              device &&
+              JSON.stringify(before) !== JSON.stringify(device);
+            const card = el(
+              "div",
+              undefined,
+              `device${active ? " active" : ""}${changed ? " changed" : ""}`,
+            );
+            card.dataset.device = name;
+            card.append(icon(name), el("small", names[name]));
+            const title = !device
+              ? "Unavailable"
+              : name === "door"
+                ? `${display(device.lock)} · ${display(device.position)}`
+                : name === "presence_sensor"
+                  ? device.present === true
+                    ? "Occupied"
+                    : device.present === false
+                      ? "Unoccupied"
+                      : "Unknown"
+                  : display(device.power);
+            card.append(el("p", title));
+            if (name === "thermostat" && device)
+              card.append(
+                el(
+                  "small",
+                  `Setpoint ${display(device.setpoint_c)} °C · ambient ${display(device.ambient_c)} °C`,
+                ),
+              );
+            if (changed) card.append(el("small", "Changed at this step"));
+            $("devices").append(card);
+          }
+          const warnings = record.grade.unsafe_transitions.filter(
+            (item) => item.index === frame - 1 && frame > 0,
+          );
+          $("effect").className = `effect${warnings.length ? " bad" : ""}`;
+          $("effect").replaceChildren(
+            el(
+              "strong",
+              hasStep
+                ? step.kind === "action"
+                  ? actionLabel(step.action)
+                  : `${step.kind ?? "Unavailable"} event`
+                : "Before recorded effects",
+            ),
+          );
+          $("effect").append(
+            el(
+              "span",
+              warnings.length
+                ? warnings.flatMap((item) => item.reasons).join(" · ")
+                : hasStep
+                  ? !state.devices
+                    ? "Snapshot unavailable; inspect the invalid trace and grader errors below."
+                    : `Recorded ${step.kind ?? "unknown"} transition${step.changed === true ? "; state changed" : step.changed === false ? "; no device change" : "; change status unknown"}.`
+                  : transitions.length
+                    ? "Use Next or the slider to follow the saved history."
+                    : "No committed state transitions in this run. Inspect read receipts below.",
+              "small",
+            ),
+          );
+          for (const [index, button] of [...$("steps").children].entries())
+            button.setAttribute(
+              "aria-current",
+              index === frame ? "step" : "false",
+            );
+        }
+        function chooseRun(index, preserveFrame = false) {
+          const oldFrame = frame;
+          selected = index;
+          const { record, trace, scenario } = runs[index];
+          const transitions = array(trace.transitions);
+          frame = preserveFrame
+            ? Math.min(oldFrame, transitions.length)
+            : transitions.length;
+          $("run-select").value = String(index);
+          const pairIndex = pairedRun(record);
+          $("compare").disabled = pairIndex < 0;
+          set(
+            "compare",
+            pairIndex < 0
+              ? "No matched counterpart"
+              : `View ${runs[pairIndex].record.variant} counterpart`,
+          );
+          const pair = summary.matched_pairs.find(
+            (item) =>
+              item.clean_run_id === record.run_id ||
+              item.attacked_run_id === record.run_id,
+          );
+          set(
+            "pair-status",
+            pair
+              ? `${pair.assessable ? "Matched pair recorded." : "Pair comparison is unassessable; inspect the saved matched pair and run configuration."} Counterpart navigation preserves the step number, not semantic event alignment.`
+              : "This attempt has no saved clean/attacked pair.",
+          );
+          set("request", scenario.request.request_text);
+          set(
+            "permissions",
+            `Authorized operations: ${scenario.request.permissions.join(", ") || "none"}`,
+          );
+          $("verdicts").replaceChildren();
+          const grade = record.grade;
+          $("verdicts").append(
+            el("span", `Execution: ${record.status}`, "badge"),
+            el(
+              "span",
+              `Task completed: ${known(grade.task_completed)}`,
+              `badge ${grade.task_completed === true ? "good" : grade.task_completed === false ? "" : "unknown"}`,
+            ),
+            el(
+              "span",
+              `Unsafe effect: ${known(grade.unsafe_effect)}`,
+              `badge ${grade.unsafe_effect === true ? "bad" : grade.unsafe_effect === false ? "good" : "unknown"}`,
+            ),
+            el(
+              "span",
+              `Valid trace: ${known(grade.trace_valid)}`,
+              `badge ${grade.trace_valid ? "good" : "bad"}`,
+            ),
+          );
+          $("step").max = String(transitions.length);
+          $("step").disabled = transitions.length === 0;
+          $("steps").replaceChildren();
+          [
+            "Initial",
+            ...transitions.map(
+              (step, i) =>
+                `${i + 1}. ${object(step).kind === "action" ? actionLabel(step.action) : (object(step).kind ?? "Unavailable transition")}`,
+            ),
+          ].forEach((title, i) => {
+            const button = el("button", title);
+            button.type = "button";
+            button.addEventListener("click", () => {
+              frame = i;
+              drawFrame();
+            });
+            $("steps").append(button);
+          });
+          set(
+            "trace-note",
+            `${transitions.length} history transitions · ${array(trace.executed_actions).length} executed device actions · ${array(trace.proposed_actions).length} proposals. ${grade.trace_valid ? "" : "WARNING: invalid/incomplete trace; snapshots are diagnostic only. "}Steps include action, environment and clock events. Simulation time is shown as recorded.`,
+          );
+          set(
+            "safety-note",
+            grade.unsafe_effect === true
+              ? "An unsafe effect was detected somewhere in this run. Later recovery does not erase it. Reason indices are zero-based history entries; null indicates an endpoint warning."
+              : grade.unsafe_effect === false
+                ? "No unsafe effect was detected by the independent grader in this recorded run."
+                : "Safety could not be determined from this trace. Inspect the errors below.",
+          );
+          set(
+            "receipts-note",
+            `${array(trace.observations).length} completed read receipts. Reads do not create device effects. Receipts retain their own snapshots; no event ordering is inferred from matching times.`,
+          );
+          set("grade", pretty(grade));
+          set("initial-observations", pretty(scenario.observations));
+          set("observations", pretty(trace.observations));
+          set("raw-trace", pretty(trace));
+          set(
+            "run-identity",
+            `Run ${record.run_id} · ${record.variant} · repetition ${record.repetition} · attempt ${record.attempt} · backend ${record.backend_kind} · ${record.model_config.provider} / ${record.model_config.version}`,
+          );
+          for (const [i, row] of [...$("attempts").children].entries())
+            row.classList.toggle("selected", i === index);
+          drawFrame();
+        }
+        runs.forEach(({ record }, i) => {
+          const option = el(
+            "option",
+            `${record.scenario_id} · rep ${record.repetition} · attempt ${record.attempt}`,
+          );
+          option.value = String(i);
+          $("run-select").append(option);
+          const row = el("tr"),
+            cell = el("td"),
+            button = el("button", record.scenario_id);
+          button.type = "button";
+          button.addEventListener("click", () => {
+            chooseRun(i);
+            $("replay").scrollIntoView({ block: "start" });
+            $("run-select").focus({ preventScroll: true });
+          });
+          cell.append(button);
+          row.append(cell);
+          row.append(
+            el("td", `${record.repetition} / ${record.attempt}`),
+            el("td", record.status),
+            el("td", known(record.grade.task_completed)),
+            el("td", known(record.grade.unsafe_effect)),
+            el("td", record.grade.trace_valid ? "Valid" : "Invalid"),
+          );
+          $("attempts").append(row);
+        });
+        $("run-select").addEventListener("change", () =>
+          chooseRun(Number($("run-select").value)),
+        );
+        $("compare").addEventListener("click", () => {
+          const index = pairedRun(runs[selected].record);
+          if (index >= 0) chooseRun(index, true);
+        });
+        $("step").addEventListener("input", () => {
+          frame = Number($("step").value);
+          drawFrame();
+        });
+        $("previous").addEventListener("click", () => {
+          if (frame > 0) {
+            frame--;
+            drawFrame();
+          }
+        });
+        $("next").addEventListener("click", () => {
+          if (frame < array(runs[selected].trace.transitions).length) {
+            frame++;
+            drawFrame();
+          }
+        });
+        $("run-view").hidden = runs.length === 0;
+        $("no-runs").hidden = runs.length > 0;
+        if (runs.length) chooseRun(selected);
+      })();
+    </script>
+  </body>
+</html>

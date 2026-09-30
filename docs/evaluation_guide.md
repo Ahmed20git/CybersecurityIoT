@@ -1,6 +1,6 @@
 # Baseline evaluation guide
 
-Updated 2026-09-28. The repository combines Ahmed's native simulator, gateway and runtime schemas with Simon's development scenarios, bounded hidden-instruction attack, independent grader and experiment evidence tools. Work progresses by component and requirement; filenames and commands describe their function.
+Updated 2026-09-30. The repository combines Ahmed's native simulator, gateway and runtime schemas with Simon's development scenarios, bounded hidden-instruction attack, independent grader and experiment evidence tools. Work progresses by component and requirement; filenames and commands describe their function.
 
 The original baseline gate was due Friday **September 25, 2026**. That date has passed. No approved live-language-model gate result has been recorded, so benign completion, reliable action change and automatic grading for that live gate remain **unassessable**. Offline verification and renaming the tools do not move the deadline or settle the fallback decision. Record the gate disposition with Simon and Ahmed under the [open decisions](requirements.md#open-decisions); the [project plan](project_plan.md) retains the dated schedule.
 
@@ -88,6 +88,34 @@ python3 scripts/evaluate.py rehearsal --backend effectshield.experiments.openai_
 Set `backend_approval.module` to that same reviewed factory. Provider-reported token use and published tariffs produce an explicitly estimated monetary cost, not an invoice; retain the pricing basis with the protocol. No paid provider run is established by this documentation.
 
 The simulator is available. Real-model access, connector configuration, credentials and budget must still be established before a live rehearsal or gate can run. Provider-neutral or scripted-adapter checks do not satisfy that dependency. Verify actual reset/isolation, clock/environment history, read receipts, final snapshot/history-count binding, error streaming, message capture and billing with the selected provider before approving the protocol.
+
+## Visualize saved evidence
+
+Use the directory printed as `output` by an evaluation command:
+
+```sh
+python3 scripts/evaluate.py visualize PATH_TO_RUN
+```
+
+The command verifies the bundle's checksums, independently recomputes its grades and summary, then creates `PATH_TO_RUN.html` beside the directory. Open that HTML file in a browser by double-clicking it, or run `open "PATH_TO_RUN.html"` on macOS. It needs no web server, network connection, model credentials or additional packages. This reads saved results; it does not rerun an experiment.
+
+Choose a new output path when needed:
+
+```sh
+python3 scripts/evaluate.py visualize PATH_TO_RUN --output artifacts/local/evaluation/baseline-view.html
+```
+
+Existing files are never overwritten. The HTML must stay outside the input evidence directory so it cannot invalidate that bundle's manifest. Reports saved under `artifacts/local/` remain ignored; custom destinations elsewhere follow their own Git ignore rules. The report embeds scenario text, records and traces; keep the original bundle for reproducible verification.
+
+The viewer provides:
+
+- Batch completion, grading, action-change and unsafe-effect counts, with saved denominators and gate statuses.
+- A selector for every scenario/repetition/attempt, a matched-counterpart button and an attempt table.
+- All five device states with a slider through the full action, environment and clock history. Simulator time is shown as recorded.
+- Separate whole-run task completion and safety grades, reason codes, initial observations, completed read receipts and raw trace details. A read-only task may complete with no state transition.
+- Model identity, missing runs, failures, usage and explicitly labelled synthetic or estimated costs.
+
+Scripted results show that the integration and grading work; they do not establish live model completion or attack reliability. An attacked run may complete the requested task and still have an unsafe extra effect. The viewer preserves `unassessable` gate statuses and unknown values. Invalid traces remain diagnostic records, not reliable state reconstructions. Counterpart navigation preserves the step number; it does not imply that events align semantically. This local inspection tool does not mark the final Streamlit dashboard or research analysis complete.
 
 ## Draft protocol
 
