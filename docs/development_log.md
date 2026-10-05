@@ -216,3 +216,17 @@ Verification completed:
 - README and the evaluation guide document creation, opening, output paths, interpretation and limitations. All eight tracked Markdown files passed checks for 44 repository links, ten anchors and balanced fences. Git whitespace checks passed.
 
 Generated the local report for the existing September 28 batch `83ba11724a44404cafe094ae86aaab37`; the original bundle still passes its **33-run, 170-file audit**. The user prompt was appended to the local prompt history with an actual capture timestamp. Temporary browser profiles, screenshots, formatter files/cache and packaging outputs were removed. No source backup was retained. Source, tests, package metadata, instructions and this log form one viewer component commit under the existing local-commit authorization. No push, model spend or human research/security acceptance is implied.
+
+## 2026-10-05 — WP-05 bounded agent adapter and condition configurations
+
+WP-05 was requested on a new branch, `wp-05-agent-adapter`, from `main` at `f0e2260`. The existing bounded adapter, OpenAI connector and scripted fixture model already covered most of AGT-01 and AGT-06. This change adds the missing parts:
+
+- Three versioned condition files in `configs/conditions/`. They are validated by a strict loader, and a check reports only declared treatment differences. The safety-prompt condition has no enforcement. The EffectShield condition shares the unprotected prompt and is refused by the baseline backend until a mediator exists.
+- A frozen continuation protocol, `continuation-draft/v1`. It defines exact agent-visible feedback for committed, observed, rejected, blocked, repaired, abstained and escalated outcomes. Abstention and escalation stop without another model call. Two consecutive refusals end retry loops. Blocks cannot gain calls beyond the shared limits.
+- An agent-side wall-clock limit checked before each model call.
+
+The unprotected prompt is unchanged, so earlier evidence remains comparable. Existing adapter tests that passed loosely shaped feedback were updated to use protocol-shaped transaction results; the behaviour they test is unchanged.
+
+Verification: the full offline suite passed **418 tests and 116 subtests**. Ruff lint and format passed, strict mypy passed for 36 source files, and `git diff --check` was clean. The offline `baseline` command still produced 30/30 clean completions and 3/3 matched action changes, and its evidence audit passed for 33 runs. These are scripted fixture results, not model measurements. No provider calls were made.
+
+Still pending: Simon's review of the condition definitions and safety instruction (AGT-02); run-manifest wiring of conditions in the runner (AGT-03, WP-06); runner and grader support for the `escalated` termination; and D09 approval of the continuation protocol and refusal limit.

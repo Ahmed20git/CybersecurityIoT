@@ -90,6 +90,48 @@ Status: **implemented for review, 2026-09-23**. This covers WP-02 (state, action
 
 The 8-action bound is only a structural limit; D08 sets the repair bound.
 
+## Agent adapter and conditions (WP-05)
+
+Status: **implemented for review, 2026-10-05**. Covers AGT-01, AGT-04 and AGT-06. The condition files supply versioned inputs for AGT-02 and AGT-03 and remain drafts until Simon's protocol review.
+
+| Path | Requirement IDs | Responsibility |
+| --- | --- | --- |
+| `src/effectshield/agent/baseline.py` | AGT-01, AGT-04 | Bounded proposal loop: one typed JSON action per call, strict parsing, call/step/token/cost/wall-clock bounds |
+| `src/effectshield/agent/continuation.py` | AGT-04 | Frozen continuation protocol `continuation-draft/v1` and exact agent-visible feedback fields |
+| `src/effectshield/agent/conditions.py` | AGT-02, AGT-03 | Strict condition loader and treatment-difference check |
+| `src/effectshield/agent/openai_client.py` | AGT-06 | The only provider-specific code |
+| `src/effectshield/experiments/baseline.py` | AGT-06 | `ScriptedModel` offline fixture adapter; `BaselineBackend` accepts a condition |
+| `configs/conditions/*.json` | AGT-02 | `unprotected`, `safety_prompt_only` and `effectshield` |
+
+### Conditions (Proposed; AGT-02 review pending)
+
+| Condition | Prompt version | Safety instruction | Enforcement |
+| --- | --- | --- | --- |
+| `unprotected` | `baseline-prompt-draft/v1` | none | none |
+| `safety_prompt_only` | `safety-prompt-draft/v1` | yes, in the system message | none, so no hidden shield |
+| `effectshield` | `baseline-prompt-draft/v1` | none | `effectshield` mediator |
+
+The loader rejects any other shape: each condition ID fixes whether a safety instruction exists and which enforcement applies. EffectShield must reuse the unprotected prompt so its only treatment is enforcement. `treatment_differences` raises if two conditions differ outside `condition_id`, `condition_version`, `prompt_version`, `safety_instruction` and `enforcement`. The agent refuses a condition whose prompt version differs from the run configuration. `BaselineBackend` refuses `effectshield` until the mediator exists (WP-07 onward), rather than running it unprotected under that name.
+
+### Continuation protocol (Proposed; D09 review pending)
+
+The harness reports exactly one outcome per proposal. Feedback must contain exactly the listed fields; anything else is a harness defect and raises.
+
+| Outcome | Source | Agent-visible fields | Agent continues? |
+| --- | --- | --- | --- |
+| `committed` | allow, then simulator | `status`, `transaction_id`, `version_before`, `version_after`, `reason_code`, `failed_index` | yes |
+| `observed` | allow, then gateway read | `status`, `observation` | yes |
+| `rejected` | allow, then simulator refuses | same as `committed`; `reason_code` required | yes, counts as a refusal |
+| `blocked` | mediator | `status`, `reason_code`, `state_version` | yes, counts as a refusal |
+| `repaired` | mediator | `status`, `transaction_id`, `version_before`, `version_after`, `reason_code`, `executed_actions` | yes |
+| `abstained` | mediator | `status`, `reason_code` | no: stops `abstained` without another call |
+| `escalated` | mediator | `status`, `reason_code` | no: stops `escalated` without another call |
+
+- A block or rejection gives no extra budget: every proposal consumes the same calls, steps, tokens and cost as in any other condition.
+- Two consecutive refusals (`MAX_CONSECUTIVE_REFUSALS`) stop the run as `budget_exceeded`, so retry loops terminate; any non-refusal outcome resets the count.
+- The agent also stops with `timeout` before a call once `limits.wall_timeout_s` has elapsed. The runner's process-level timeout still applies.
+- The runner and grader do not yet accept the `escalated` termination. Adding it is an integration item for when the mediator produces it.
+
 ## Verification
 
 ```bash
@@ -102,6 +144,6 @@ PYTHONPATH=src python examples/hand_run.py
 
 ## Related work
 
-- Mediator rules 1–8, repair and escalation remain planned in WP-07 to WP-09.
+- Mediator rules 1–8, repair and escalation remain planned in WP-07 to WP-09. The continuation protocol above fixes how the agent reacts to their decisions.
 - The implemented agent adapter, baseline executor, scenarios, attack builder, independent grader and run ledger are documented in the [evaluation guide](evaluation_guide.md).
 - Full LOG-02 records will include mediator decisions and repairs when those components are implemented.

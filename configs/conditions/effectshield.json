@@ -1,0 +1,10 @@
+{
+  "schema_version": "agent-condition/v1",
+  "condition_id": "effectshield",
+  "condition_version": "effectshield-draft/v1",
+  "prompt_version": "baseline-prompt-draft/v1",
+  "safety_instruction": null,
+  "enforcement": "effectshield",
+  "continuation_protocol": "continuation-draft/v1",
+  "decision_status": "pending"
+}

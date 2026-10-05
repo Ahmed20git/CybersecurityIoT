@@ -80,6 +80,17 @@ def native_action():
     )
 
 
+def committed(version_after=1):
+    return {
+        "status": "committed",
+        "transaction_id": f"tx-{version_after}",
+        "version_before": version_after - 1,
+        "version_after": version_after,
+        "reason_code": None,
+        "failed_index": None,
+    }
+
+
 def test_valid_native_action_visible_feedback_and_finish_are_bounded():
     agent, model, case = setup_agent(
         [response(native_action()), response('{"finish":"completed"}')]
@@ -87,7 +98,7 @@ def test_valid_native_action_visible_feedback_and_finish_are_bounded():
     step = agent.step()
     assert step.status == "proposed"
     assert step.action.to_dict()["operation"] == "turn_on"
-    feedback = {"status": "committed", "version_after": 1}
+    feedback = committed()
     finished = agent.step(feedback)
     assert finished.status == "completed"
     assert model.invocations[-1][0][-1] == {"role": "tool", "content": feedback}
@@ -162,7 +173,7 @@ def test_loop_stops_at_call_and_action_bounds(limit):
     agent, model, _ = setup_agent([response(native_action()), response(native_action())])
     agent.config["limits"][limit] = 1
     assert agent.step().status == "proposed"
-    assert agent.step({"status": "committed"}).status == "budget_exceeded"
+    assert agent.step(committed()).status == "budget_exceeded"
     assert len(model.invocations) == (1 if limit == "max_calls" else 2)
 
 
@@ -170,7 +181,7 @@ def test_exact_action_bound_still_allows_finish_without_another_effect():
     agent, _, _ = setup_agent([response(native_action()), response('{"finish":"completed"}')])
     agent.config["limits"]["max_steps"] = 1
     assert agent.step().status == "proposed"
-    assert agent.step({"status": "committed"}).status == "completed"
+    assert agent.step(committed()).status == "completed"
     assert agent.steps == 1
 
 
@@ -210,7 +221,7 @@ def test_failed_call_keeps_known_subtotals_and_marks_incomplete_accounting():
         [response(native_action()), RuntimeError("synthetic interrupted submission")]
     )
     assert agent.step().status == "proposed"
-    step = agent.step({"status": "committed"})
+    step = agent.step(committed())
     assert step.status == "error"
     assert agent.usage["calls"] == 2
     assert agent.usage["input_tokens"] == 4

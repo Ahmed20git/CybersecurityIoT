@@ -11,7 +11,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
-from effectshield.agent import BoundedAgent, CallEstimate, ModelClient, ModelResponse
+from effectshield.agent import BoundedAgent, CallEstimate, Condition, ModelClient, ModelResponse
 
 from .backends import load_fixture_trace
 from .replay import NativeEvaluationBackend
@@ -48,7 +48,12 @@ class ScriptedModel:
 
 
 class BaselineBackend(NativeEvaluationBackend):
-    """Run a provider-neutral bounded agent; capabilities stay on this trusted side."""
+    """Run a provider-neutral bounded agent; capabilities stay on this trusted side.
+
+    Only conditions without enforcement run here. The full EffectShield
+    condition needs the mediator (WP-07 onward) and is refused rather than run
+    unprotected under its name.
+    """
 
     def __init__(
         self,
@@ -56,8 +61,14 @@ class BaselineBackend(NativeEvaluationBackend):
         scenario_id: str | None = None,
         *,
         model: ModelClient | None = None,
+        condition: Condition | None = None,
     ) -> None:
         super().__init__()
+        if condition is not None and condition.requires_mediator:
+            raise ValueError(
+                f"Condition {condition.condition_id} requires a mediator, which is not available"
+            )
+        self.condition = condition
         self.expected_initial: dict[str, Any] | None = None
         if model is None:
             if fixture_path is None or scenario_id is None:
@@ -88,7 +99,7 @@ class BaselineBackend(NativeEvaluationBackend):
         self, request: dict[str, Any], observations: list[dict[str, Any]], config: dict[str, Any]
     ) -> Iterator[dict[str, Any]]:
         yield from self._prepare(request, observations)
-        agent = BoundedAgent(request, observations, config, self.model)
+        agent = BoundedAgent(request, observations, config, self.model, condition=self.condition)
         for message in agent.messages:
             yield {"type": "message", **deepcopy(message)}
         feedback = None
