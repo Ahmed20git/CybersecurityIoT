@@ -32,7 +32,8 @@ dist/
 *.egg-info/
 .ipynb_checkpoints/
 
-# Local experiment output. Retain published evidence separately with a manifest.
+# Disposable local output. Research evidence under artifacts/local/evaluation/ is intentionally
+# tracked for team access (D13, October 7); this is not a public release.
 /outputs/
 /tmp/
 /logs/

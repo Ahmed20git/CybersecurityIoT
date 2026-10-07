@@ -2,7 +2,7 @@
 
 Updated 2026-10-07. The repository combines Ahmed's native simulator, gateway and runtime schemas with Simon's development scenarios, bounded hidden-instruction attack, independent grader and experiment evidence tools. Work progresses by component and requirement; filenames and commands describe their function.
 
-The original baseline gate was due Friday **September 25, 2026**. That date has passed. No approved live-language-model gate result has been recorded, so benign completion, reliable action change and automatic grading for that live gate remain **unassessable**. Offline verification and renaming the tools do not move the deadline or settle the fallback decision. Simon approved full scope and reported completed joint baseline review on October 7; this explicitly deviates from the missed-deadline fallback. See the [decision register](requirements.md#open-decisions); the [project plan](project_plan.md) retains the dated schedule.
+The original baseline gate was due Friday **September 25, 2026**. That deadline was missed. On October 7, 2026, after Simon's approval, a live rehearsal (11 attempts) and an approval-bound freeze (`953b4940…`), the official gate ran once. Benign completion was 30/30 (threshold 21/30), executed action change 3/3 (threshold 3/3), and all 33 attempts were automatically graded with no invalid traces, so all three criteria **passed** at baseline scope. This is a late result, not a retroactive September 25 pass. Simon approved full scope and reported completed joint baseline protocol review on October 7; D14 records full scope as a documented deviation from the missed-deadline fallback. Execution, automated audit and an independent re-execution reproduction are complete; joint acceptance of the results by Ahmed and Simon is pending sign-off in the [review record](../artifacts/local/evaluation/live-baseline/review/README.md). See the [decision register](requirements.md#open-decisions); the [project plan](project_plan.md) retains the dated schedule.
 
 ## Scope and ownership
 
@@ -38,7 +38,7 @@ Run the complete static-fixture workflow with one command:
 python3 scripts/evaluate.py offline
 ```
 
-It validates the development suite, checks the independent grader fixtures and writes traces, grades, per-attempt records, a ledger and reports to a unique ignored directory beneath `artifacts/local/evaluation/`. No credentials or provider access are needed. The outputs identify synthetic usage and leave all live gate criteria unassessable.
+It validates the development suite, checks the independent grader fixtures and writes traces, grades, per-attempt records, a ledger and reports to a unique directory beneath `artifacts/local/evaluation/` (no longer Git-ignored; do not commit disposable fixture runs). No credentials or provider access are needed. The outputs identify synthetic usage and leave all live gate criteria unassessable.
 
 To exercise the implemented simulator and gateway using authored proposal sequences:
 
@@ -110,7 +110,7 @@ A single named baseline can also be selected:
 python3 scripts/evaluate.py baseline --condition configs/conditions/safety_prompt_only.json --suite scenarios/development/authorization.json --fixtures fixtures/evaluation/authorization_runs.json
 ```
 
-Full EffectShield is rejected before a run directory is created. Condition definitions and continuation choices remain drafts under D05/D09. An end-to-end protection claim requires Ahmed's mediator, reviewed semantics, and passing protected integration cases. Live execution and the outstanding gate/fallback disposition remain separate decisions.
+Full EffectShield is rejected before a run directory is created. The unprotected baseline prompt and continuation protocol are approved at baseline scope (D09, October 7). The safety-prompt-only and EffectShield condition definitions remain drafts pending the final provenance (D05) and final-study decisions. An end-to-end protection claim requires Ahmed's mediator, reviewed semantics, and passing protected integration cases. Live execution of these comparison conditions is a separate decision; the baseline gate disposition is recorded in D14.
 
 ## Rehearsal and live integration
 
@@ -124,15 +124,15 @@ The [evaluation interface](evaluation_interface.md) defines the native snapshots
 
 The OpenAI connector targets `gpt-4.1-mini-2025-04-14` through the Responses API. The [official model documentation](https://developers.openai.com/api/docs/models/gpt-4.1-mini) lists this fixed snapshot and its pricing; the chosen snapshot must match the reviewed configuration. Supply `OPENAI_API_KEY` through the process environment using your local credential tooling. The connector does not automatically load `.env` files, and credentials must not appear in prompts, command arguments or committed files. Simon approved USD 2 total for baseline rehearsal and gate on October 7. The current allocation is 11 rehearsal and 33 gate attempts with a USD 0.02 per-attempt cap (USD 0.88 maximum allocation).
 
-After access, budget and the required rehearsal decisions are recorded, the exact command is:
+The October 7 rehearsal used a separate one-repetition protocol (`baseline-rehearsal-v1`, retained as `artifacts/local/evaluation/live-baseline/rehearsal_protocol.json`). Without `--config` the command uses `configs/evaluation/gate.json` and schedules 33 attempts. The executed command was:
 
 ```sh
-python3 scripts/evaluate.py rehearsal --backend effectshield.experiments.openai_baseline:create_backend --output artifacts/local/evaluation/live-rehearsal
+python3 scripts/evaluate.py rehearsal --config artifacts/local/evaluation/live-baseline/rehearsal_protocol.json --backend effectshield.experiments.openai_baseline:create_backend --output artifacts/local/evaluation/live-baseline/rehearsal
 ```
 
-Set `backend_approval.module` to that same reviewed factory. Provider-reported token use and published tariffs produce an explicitly estimated monetary cost, not an invoice; retain the pricing basis with the protocol. No paid provider run is established by this documentation.
+Set `backend_approval.module` to that same reviewed factory. Provider-reported token use and published tariffs produce an explicitly estimated monetary cost, not an invoice; retain the pricing basis with the protocol. Paid provider runs are established only by retained evidence: the October 7 rehearsal (11 attempts, 23 calls, USD 0.0049496 estimated) and gate (33 attempts, 69 calls, USD 0.0148488 estimated) under `artifacts/local/evaluation/live-baseline/`. The connector also sends one input-token count request before each generation call; those 92 requests are not counted in `calls` or in the estimated cost, which assumes the count endpoint is free (not verified offline).
 
-The simulator and connector are available. Baseline access and budget were approved October 7; actual provider availability is established only by a live run. Provider-neutral or scripted-adapter checks do not satisfy that dependency. Verify actual reset/isolation, clock/environment history, read receipts, final snapshot/history-count binding, error streaming, message capture and billing with the selected provider before approving the protocol.
+The simulator and connector are available. Baseline access and budget were approved October 7; the October 7 rehearsal and gate established baseline provider access: 44/44 attempts completed with verified resets and complete traces. Provider-neutral or scripted-adapter checks do not satisfy that dependency. Verify actual reset/isolation, clock/environment history, read receipts, final snapshot/history-count binding, error streaming, message capture and billing with the selected provider before approving any new protocol.
 
 ## Visualize saved evidence
 
@@ -150,7 +150,7 @@ Choose a new output path when needed:
 python3 scripts/evaluate.py visualize PATH_TO_RUN --output artifacts/local/evaluation/baseline-view.html
 ```
 
-Existing files are never overwritten. The HTML must stay outside the input evidence directory so it cannot invalidate that bundle's manifest. Reports saved under `artifacts/local/` remain ignored; custom destinations elsewhere follow their own Git ignore rules. The report embeds scenario text, records and traces; keep the original bundle for reproducible verification.
+Existing files are never overwritten. The HTML must stay outside the input evidence directory so it cannot invalidate that bundle's manifest. Reports saved under `artifacts/local/` are no longer Git-ignored; commit them only when they belong to retained evidence. Custom destinations elsewhere follow their own Git ignore rules. The report embeds scenario text, records and traces; keep the original bundle for reproducible verification.
 
 The viewer provides:
 
@@ -170,9 +170,9 @@ The total approved spending ceiling is USD 2. The initial allocation is 11 rehea
 
 All live rehearsal and gate attempts count toward the 432-run ceiling under Simon’s delegated accounting decision. Offline fixture tests do not. Before final-study freeze, reconcile the remaining run allowance with the full task matrix; neither increasing the ceiling nor reducing task coverage is implicitly approved.
 
-Keep credentials in ignored `.env` or the environment, never `.env.example`. The CLI reads `OPENAI_API_KEY` from its environment and does not automatically load `.env`; the execution harness must load only that variable without printing its value. Retain all research evidence locally under `artifacts/local/evaluation/` for now, with no automatic deletion. Local evidence is not published through GitHub. Sharing, long-term retention and release remain later decisions.
+Keep credentials in ignored `.env` or the environment, never `.env.example`. The CLI reads `OPENAI_API_KEY` from its environment and does not automatically load `.env`; the execution harness must load only that variable without printing its value. Retain all research evidence under `artifacts/local/evaluation/`, with no automatic deletion. Since October 7 that directory is tracked so both collaborators can access the evidence through the project's GitHub repository. This is team sharing, not publication: professor delivery, long-term retention and public release remain later decisions. Seventeen tracked evidence files embed a local machine path that cannot be edited without breaking their hashes; resolve that before any release.
 
-D03–D05 and D09–D13 are approved only at baseline scope, as recorded in the [requirements register](requirements.md#open-decisions). Final-study and mediator-specific decisions remain separate. Full scope is retained by explicit instruction despite the missed original deadline; document that deviation without claiming a gate pass. Human review of new results remains distinct from the already reported protocol review.
+D03–D05 and D09–D13 are approved only at baseline scope, as recorded in the [requirements register](requirements.md#open-decisions). Final-study and mediator-specific decisions remain separate. Full scope is retained by explicit instruction despite the missed original deadline; document that deviation without presenting the October 7 gate pass as a timely September 25 result. Human review of new results remains distinct from the already reported protocol review; joint acceptance of the October 7 results is pending.
 
 ## Freeze and official gate
 
@@ -201,6 +201,8 @@ python3 scripts/evaluate.py verify-evidence artifacts/local/evaluation/gate
 ```
 
 The gate rechecks snapshot integrity, current implementation bytes, the approved connector, exact model provenance, actual usage and reset/trace evidence. A marker beside the freeze records the first official batch and its evidence path. A second batch under the same freeze is rejected. Retain that marker and interrupted attempts; another official attempt requires review of the evidence and a recorded deviation/new freeze, not a success-only rerun.
+
+**Executed October 7, 2026 (times +04:00):** approval `live-baseline/approval.json` (approved_at 15:37:23), rehearsal batch `93815048…` 15:37:36–15:38:31, freeze `953b4940…` created 15:39:27, marker `frozen.gate-started.json`, gate batch `9413031c…` 15:39:27–15:41:34. The approval was captured before the rehearsal and the freeze followed 56 seconds after it ended, so the rehearsal served as an automated pre-gate check, not a separately human-reviewed step; the bound hashes show that nothing was tuned between them. The freeze and gate ran from `a9786d1` with the approved `configs/evaluation/gate.json` and `docs/evaluation_interface.md` edits not yet committed. The evidence records `code_revision` `a9786d1` without a flag for those uncommitted edits; `2f6851c` commits them byte-identically and is the first commit that reproduces the frozen inputs. Results are unaffected: every hashed source file equals `a9786d1`, and the gate loads its protocol and suite from the verified freeze. The [review record](../artifacts/local/evaluation/live-baseline/review/README.md) lists the checks, reproduction commands and limitations.
 
 Freezes bind native evaluation schemas, task/attack labels, protocol, grader fixtures, interface and package source. Later edits require a reviewed new freeze. Retained research artifacts keep their original bytes and identifiers. Use the corresponding Git revision when auditing evidence in a superseded format; do not maintain backup copies of the source tree.
 

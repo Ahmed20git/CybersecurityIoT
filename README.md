@@ -2,7 +2,7 @@
 
 EffectShield studies whether deterministic checks between a tool-using language-model agent and a simulated smart home reduce unsafe effects while preserving useful task completion.
 
-The simulator, trusted gateway and typed runtime records are integrated with the development scenarios, bounded payload attacks, independent grader and experiment runner. A recorded-proposal replay exercises the actual simulator. The bounded baseline agent adapter uses the same runtime and supports a scripted test model plus a separate OpenAI connector. Live gate results require a reviewed provider, model, budget and protocol; offline results do not establish model performance.
+The simulator, trusted gateway and typed runtime records are integrated with the development scenarios, bounded payload attacks, independent grader and experiment runner. A recorded-proposal replay exercises the actual simulator. The bounded baseline agent adapter uses the same runtime and supports a scripted test model plus a separate OpenAI connector. The approval-bound live baseline gate ran on October 7, 2026 with OpenAI `gpt-4.1-mini-2025-04-14` (see the [project plan](docs/project_plan.md#week-4-gate-and-fallback)); offline results do not establish model performance.
 
 ## Run locally
 
@@ -17,7 +17,7 @@ python3 -m venv .venv
 .venv/bin/python scripts/evaluate.py baseline
 ```
 
-Each command creates a separate evidence directory under ignored `artifacts/local/evaluation/`, containing traces, automatic grades, a run ledger, configuration and a report. The replay command executes recorded proposals through the real simulator and gateway; `baseline` also exercises the bounded agent using scripted model responses. All three commands run without live model calls.
+Each command creates a separate evidence directory under `artifacts/local/evaluation/`, containing traces, automatic grades, a run ledger, configuration and a report. The replay command executes recorded proposals through the real simulator and gateway; `baseline` also exercises the bounded agent using scripted model responses. All three commands run without live model calls. Since October 7 that directory is no longer Git-ignored, so both collaborators can reach retained evidence through Git. Delete disposable verification runs, or write them to a temporary directory, instead of committing them.
 
 To visualize a saved run, replace `PATH_TO_RUN` with the `output` directory printed by the command:
 
@@ -63,9 +63,10 @@ The comparison preserves matching and outcome evidence. The protected condition 
 - [Runtime interfaces](docs/interfaces.md) and [evaluation records](docs/evaluation_interface.md)
 - [Requirements](docs/requirements.md) and [project plan](docs/project_plan.md)
 - [Development and verification log](docs/development_log.md)
+- [Live baseline gate review record](artifacts/local/evaluation/live-baseline/review/README.md)
 - [Source research contract](docs/reference/EffectShield_Revised_Research_Project_Contract.docx)
 
-The [open decisions](docs/requirements.md#open-decisions) identify pending research and live-run approvals. The [project plan](docs/project_plan.md) records the timeline and owner responsibilities.
+The [open decisions](docs/requirements.md#open-decisions) record the October 7 baseline approvals and the remaining final-study, mediator and release decisions. The [project plan](docs/project_plan.md) records the timeline and owner responsibilities.
 
 ## Responsibilities and schedule
 
@@ -75,6 +76,6 @@ The [open decisions](docs/requirements.md#open-decisions) identify pending resea
 | Simon | Scenarios, attacks, independent grading, experiments, analysis and reproducibility |
 | Both | Interface and security reviews, interpretation, report and demonstration |
 
-The original baseline checkpoint was September 25, 2026. As of September 28, no verified live gate result is available; its status remains unassessable pending model access and protocol decisions. The project plan preserves that checkpoint and records the outstanding work. Target a complete candidate by November 6, joint review by November 13 and internal completion by November 20. Submission remains November 23–27, with its exact due time pending.
+The original baseline checkpoint was September 25, 2026, and it was missed. On October 7 the approval-bound live baseline gate (33 attempts, OpenAI `gpt-4.1-mini-2025-04-14`) passed all three criteria at baseline scope: 30/30 benign completions, 3/3 executed action changes and 33/33 attempts automatically graded with no invalid traces. This is a late result, 12 days after the checkpoint, not a September 25 pass; D14 records full scope as a deviation. Execution, automated audit and an independent re-execution reproduction are complete (see the [review record](artifacts/local/evaluation/live-baseline/review/README.md)). Joint acceptance of these results by Ahmed and Simon is pending sign-off, and no mediator or protected-condition result exists. The project plan preserves that checkpoint and records the outstanding work. Target a complete candidate by November 6, joint review by November 13 and internal completion by November 20. Submission remains November 23–27, with its exact due time pending.
 
 Implement and verify one coherent component at a time. Keep credentials in environment configuration, retain research evidence and commit related source, tests and documentation together. Use Git for source history; remove disposable verification outputs and tool caches after checks instead of keeping backup copies. No real devices or smart-home accounts are used.

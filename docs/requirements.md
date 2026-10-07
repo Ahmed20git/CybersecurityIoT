@@ -1,12 +1,12 @@
 # EffectShield research requirements
 
-Version 0.4 · Updated September 28, 2026.
+Version 0.5 · Updated October 7, 2026.
 
 EffectShield evaluates whether a deterministic mediator between a language-model agent and a simulated smart home reduces unsafe effects and attacker success while preserving useful task completion. The simulator contains a light, fan, thermostat, door and presence sensor. All device effects remain simulated.
 
 This register defines 89 requirements, their accountable owners and acceptance evidence. Each owner implements or coordinates the requirement; the other collaborator reviews it. Both review security-sensitive changes, the threat model, cost assumptions and result interpretation.
 
-The baseline implementation is integrated and verified offline. Formal acceptance, live evaluation and later mediator work remain pending. Verification results are recorded in the [development log](development_log.md); dates and delivery milestones are in the [project plan](project_plan.md).
+The baseline implementation is integrated and verified offline. On October 7 the approval-bound live baseline gate passed all three criteria at baseline scope (see the [project plan](project_plan.md#week-4-gate-and-fallback)). Joint acceptance of those results, formal requirements acceptance, final-study evaluation and mediator work remain pending. Verification results are recorded in the [development log](development_log.md); dates and delivery milestones are in the [project plan](project_plan.md).
 
 ## Reading the requirements
 
@@ -217,7 +217,7 @@ These boundaries define responsibilities within `src/effectshield/`. The domain,
 | `analysis` | Simon | Metrics, paired bootstrap and plots from recorded grades; no model calls or dataset relabeling |
 | `dashboard` | Simon | Streamlit view of curated results; no authoritative policy or grading logic |
 
-Tests will mirror behaviors through `tests/unit`, `tests/integration`, `tests/security` and `tests/analysis` as needed. Human-readable policy/configuration, scenarios, experiment manifests and curated results belong outside implementation modules. `artifacts/local/` is for disposable local output; retained evidence needs the D13 manifest. Create only the directories needed for the selected task.
+Tests will mirror behaviors through `tests/unit`, `tests/integration`, `tests/security` and `tests/analysis` as needed. Human-readable policy/configuration, scenarios, experiment manifests and curated results belong outside implementation modules. `artifacts/local/evaluation/` holds retained research evidence, tracked in Git for team access since October 7 (D13). Disposable verification output belongs in temporary directories and is not committed. Retained evidence needs the D13 manifest. Create only the directories needed for the selected task.
 
 ## Contract coverage
 
@@ -255,9 +255,9 @@ The following table defines every decision ID used in this register and the eval
 | D10 | **Baseline approved October 7:** use the existing independent grader, complete executed traces, task completion and matched action-sequence comparison; retain failed attempts in denominators and report invalid/missing evidence as unassessable. Final-study metric populations and mixed-family reporting remain pending. | Simon / grading acceptance and final freeze |
 | D11 | **Baseline accounting resolved under Simon’s delegation October 7:** count all live rehearsal/gate attempts, including failures, toward the 432-run ceiling; deterministic offline tests do not count. Reserve 44 attempts initially. Final-study allocation must fit remaining capacity or obtain an explicit ceiling revision; this does not approve reducing final task coverage. Replay/ablation allocation remains pending. | Both; Simon leads / budgeted experiments |
 | D12 | **Pending:** freeze bootstrap interval method, replicate count, seed, task weighting, missing-data and multiplicity policies. Preserve whole-task pairing and the contract's two-sided 95% interval criterion. | Simon / analysis implementation and final freeze |
-| D13 | **Baseline local retention approved October 7:** keep complete successful and failed research records under ignored `artifacts/local/evaluation/`, with no automatic deletion. Local storage is not shared through GitHub. Shared access, professor delivery, long-term retention and release license remain deferred; no publication is authorized. | Simon / retained experiment collection and release |
-| D14 | **Full scope retained by explicit instruction October 7:** Simon reports joint review complete and chooses full scope despite the missed original gate deadline. Record this as a deviation from the contract fallback, not a retroactive gate pass. Baseline results and the subsequent handoff review remain required. | Both / next enforcement phase |
-| D15 | **Local commits authorized:** coherent component commits with accurate attribution. Simon reports joint baseline protocol/interface review with Ahmed completed October 7. This does not pre-approve later mediator changes or review results that have not yet been produced. | Both / acceptance of security-sensitive changes |
+| D13 | **Baseline retention approved October 7; team sharing added October 7 at Ahmed's request:** keep complete successful and failed research records under `artifacts/local/evaluation/`, with no automatic deletion. The directory is no longer Git-ignored, so retained evidence (e.g. `live-baseline/`) is shared between Simon and Ahmed through the project GitHub repository. This is team access, not publication. Professor delivery, long-term retention and release license remain deferred; no public release is authorized. Seventeen tracked evidence files embed a local machine path that cannot be edited without breaking their hashes; resolve this before any release. Do not commit disposable verification output. | Simon / retained experiment collection and release |
+| D14 | **Full scope retained by explicit instruction October 7:** Simon reports joint review complete and chooses full scope despite the missed original gate deadline. Record this as a deviation from the contract fallback, not a retroactive gate pass. The October 7 gate passed at baseline scope (30/30, 3/3, 33 graded), 12 days late; the independent re-execution reproduction is complete, and joint acceptance of those results by Ahmed and Simon remains required. | Both / next enforcement phase |
+| D15 | **Local commits authorized:** coherent component commits with accurate attribution. Simon reports joint baseline protocol/interface review with Ahmed completed October 7. This does not pre-approve later mediator changes and is not a review of the October 7 rehearsal/gate results, which remains pending. | Both / acceptance of security-sensitive changes |
 | D16 | **Logging scope established:** retain user prompts locally and record observable assistance, changed files, checks and limitations in the tracked development log. Confirm any additional institutional disclosure rules. Runtime model messages belong in experiment records; hidden reasoning and system instructions are excluded. | Simon / institutional disclosure and submission |
 
 ## Research sources
