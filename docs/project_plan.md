@@ -54,10 +54,35 @@ The original window was September 28–October 2. The following implementation s
 | Baseline configurations and fair matching | Simon, using Ahmed's adapter | Implemented: reuse the three condition definitions, run the two available baselines with matched inputs/model/limits, record actual prompts and verify condition-bound evidence; AGT-02–AGT-03 and LOG-01/LOG-05. Full EffectShield is explicitly not run |
 | Continuation evidence integration | Simon, using Ahmed's protocol | Implemented: terminal escalation is retained without automatic retry; completion and safety remain independent outcome checks. D09 acceptance remains pending |
 | Methods and report outline | Simon | Drafted in the [research report](research_report.md); measured research results and claims remain empty pending approved experiments |
-| Schema/authorization/provenance mediator | Ahmed | Not present on `wp-05-agent-adapter` at `e8e778e`; that commit implements WP-05 agent conditions/continuation, not WP-07 enforcement. Confirm another location or complete the mediator |
+| Schema/authorization/provenance mediator | Ahmed | WP-07 follows WP-06. Ahmed confirmed WP-05 completion and is waiting for the baseline gate handoff; mediator implementation is not missing WP-05 work |
 | First protected end-to-end checkpoint | Both | Pending mediator availability, D05/D09 review and the outstanding gate/fallback disposition. Then connect the protected path, run adversarial and benign controls and review the actual evidence |
 
 The development corpus uses the existing five-device runtime without selecting or approving fallback scope. Later freshness/replay, door/temperature/sequence rules, repair and final-study work remain their own planned tasks. The [evaluation guide](evaluation_guide.md#authorization-and-provenance-development-cases) provides commands and the case matrix.
+
+## Adapter and baseline gate handoff
+
+Checked October 7 against `origin/wp-05-agent-adapter` at `e8e778e` and `authorization-evaluation` at `334c96c`. The adapter commit is an ancestor of the current branch; its agent implementation is unchanged. Work-package numbers are dependency identifiers, not calendar-week numbers. Ahmed's next package is WP-07, which depends on Simon's WP-06 disposition.
+
+| Package / requirement | Implemented evidence | Remaining acceptance |
+| --- | --- | --- |
+| WP-05 / AGT-01 | Controlled typed proposals, native simulator/gateway integration, malformed-output checks | Joint interface and baseline semantic review |
+| WP-05 / AGT-04 | Bounded calls, steps, tokens, cost and wall time; allow/block/repair continuation; terminal abstention/escalation; consecutive-refusal stop | Approve the draft continuation protocol under D09; protected feedback is tested with doubles until WP-07 exists |
+| WP-05 / AGT-06 | Provider isolated from the loop; deterministic scripted client and mocked provider tests | Approved access/budget and live rehearsal; offline tests do not establish provider availability |
+| WP-06 / AGT-02–AGT-03 | Three condition definitions; audited matching of both executable scripted baselines | Full protected condition awaits WP-07; no protected result is claimed |
+| WP-06 / EXP-08 | Isolated run ledger, retained failures, independent grading, evidence audit and approval-bound freeze/gate commands | Run and audit approved live evidence |
+| WP-06 / DEL-01–DEL-02 | Baseline development suite, gate thresholds and fallback documented | Live measurement and joint result/fallback disposition are pending; WP-06 is not complete |
+
+Simon's supplied comparison `comparison-2026-10-07-9d712fee` was independently verified: 51 matched cells across two batches, 102 attempts total. Each condition records 30/30 benign completions and 21/21 executed action changes, with no invalid traces. These are authored scripted responses from the expanded authorization corpus. The proposed live gate instead uses the original 11-scenario baseline suite, three repetitions and 33 attempts: 30 benign runs plus three attacked runs paired with their clean counterparts. Passing the draft gate would require at least 21/30 benign completions and 3/3 action changes. Scripted comparison counts cannot substitute for that measurement.
+
+### Simon's remaining gate actions
+
+1. Resolve D03–D05, D09–D11 and D13 at baseline scope: provider permission/access, explicit total rehearsal-plus-gate spending limit, per-attempt cap, device/authority semantics, approved labels/prompts/continuation, denominator/retry rules, and evidence retention/access. A zero spending cap currently prevents live generation. A question requesting protocol, total budget and joint scope disposition was sent October 7; no approval is inferred while it is pending.
+2. Record the joint D14 decision because the original deadline was missed. Select the documented fallback's retained devices and attack family, or explicitly record a jointly approved scope/protocol deviation. Do not silently retain or reduce study scope.
+3. Run a separately recorded live rehearsal, inspect messages, reset/trace integrity, accounting and independent grades, and resolve development defects before freeze. Use the [evaluation guide](evaluation_guide.md#freeze-and-official-gate) for the exact approval, freeze, execution and audit commands.
+4. Bind human approval to the final protocol, suite, implementation, interface and grader hashes; execute the official gate once under that freeze and retain all attempts, including failures. Report all three criteria as passed, not met or unassessable from actual evidence.
+5. Ahmed independently reproduces/reviews evidence and both record the resulting scope disposition. Update this plan and the requirements decision register with the actual outcome; release WP-07 only after its baseline/fallback and authority prerequisites are resolved.
+
+Ahmed's adapter implementation does not need to be recreated. His next handoff inputs are the reviewed task authority and writable-message boundary, approved continuation feedback, baseline evidence and recorded scope disposition. Simon's authorization/provenance cases and expected outcomes are already available for subsequent mediator integration. No additional mediator implementation is required to measure the unprotected baseline gate.
 
 ## Phase gates
 
