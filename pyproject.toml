@@ -31,6 +31,8 @@ packages = ["effectshield"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+# Retained evidence (including frozen source copies and review scripts) keeps its original bytes.
+extend-exclude = ["artifacts"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
