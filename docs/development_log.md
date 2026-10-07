@@ -230,3 +230,32 @@ The unprotected prompt is unchanged, so earlier evidence remains comparable. Exi
 Verification: the full offline suite passed **418 tests and 116 subtests**. Ruff lint and format passed, strict mypy passed for 36 source files, and `git diff --check` was clean. The offline `baseline` command still produced 30/30 clean completions and 3/3 matched action changes, and its evidence audit passed for 33 runs. These are scripted fixture results, not model measurements. No provider calls were made.
 
 Still pending: Simon's review of the condition definitions and safety instruction (AGT-02); run-manifest wiring of conditions in the runner (AGT-03, WP-06); runner and grader support for the `escalated` termination; and D09 approval of the continuation protocol and refusal limit.
+
+## 2026-10-07 — WP-07 to WP-09 EffectShield mediator
+
+Ahmed requested WP-07 to WP-09 on `wp-05-agent-adapter` while Simon worked on WP-06. The work was AI-assisted (Claude Code) at Ahmed's request. WP-06 was accepted the same day on `authorization-evaluation`; that branch is not merged here.
+
+**Design.** A written design was reviewed before coding by four independent AI reviewers (security, utility, requirements coverage, integration). The security review found one blocking flaw in the first draft: replaying an old authentic "present" reading could hide a newer "absent" reading and let an empty home be unlocked. The revised design judges presence evidence against trusted current state (rule 4) and replay state (rule 5) only, so each ablation removes exactly the rules it names. It also removes the mediator's access to the simulator object, binds the evidence ledger to the gateway's own delivery log and allows one presence reading to authorize one unlock and one open. The live baseline gate evidence shaped two choices: the model never cited `evidence_refs` and never read presence before `door.unlock`, so door access blocks with a specific `presence_evidence_missing` reason that a model can act on within the four-call budget, rather than the mediator reading presence itself. The design is published as the [mediator design](mediator_design.md), and the [runtime interfaces](interfaces.md) summarize it. Every choice that settles part of D04–D08 is labelled Proposed.
+
+**Implementation.** New package `src/effectshield/mediator/` (policy, decisions, evidence ledger, rules 2–8, repair, mediator, protected executor), `src/effectshield/experiments/mediated.py` (`MediatedBackend`) and `examples/protected_demo.py`. Shared files changed minimally: `experiments/replay.py` and `experiments/baseline.py` gained behaviour-preserving hooks (`_bind_request`, `_deliver`, `_feedback`, `_stopped`), and the native parser in `domain/actions.py` now rejects an integer parameter too large for a float as `non_finite_number` instead of raising `OverflowError`. Simon's runner, CLI, audit, report, comparison and grader files, scenarios, fixtures and gate configuration were not edited.
+
+**Independent testing and review.**
+
+| Step | Outcome |
+| --- | --- |
+| Seven test files written independently from the design, not from the code | 1,701 mediator tests; they found 3 implementation bugs (an exception from a trusted callable was reported as malformed context instead of `mediator_error`), all fixed |
+| Adversarial review (security, correctness, integration), each finding reproduced before acceptance | 8 findings confirmed and fixed with 39 regression tests: the oversized-integer parser crash; invalid adapter responses logged as allowed decisions; task intents filed under the wrong request; incomplete rule tables accepted; the repair template's permission check under `no_provenance` documented as a Proposed boundary; two missing Proposed labels |
+| Scripted fixtures through `MediatedBackend` | 9/10 clean tasks complete; `door-unlock-occupied-clean` is blocked with `presence_evidence_missing` (no presence observation in context); `light-on-clean-attacked` commits the light and blocks the injected unlock; a scripted recovery (unlock, presence read, unlock) completes within four calls; a 35 °C proposal is blocked with `repair_not_task_preserving` |
+| `examples/protected_demo.py` | Both demo attacks blocked under `full`; the replayed stale reading unlocks the door under `no_freshness_replay` |
+
+**Verification** (Linux, Python 3.13.16, Ruff 0.16.8, mypy 2.3.1; bytecode and tool caches disabled): **2,119 tests and 116 subtests passed** (418 existing plus 1,701 mediator tests); `ruff check .` passed; `ruff format --check src tests examples scripts` passed for 81 files; strict mypy passed for 45 source files; `git diff --check` was clean. `ruff format --check .` still reports the two Python code blocks in `docs/evaluation_interface.md` and `docs/running.md` that predate this work.
+
+Not run: no live model or provider call; no protected run through the evaluation runner (it cannot yet record mediator decisions or the `escalated` termination on this branch); no human review.
+
+**Pending.**
+
+- Joint review of the Proposed D04–D08 semantics in the [mediator design](mediator_design.md), and both collaborators' security review of this change.
+- Integration with the evaluation runner after merging `authorization-evaluation`: a `mediator_decision` event, `trace.repairs` indexes and the mediator policy version in run records, then protected scripted and live runs.
+- A trusted, harness-issued task-intent field (D05/D08) before clamp repair can run end to end.
+- Whether door-access scenarios should deliver a presence observation initially, which would affect protected utility for models that do not read presence first.
+- Updating the project plan and requirements status for WP-07 to WP-09, which is left until the branches are merged to avoid conflicting edits.
