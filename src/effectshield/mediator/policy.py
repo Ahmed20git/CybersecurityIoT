@@ -9,6 +9,14 @@ carry its own version string so it can never be mistaken for a preset.
 Parameter values are drafts: the sensor TTL and its inclusive boundary are
 Proposed D06, and the repair bound is Proposed D08. The 16-30 C thermostat range
 is the contract's rule 7.
+
+Ablation boundaries (:data:`ABLATION_RULES`): the ``no_provenance`` boundary is
+Proposed D05. It removes exactly rule 3 (the exact operation permission and the
+known-origin check on cited references) from evaluation and repair
+revalidation; rule 2 device scope, rule 6 presence and the repair template's
+own prerequisite permission check remain (see
+:mod:`effectshield.mediator.repair`). ``no_freshness_replay`` removes rules 4
+and 5.
 """
 
 from __future__ import annotations
@@ -71,6 +79,7 @@ class Ablation(StrEnum):
     CUSTOM = "custom"
 
 
+# The no_provenance boundary (all rules but 3) is Proposed D05; see the module docstring.
 ABLATION_RULES: Mapping[Ablation, frozenset[RuleId]] = MappingProxyType(
     {
         Ablation.FULL: ALL_RULES,

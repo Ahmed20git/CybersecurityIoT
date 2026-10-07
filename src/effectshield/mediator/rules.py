@@ -21,7 +21,10 @@ Semantic drafts settled here:
 - Proposed D05: authority comes only from the request's exact
   ``Permission(device, operation)``; "conflicting authority" is any request
   other than the run's harness-bound request. Cited references never grant
-  authority; they must merely have been delivered by the gateway.
+  authority; they must merely have been delivered by the gateway. Ablation
+  boundary: ``no_provenance`` disables exactly rule 3 (the operation
+  permission and cited-reference origin checks); rule 2 device scope, rule 6
+  presence and the repair template's prerequisite permission remain.
 - Proposed D06: presence is the only required evidence, and only for door
   access. Its gateway time is compared with the trusted simulator time using an
   inclusive TTL; canonical facts that disagree with trusted current state are
@@ -157,8 +160,10 @@ def check_instruction_provenance(
 
     Payload instructions are ignored structurally: nothing here reads a payload.
     Cited references must be gateway-delivered, but a valid reference still
-    grants nothing. This is exactly what the ``no_provenance`` ablation removes.
-    Without a resolved request there is no authority at all.
+    grants nothing. This is exactly what the ``no_provenance`` ablation removes
+    (Proposed D05 ablation boundary); the repair template's own prerequisite
+    permission check is not part of this rule and stays enabled. Without a
+    resolved request there is no authority at all.
     """
     rule = RuleId.INSTRUCTION_PROVENANCE
     findings: list[RuleFinding] = []

@@ -9,6 +9,16 @@ all non-repairable checks succeeded. Proposed D08 templates:
 - prerequisite (rule 8 ``precondition_unmet``): the named prerequisite before
   the original action, only if the request itself permits the prerequisite.
 
+Proposed D05/D08 ablation boundary: the prerequisite permission check belongs to
+the repair template, not to rule 3, so it applies under every policy, including
+``no_provenance``. A repair is an effect the mediator itself adds, and the
+mediator never adds an operation the trusted request did not permit. Under
+``no_provenance`` a directly proposed ``door.unlock`` is therefore evaluated
+without an operation check, while a ``door.open`` on a locked door is repaired
+only when the request permits ``door.unlock`` (otherwise ``repair_unavailable``).
+This is the fail-closed reading of design sections 6 and 7; the ablation removes
+rule 3 from evaluation and revalidation, not repair-template authority.
+
 A unique candidate must exist, fit ``max_repair_actions``, be physically
 valid, pass every enabled rule at each predicted intermediate state and change
 the state. A repair therefore cannot invent permission, presence or freshness,
@@ -95,6 +105,7 @@ def _prerequisite(ctx: RuleContext, action: ActionProposal, detail: str) -> _Tem
         return _Template(ReasonCode.REPAIRED_PREREQUISITE, None, ReasonCode.REPAIR_UNAVAILABLE)
     # The prerequisite cites the same evidence: one access episode for the transaction.
     candidate = (ActionProposal(device, operation, {}, action.evidence_refs), action)
+    # Template authority, not rule 3: enforced even under no_provenance (Proposed D05/D08).
     permitted = ctx.request is not None and ctx.request.allows(device, operation)
     failure = None if permitted else ReasonCode.REPAIR_UNAVAILABLE
     return _Template(ReasonCode.REPAIRED_PREREQUISITE, candidate, failure)

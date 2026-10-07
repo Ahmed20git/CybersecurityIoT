@@ -12,6 +12,15 @@ repair is disabled end to end (no task intents) until D05/D08 approve a trusted,
 harness-issued intent field; intents are never derived from grader labels or
 request text.
 
+When the adapter stops with ``invalid_response``, only a rule-1 outcome is
+logged (MED-02): a response the native parser rejects becomes a logged
+``schema_invalid`` block. The adapter also stops with ``invalid_response`` for
+text that parses (a provider stop status, malformed provider-visible messages);
+that text was never proposed or executed, so no decision is logged for it and
+no record can claim an approved effect (``executed_actions``) that never ran.
+The stop itself stays in the run's finish event. This narrows design section 9's
+"log ``decide(raw_text)``" to the rule-1 block it names.
+
 This is a direct-drive path, not yet a runner backend. It emits only existing
 runner event types and keeps decision records in :attr:`MediatedBackend.decisions`
 rather than in agent-visible messages. Persisting them in run records (a
@@ -108,6 +117,11 @@ class MediatedBackend(BaselineBackend):
     def _stopped(self, step: AgentStep) -> None:
         # MED-02: an unparseable response is a logged rule-1 block with no effect.
         # It is never executed and the agent has already stopped, so no feedback.
-        if step.status == "invalid_response" and isinstance(step.raw_text, str):
-            decision = self._protected().mediator.decide(step.raw_text, request_id=self._request_id)
+        if step.status != "invalid_response" or not isinstance(step.raw_text, str):
+            return
+        decision = self._protected().mediator.decide(step.raw_text, request_id=self._request_id)
+        # The adapter also stops with a parseable text (a provider stop status or
+        # malformed provider-visible messages). That text was never proposed, so
+        # its rules 2-8 outcome must not be logged as an approved or blocked effect.
+        if decision.action is None:
             self.decisions.append(outcome_record(decision))

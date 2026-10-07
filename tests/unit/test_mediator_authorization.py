@@ -1,9 +1,9 @@
 """WP-07 mediator authorization: rules 1-3, the no_provenance ablation and OBS-04 forgery.
 
-Expected outcomes come from the mediator spec (section 4 reason-code table, section 6
-rules 1-3, required evidence, section 10 test list), not from the implementation.
-Requirements: MED-02 (typed action), MED-03 (identity and device scope), MED-04,
-OBS-03 (instruction provenance), OBS-04 (authentic envelope, untrusted payload).
+Expected outcomes come from the mediator design in docs/mediator_design.md (section 4 reason-code
+table, section 6 rules 1-3, required evidence, section 10 test list), not from the implementation.
+Requirements: MED-02 (typed action), MED-03 (identity and device scope), MED-04, OBS-03 (instruction
+provenance), OBS-04 (authentic envelope, untrusted payload).
 """
 
 from __future__ import annotations
@@ -548,7 +548,7 @@ SCHEMA_CASES = [
     ),
 ]
 
-# Inputs whose exact SchemaErrorCode the spec leaves open; detail is still a schema code.
+# Inputs whose exact SchemaErrorCode the design leaves open; detail is still a schema code.
 UNTYPED_CASES = [
     pytest.param(42, {"other"}, id="int"),
     pytest.param(3.5, {"other"}, id="float"),
@@ -556,7 +556,7 @@ UNTYPED_CASES = [
     pytest.param(True, {"other"}, id="bool"),
     pytest.param(["light", "turn_on"], {"other"}, id="list"),
     pytest.param(object(), {"other"}, id="object"),
-    # Not bytes: the spec does not say whether the summary calls it bytes or other.
+    # Not bytes: the design does not say whether the summary calls it bytes or other.
     pytest.param(bytearray(json.dumps(_raw()).encode()), {"bytes", "other"}, id="bytearray"),
     pytest.param(_raw(evidence_refs={"obs-000001"}), {"mapping"}, id="mapping-set-value"),
     pytest.param(_raw(parameters={"x": object()}), {"mapping"}, id="mapping-object-value"),
@@ -629,6 +629,43 @@ def test_schema_error_short_circuits_before_identity(proposal: object) -> None:
     outcome = executor.submit(proposal)
 
     _assert_schema_block(run, outcome, None)
+    assert _observable(run, executor) == before
+
+
+# An integer literal too large for a float (309+ digits) is still far below MAX_ACTION_BYTES.
+_HUGE = 10**400
+_HUGE_SETPOINT = {
+    "schema_version": "1.0",
+    "device": "thermostat",
+    "operation": "set_setpoint",
+    "parameters": {"setpoint_c": _HUGE},
+    "evidence_refs": [],
+}
+
+
+@pytest.mark.parametrize(
+    "proposal",
+    [
+        pytest.param(_setpoint("1" + "0" * 400), id="str-401-digits"),
+        pytest.param(_setpoint("-1" + "0" * 400), id="str-negative"),
+        pytest.param(_setpoint("1" + "0" * 309), id="str-just-past-float-range"),
+        pytest.param(_setpoint("1" + "0" * 400).encode(), id="bytes"),
+        pytest.param(_HUGE_SETPOINT, id="mapping"),
+        pytest.param(
+            ActionProposal(DeviceId.THERMOSTAT, Operation.SET_SETPOINT, {"setpoint_c": _HUGE}),
+            id="proposal",
+        ),
+    ],
+)
+def test_integer_setpoint_beyond_float_range_is_schema_invalid(proposal: object) -> None:
+    # Regression: float() overflow used to escape rule 1 as ERROR mediator_error.
+    run, executor, _ = _harness(ALL_EFFECTS)
+    before = _observable(run, executor)
+
+    outcome = executor.submit(proposal)
+
+    _assert_schema_block(run, outcome, SchemaErrorCode.NON_FINITE_NUMBER)
+    assert outcome.decision.rules_evaluated == (int(RuleId.TYPED_ACTION),)
     assert _observable(run, executor) == before
 
 

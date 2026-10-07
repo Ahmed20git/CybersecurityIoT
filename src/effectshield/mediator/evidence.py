@@ -15,7 +15,12 @@ Proposed D07 semantics:
 - an envelope the gateway did not issue is ``unknown_origin`` and never usable;
 - consumption ("access episode"): a presence observation may authorize each
   distinct door access operation once, for one request. Reads, non-access
-  effects and blocked attempts never consume.
+  effects and blocked attempts never consume;
+- delivery-log binding (MED-06): the ledger's known-origin deliveries must
+  match the gateway's own delivery log (same length, same observation IDs in
+  order, and a gateway redelivery exactly where the ledger recorded
+  ``duplicate``/``out_of_order``), otherwise the mediator fails closed with
+  ``trusted_context_malformed``.
 """
 
 from __future__ import annotations

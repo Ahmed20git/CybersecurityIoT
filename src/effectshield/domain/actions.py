@@ -225,9 +225,15 @@ def action_from_object(obj: object) -> ActionProposal:
                 raise ActionSchemaError(
                     SchemaErrorCode.WRONG_TYPE, f"{param.name} must be a number"
                 )
-            if not math.isfinite(float(value)):
+            try:
+                number = float(value)
+            except OverflowError as exc:
+                # An integer literal too large for a float (about 309+ digits) has no
+                # finite value; it must stay a schema error, not escape as a crash.
+                raise ActionSchemaError(SchemaErrorCode.NON_FINITE_NUMBER, param.name) from exc
+            if not math.isfinite(number):
                 raise ActionSchemaError(SchemaErrorCode.NON_FINITE_NUMBER, param.name)
-            parameters[param.name] = float(value)
+            parameters[param.name] = number
 
     evidence_refs = _parse_evidence_refs(obj.get("evidence_refs", []))
     return ActionProposal(device, operation, parameters, evidence_refs)

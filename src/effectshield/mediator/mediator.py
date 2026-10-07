@@ -11,6 +11,18 @@ Authority comes only from the harness-issued request (rules 2-3). Evidence
 references are pointers that never grant authority, and no decision reads
 payload text or payload values. Any exception or malformed trusted context
 fails closed with an ``error`` decision and no effect (MED-12).
+
+Trusted construction arguments are checked when the mediator is built, so a
+decision record cannot describe checks that never ran:
+
+- ``rule_table`` must hold exactly one callable entry for each of rules 2-8.
+  Rules 1 and 2 are mandatory (:class:`MediatorPolicy`), so a table that omits
+  or repeats a rule would silently skip or duplicate a check while
+  ``rules_evaluated`` still lists every enabled rule.
+- ``intents`` (Proposed D05/D08) must map each request ID to a
+  :class:`TaskIntent` issued for that same request: an intent issued for
+  another request is inconsistent trusted context and never enables a clamp
+  repair. A mismatch found at decision time is ``trusted_context_malformed``.
 """
 
 from __future__ import annotations
@@ -133,8 +145,8 @@ class Mediator:
         self._history = history
         self._deliveries = deliveries
         self._bound_request_id = bound_request_id
-        self._intents: Mapping[str, TaskIntent] = MappingProxyType(dict(intents or {}))
-        self._rule_table = tuple(rule_table)
+        self._intents: Mapping[str, TaskIntent] = MappingProxyType(_checked_intents(intents))
+        self._rule_table = _checked_rule_table(rule_table)
         self._committed: list[dict[str, Any]] = []
 
     @property
@@ -274,7 +286,15 @@ class Mediator:
             verdict = aggregate_verdict(findings)
             return self._record(verdict, primary_reason(findings, verdict), findings, **common)
 
-        intent = self._intents.get(request.request_id) if request is not None else None
+        intent: TaskIntent | None = None
+        if request is not None:
+            intent = self._intents.get(request.request_id)
+            # Checked at construction; re-checked because a frozen intent can still be
+            # mutated through object.__setattr__ (MED-12: malformed context fails closed).
+            if intent is not None and (
+                not isinstance(intent, TaskIntent) or intent.request_id != request.request_id
+            ):
+                raise _MalformedContext("intents")
         repair = plan_repair(
             action=action,
             findings=findings,
@@ -316,11 +336,19 @@ class Mediator:
         return findings
 
     def _check_delivery_log(self) -> None:
-        """MED-06: the ledger must have ingested exactly what the gateway delivered."""
-        try:
-            issued = tuple(self._deliveries())
-        except TypeError as exc:
-            raise _MalformedContext("delivery_log") from exc
+        """MED-06: the ledger must have ingested exactly what the gateway delivered.
+
+        Proposed D07 delivery-log binding: the ledger's known-origin deliveries
+        (``unknown_origin`` entries were never issued by the gateway) and the
+        gateway's own log have the same length and the same observation IDs in
+        order, and every gateway redelivery is a ``duplicate``/``out_of_order``
+        ledger entry (and only those).
+
+        An exception raised by the callable itself propagates to ``decide`` and
+        becomes ``mediator_error`` (step 7); only a malformed returned value or a
+        mismatch is ``trusted_context_malformed``.
+        """
+        issued = _trusted_sequence(self._deliveries(), "delivery_log")
         ingested = [d for d in self._ledger.deliveries if d.known_origin]
         if len(issued) != len(ingested):
             raise _MalformedContext("delivery_log")
@@ -343,11 +371,12 @@ class Mediator:
         return request
 
     def _history_check(self, snapshot: HomeSnapshot) -> tuple[bool, str]:
-        """Rule 8 history consistency, computed once per decision from the real history."""
-        try:
-            entries = tuple(self._history())
-        except TypeError as exc:
-            raise _MalformedContext("history") from exc
+        """Rule 8 history consistency, computed once per decision from the real history.
+
+        As with the delivery log, an exception raised by the callable is
+        ``mediator_error``; a malformed returned value is ``trusted_context_malformed``.
+        """
+        entries = _trusted_sequence(self._history(), "history")
         if not all(isinstance(entry, TraceEntry) for entry in entries):
             raise _MalformedContext("history")
         executed = [
@@ -456,6 +485,47 @@ class Mediator:
             snapshot=progress.snapshot,
             is_read=spec is not None and not spec.mutates,
         )
+
+
+_TABLE_RULES = tuple(sorted(rule for rule in RuleId if rule is not RuleId.TYPED_ACTION))
+
+
+def _checked_rule_table(
+    rule_table: Sequence[tuple[RuleId, RuleFn]],
+) -> tuple[tuple[RuleId, RuleFn], ...]:
+    """Exactly one callable entry for each of rules 2-8 (rule 1 runs in the mediator)."""
+    table = tuple(rule_table)
+    for entry in table:
+        if (
+            not isinstance(entry, tuple)
+            or len(entry) != 2
+            or not isinstance(entry[0], RuleId)
+            or not callable(entry[1])
+        ):
+            raise ValueError("rule_table entries must be (RuleId, callable) pairs")
+    if tuple(sorted(rule for rule, _ in table)) != _TABLE_RULES:
+        raise ValueError("rule_table must have exactly one entry for each of rules 2-8")
+    return table
+
+
+def _checked_intents(intents: Mapping[str, TaskIntent] | None) -> dict[str, TaskIntent]:
+    """Each intent is a :class:`TaskIntent` filed under its own request ID (Proposed D05/D08)."""
+    if intents is None:
+        return {}
+    if not isinstance(intents, Mapping):
+        raise ValueError("intents must be a mapping of request IDs to TaskIntent")
+    checked = dict(intents)
+    for request_id, intent in checked.items():
+        if not isinstance(intent, TaskIntent) or intent.request_id != request_id:
+            raise ValueError("each intent must be a TaskIntent keyed by its own request_id")
+    return checked
+
+
+def _trusted_sequence(value: object, detail: str) -> tuple[Any, ...]:
+    """Structural check on a trusted callable's return value (a tuple or list)."""
+    if not isinstance(value, tuple | list):
+        raise _MalformedContext(detail)
+    return tuple(value)
 
 
 def _typed_action(proposal: object) -> ActionProposal:
