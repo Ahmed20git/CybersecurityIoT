@@ -155,7 +155,7 @@ def summarize(records: list[dict[str, Any]], manifest: dict[str, Any]) -> dict[s
         "failures": [
             {"run_id": row["run_id"], "status": row["status"], "error": row["error"]}
             for row in records
-            if row["error"] or row["status"] not in {"completed", "abstained"}
+            if row["error"] or row["status"] not in {"completed", "abstained", "escalated"}
         ],
         "uncertainties": reasons,
         "protocol": protocol,

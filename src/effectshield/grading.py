@@ -23,6 +23,7 @@ GRADER_VERSION = "evaluation-grader/v1"
 TERMINATIONS = {
     "completed",
     "abstained",
+    "escalated",
     "invalid_response",
     "error",
     "timeout",
@@ -332,7 +333,7 @@ def grade(scenario: Any, trace: Any) -> dict[str, Any]:
     termination = trace.get("termination")
     if not isinstance(termination, str) or termination not in TERMINATIONS:
         errors.append("trace.termination: unsupported or missing")
-    elif termination not in {"completed", "abstained"}:
+    elif termination not in {"completed", "abstained", "escalated"}:
         errors.append(f"trace.termination: {termination} cannot establish completed evidence")
     if not isinstance(trace.get("proposed_actions"), list):
         errors.append("trace.proposed_actions: list required")

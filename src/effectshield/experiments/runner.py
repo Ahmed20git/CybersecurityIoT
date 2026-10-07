@@ -20,7 +20,15 @@ from effectshield.scenarios import load_suite
 from .backends import FixtureBackend, load_backend
 from .storage import append_jsonl, canonical, digest, load_json, now, redact, write_json
 
-END_STATUSES = {"completed", "abstained", "invalid_response", "error", "timeout", "budget_exceeded"}
+END_STATUSES = {
+    "completed",
+    "abstained",
+    "escalated",
+    "invalid_response",
+    "error",
+    "timeout",
+    "budget_exceeded",
+}
 PUBLIC_EVENTS = {
     "proposed_action",
     "committed_transition",
@@ -314,7 +322,11 @@ def run_attempt(
                         )
                     ):
                         raise ValueError("Live model provenance differs from frozen configuration")
-                trace["complete"] = reset_verified and finished in {"completed", "abstained"}
+                trace["complete"] = reset_verified and finished in {
+                    "completed",
+                    "abstained",
+                    "escalated",
+                }
                 break
             elif event_type == "worker_error":
                 trace["termination"] = "error"
@@ -341,7 +353,11 @@ def run_attempt(
             process.join(timeout=2)
         channel.close()
         acknowledged.close()
-    if backend_kind == "live" and trace["termination"] not in {"completed", "abstained"}:
+    if backend_kind == "live" and trace["termination"] not in {
+        "completed",
+        "abstained",
+        "escalated",
+    }:
         # A killed/failed worker may have submitted an unreported paid request.
         # Preserve known subtotals without treating them as complete billing.
         usage.update(accounting_complete=False, cost_status="unavailable")
@@ -538,7 +554,7 @@ def run_suite(
             append_jsonl(output / "ledger.jsonl", record)
             write_json(output / "runs" / run_id / "record.json", record)
             records.append(record)
-            if result["status"] in {"completed", "abstained", "interrupted"}:
+            if result["status"] in {"completed", "abstained", "escalated", "interrupted"}:
                 break
         if records[-1]["status"] == "interrupted":
             break
