@@ -1,6 +1,6 @@
 # WP-06 live baseline gate: results review record
 
-**Status, October 7, 2026:** the approval-bound gate ran once and passed all three criteria at baseline scope. The automated audit and an independent re-execution reproduction are complete, with no mismatches. **Joint human acceptance by Ahmed and Simon is pending** (see [Sign-off](#sign-off)).
+**Status, October 7, 2026:** the approval-bound gate ran once and passed all three criteria at baseline scope. The automated audit and an independent re-execution reproduction are complete, with no mismatches. **Ahmed and Simon jointly accepted the results on October 7** (see [Sign-off](#sign-off)); WP-06 is complete.
 
 > This record and `reproduce_live_evidence.py` were prepared with AI assistance (Claude Code) on October 7, 2026, at Ahmed's request, while Simon was unavailable. They record automated checks and observations. They are not a human review or acceptance of the results, and they do not authenticate who approved the protocol.
 
@@ -190,21 +190,21 @@ These observations come from all 44 runs.
 - **The samples are small.** Reliable action change rests on 3 pairs from one attacked scenario, all with identical responses. With a 0.8 threshold and 3 pairs, only 3/3 can pass. The lower limits of the exact (Clopper–Pearson) two-sided 95% intervals are 0.29 for 3/3 and 0.88 for 30/30; the one-sided 95% lower bounds are 0.37 and 0.90. These results satisfy the acceptance rules; they are not reliability estimates.
 - **The scope is narrow.** The results cover one model snapshot, one attack, the 11-scenario development suite and the unprotected condition only.
 - **The platforms differ.** The gate ran on macOS with Python 3.14.6, and this review ran on Linux with Python 3.13.16. The outcomes agree under re-execution only.
-- **The review is AI-assisted.** No human has yet read this record or confirmed its findings.
+- **The review is AI-assisted.** The checks and observations above were produced by the assistant; the human decision is the joint acceptance recorded under Sign-off.
 
 ## Sign-off
 
-Joint acceptance of these results is the only remaining WP-06 step. Each reviewer reads this record, reruns or inspects the checks they consider necessary and completes their own line. An AI assistant must not tick these boxes.
+Joint acceptance of these results was the last WP-06 step. Each line below records the decision as it was stated and how it reached this record. The assistant recorded the decisions; it did not make them.
 
-Points that need an explicit decision:
+Points that needed an explicit decision:
 
-- accept or reject the result as a late pass at baseline scope under D14;
-- the source-revision binding (disclosure 1) and the absence of review between rehearsal and gate (disclosure 2);
-- the local paths in tracked evidence before any release (disclosure 6);
-- whether to narrow the Git ignore rules so that disposable runs under `artifacts/local/` cannot be committed by mistake.
+- accept or reject the result as a late pass at baseline scope under D14: **accepted**;
+- the source-revision binding (disclosure 1) and the absence of review between rehearsal and gate (disclosure 2): accepted with the results, as disclosed;
+- the local paths in tracked evidence before any release (disclosure 6): **open**, to be resolved before any release;
+- whether to narrow the Git ignore rules so that disposable runs under `artifacts/local/` cannot be committed by mistake: **open** team decision.
 
-- [ ] **Ahmed:** I have reviewed the evidence, the reproduction and the disclosures above. Decision (accept / do not accept): ______ Date: ______ Notes: ______
-- [ ] **Simon:** I have reviewed the evidence, the reproduction and the disclosures above. Decision (accept / do not accept): ______ Date: ______ Notes: ______
-- [ ] **Joint disposition recorded** in step 5 of the [project plan's handoff sequence](../../../../../docs/project_plan.md#baseline-approval-and-handoff-sequence) and in D14 of the [decision register](../../../../../docs/requirements.md#open-decisions).
+- [x] **Ahmed:** Decision: accept. Date: 2026-10-07. Stated by Ahmed in the project session ("we both accept") at about 16:43 +04:00 and recorded here by Claude Code at his instruction.
+- [x] **Simon:** Decision: accept. Date: 2026-10-07. Relayed by Ahmed in the same statement; Simon did not enter it directly.
+- [x] **Joint disposition recorded** in step 5 of the [project plan's handoff sequence](../../../../../docs/project_plan.md#baseline-approval-and-handoff-sequence) and in D14 of the [decision register](../../../../../docs/requirements.md#open-decisions).
 
 Related: the [freeze and gate workflow](../../../../../docs/evaluation_guide.md#freeze-and-official-gate) and the [development log](../../../../../docs/development_log.md).
