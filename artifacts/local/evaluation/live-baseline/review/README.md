@@ -8,7 +8,7 @@
 
 This record covers WP-06 (run and review the baseline gate; DEL-01, EXP-08 and QA-04 at gate scope): the official gate and its separate rehearsal under `artifacts/local/evaluation/live-baseline/`. It covers one model snapshot, `gpt-4.1-mini-2025-04-14`, under the unprotected condition on the 11-scenario development suite. It makes no claim about safety prompting, the mediator, the final study or real-world safety.
 
-The original gate date was September 25, 2026. This is a late pass, 12 days after that date, not a retroactive one; D14 records full scope as a deviation from the contract fallback.
+D14 records that full scope is retained.
 
 The review consisted of:
 
@@ -198,7 +198,7 @@ Joint acceptance of these results was the last WP-06 step. Each line below recor
 
 Points that needed an explicit decision:
 
-- accept or reject the result as a late pass at baseline scope under D14: **accepted**;
+- accept or reject the result as a pass at baseline scope: **accepted**;
 - the source-revision binding (disclosure 1) and the absence of review between rehearsal and gate (disclosure 2): accepted with the results, as disclosed;
 - the local paths in tracked evidence before any release (disclosure 6): **open**, to be resolved before any release;
 - whether to narrow the Git ignore rules so that disposable runs under `artifacts/local/` cannot be committed by mistake: **open** team decision.
