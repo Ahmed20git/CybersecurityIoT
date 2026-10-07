@@ -14,6 +14,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+from effectshield.agent.conditions import parse_condition
 from effectshield.grading import grade
 from effectshield.scenarios import load_suite
 
@@ -53,7 +54,11 @@ def _worker(
         if fixture_path and config["mode"] == "baseline":
             from .baseline import BaselineBackend
 
-            backend = BaselineBackend(fixture_path, scenario["scenario_id"])
+            backend = BaselineBackend(
+                fixture_path,
+                scenario["scenario_id"],
+                condition=parse_condition(config["condition"]) if "condition" in config else None,
+            )
         elif fixture_path and config["mode"] == "simulator-replay":
             from .replay import SimulatorReplayBackend
 
@@ -396,6 +401,7 @@ def run_suite(
     fixture_path: Path | None = None,
     freeze_path: Path | None = None,
     invocation: list[str] | None = None,
+    condition: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Each scheduled cell and every retry is retained; output paths are exclusive."""
     from .checks import grader_selfcheck
@@ -412,6 +418,19 @@ def run_suite(
         raise ValueError("A fixture source or Ahmed's backend connector is required")
     if fixture_path and backend_spec:
         raise ValueError("Choose one backend")
+    if condition is not None:
+        parsed = parse_condition(condition)
+        if mode != "baseline" or backend_spec or not fixture_path:
+            raise ValueError("Named conditions currently require scripted baseline mode")
+        if parsed.requires_mediator:
+            raise ValueError(
+                "EffectShield requires an implemented mediator; no protected run was made"
+            )
+        if parsed.prompt_version != config["prompt_version"]:
+            raise ValueError("Condition prompt version differs from the run protocol")
+        if canonical(condition) != canonical(redact(condition)):
+            raise ValueError("Condition contains recognizable credentials")
+        condition = parsed.to_dict()
     validate_protocol(config, official=mode == "gate")
     if (
         config["repetitions"] is None
@@ -420,6 +439,20 @@ def run_suite(
     ):
         raise ValueError("Execution requires concrete repetitions, threshold and run limits")
     suite = load_suite(suite_path)
+    scripted_inputs = None
+    if condition is not None:
+        assert fixture_path is not None
+        scripted_inputs = load_json(fixture_path)
+        if canonical(scripted_inputs) != canonical(redact(scripted_inputs)):
+            raise ValueError("Scripted inputs contain recognizable credentials")
+        if scripted_inputs.get("schema_version") != "evaluation-fixtures/v1":
+            raise ValueError("Unsupported scripted input schema")
+        for scenario in suite["scenarios"]:
+            script = scripted_inputs["traces"][scenario["scenario_id"]]
+            if canonical(script["initial_state"]) != canonical(scenario["initial_state"]):
+                raise ValueError("Scripted input reset differs from scenario")
+            if not isinstance(script["proposed_actions"], list):
+                raise ValueError("Scripted proposals must be a list")
     if canonical(suite) != canonical(redact(suite)):
         raise ValueError(
             "Scenario suite contains recognizable credentials; redact before evaluation"
@@ -474,6 +507,8 @@ def run_suite(
     batch_id = uuid.uuid4().hex
     effective = deepcopy(config)
     effective["mode"] = mode
+    if condition is not None:
+        effective["condition"] = deepcopy(condition)
     scenarios = suite["scenarios"]
     planned = [
         {
@@ -522,6 +557,14 @@ def run_suite(
             "freeze": str(Path(freeze_path).resolve()) if freeze_path else None,
         },
     }
+    if condition is not None:
+        manifest.update(
+            condition=condition,
+            condition_sha256=digest(condition),
+            scripted_inputs_sha256=digest(scripted_inputs),
+        )
+        fixture_path = output / "scripted_inputs.json"
+        write_json(fixture_path, scripted_inputs)
     write_json(output / "manifest.json", manifest)
     write_json(output / "suite.json", suite)
     records = []
@@ -542,6 +585,10 @@ def run_suite(
                 "model_config": config["model"],
                 "run_limits": config["limits"],
             }
+            if condition is not None:
+                prefix.update(
+                    condition_id=condition["condition_id"], condition_sha256=digest(condition)
+                )
             append_jsonl(output / "ledger.jsonl", {**prefix, "event": "started", "at": now()})
             result = run_attempt(
                 scenario,

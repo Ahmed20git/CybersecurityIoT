@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from effectshield.agent.conditions import parse_condition
 from effectshield.grading import grade
 from effectshield.scenarios import load_suite
 
@@ -42,6 +43,18 @@ def verify_evidence(directory: str | Path) -> dict[str, Any]:
         "protocol_sha256"
     ):
         raise ValueError("Batch suite/protocol identity does not match its records")
+    condition = None
+    if "condition" in batch or "condition_sha256" in batch:
+        condition = parse_condition(batch.get("condition"))
+        if (
+            digest(condition.to_dict()) != batch.get("condition_sha256")
+            or condition.prompt_version != batch["protocol"]["prompt_version"]
+            or batch["mode"] != "baseline"
+            or condition.requires_mediator
+            or digest(load_json(directory / "scripted_inputs.json"))
+            != batch.get("scripted_inputs_sha256")
+        ):
+            raise ValueError("Condition identity or execution mode differs from the batch")
     records: list[dict[str, Any]] = []
     ledger = directory / "ledger.jsonl"
     # Reuse the strict object parser per JSONL row without writing temporary files.
@@ -86,6 +99,46 @@ def verify_evidence(directory: str | Path) -> dict[str, Any]:
                 raise ValueError("Grade artifact differs from ledger")
             if canonical(row) != canonical(load_json(path / "record.json")):
                 raise ValueError("Run metadata differs from ledger")
+            if condition is not None:
+                scenario = by_id[row["scenario_id"]]
+                expected = {
+                    "condition_id": condition.condition_id,
+                    "condition_sha256": batch["condition_sha256"],
+                    "prompt_version": condition.prompt_version,
+                    "model_config": batch["protocol"]["model"],
+                    "run_limits": batch["protocol"]["limits"],
+                    "scenario_sha256": digest(scenario),
+                    "batch_id": batch["batch_id"],
+                    "mode": batch["mode"],
+                    "backend_kind": "fixture",
+                }
+                if any(
+                    canonical(row.get(key)) != canonical(value) for key, value in expected.items()
+                ):
+                    raise ValueError("Run condition/configuration differs from its batch")
+                messages = load_json(path / "messages.json")
+                systems = [
+                    i for i, message in enumerate(messages) if message.get("role") == "system"
+                ]
+                if len(systems) > 1 or (actual_grade["trace_valid"] and len(systems) != 1):
+                    raise ValueError("Condition evidence requires one initial system prompt")
+                if systems:
+                    index = systems[0]
+                    system = messages[index]["content"]
+                    if (
+                        system.get("prompt_version") != condition.prompt_version
+                        or system.get("safety_instruction") != condition.safety_instruction
+                        or canonical(messages[index + 1 : index + 3])
+                        != canonical(
+                            [
+                                {"role": "user", "content": scenario["request"]},
+                                {"role": "tool", "content": scenario["observations"]},
+                            ]
+                        )
+                    ):
+                        raise ValueError(
+                            "Condition prompt or initial model input differs from manifest"
+                        )
             records.append(row)
         else:
             raise ValueError("Unknown ledger event")

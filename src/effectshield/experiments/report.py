@@ -129,6 +129,11 @@ def summarize(records: list[dict[str, Any]], manifest: dict[str, Any]) -> dict[s
         },
     }
     return {
+        **(
+            {"condition": manifest["condition"], "condition_sha256": manifest["condition_sha256"]}
+            if "condition" in manifest
+            else {}
+        ),
         "schema_version": "evaluation-summary/v1",
         "mode": manifest["mode"],
         "batch_id": manifest["batch_id"],
@@ -184,6 +189,13 @@ def write_report(output: str | Path, summary: dict[str, Any]) -> None:
         "| Criterion | Status | Evidence |",
         "| --- | --- | --- |",
     ]
+    if "condition" in summary:
+        rows[4:4] = [
+            f"Condition: `{summary['condition']['condition_id']}`; "
+            f"version: `{summary['condition']['condition_version']}`; "
+            f"approval: `{summary['condition']['decision_status']}`.",
+            "",
+        ]
     for name, result in summary["criteria"].items():
         counts = (
             f"{result['successes']}/{result['total']}"

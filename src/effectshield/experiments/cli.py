@@ -40,6 +40,10 @@ def main(argv: list[str] | None = None) -> int:
             sub.add_argument(
                 "--fixtures", type=Path, default=ROOT / "fixtures/evaluation/runs.json"
             )
+            if command == "baseline":
+                sub.add_argument(
+                    "--condition", type=Path, default=ROOT / "configs/conditions/unprotected.json"
+                )
             if command == "rehearsal":
                 sub.add_argument(
                     "--backend", help="Trusted module:factory; omit for fixture rehearsal"
@@ -54,6 +58,18 @@ def main(argv: list[str] | None = None) -> int:
     verify.add_argument("path", type=Path)
     evidence = commands.add_parser("verify-evidence")
     evidence.add_argument("path", type=Path)
+    comparison = commands.add_parser("compare-baselines", help="Run matched scripted conditions")
+    comparison.add_argument("--config", type=Path, default=ROOT / "configs/evaluation/gate.json")
+    comparison.add_argument(
+        "--suite", type=Path, default=ROOT / "scenarios/development/authorization.json"
+    )
+    comparison.add_argument(
+        "--fixtures", type=Path, default=ROOT / "fixtures/evaluation/authorization_runs.json"
+    )
+    comparison.add_argument("--conditions", type=Path, default=ROOT / "configs/conditions")
+    comparison.add_argument("--output", type=Path)
+    comparison_check = commands.add_parser("verify-comparison")
+    comparison_check.add_argument("path", type=Path)
     visualize = commands.add_parser(
         "visualize", help="View saved evidence in an offline HTML report"
     )
@@ -75,6 +91,32 @@ def main(argv: list[str] | None = None) -> int:
             result = verify_freeze(args.path)
         elif args.command == "verify-evidence":
             result = verify_evidence(args.path)
+        elif args.command == "compare-baselines":
+            from .comparison import run_comparison
+
+            output = args.output or _output("comparison")
+            summary = run_comparison(
+                args.suite,
+                args.fixtures,
+                load_json(args.config),
+                args.conditions,
+                output,
+                invocation=[
+                    sys.executable,
+                    "scripts/evaluate.py",
+                    *(sys.argv[1:] if argv is None else argv),
+                ],
+            )
+            result = {
+                "output": str(output.resolve()),
+                "status": summary["status"],
+                "conditions": summary["conditions"],
+                "notice": summary["notice"],
+            }
+        elif args.command == "verify-comparison":
+            from .comparison import verify_comparison
+
+            result = verify_comparison(args.path)
         elif args.command == "visualize":
             from .visualize import write_visualization
 
@@ -116,12 +158,19 @@ def main(argv: list[str] | None = None) -> int:
                         "seed": 0,
                         "seed_status": "supported",
                     }
+            condition = None
+            if args.command == "baseline":
+                from effectshield.agent.conditions import load_condition
+
+                condition = load_condition(args.condition).to_dict()
+                config["prompt_version"] = condition["prompt_version"]
             output = args.output or _output(args.command)
             summary = run_suite(
                 suite,
                 config,
                 output,
                 mode=args.command,
+                condition=condition,
                 backend_spec=backend,
                 fixture_path=fixture,
                 freeze_path=freeze_path,
@@ -132,6 +181,7 @@ def main(argv: list[str] | None = None) -> int:
                 ],
             )
             result = {
+                **({"condition": condition["condition_id"]} if condition else {}),
                 "output": str(output.resolve()),
                 "mode": summary["mode"],
                 "attempts": summary["attempts"],
