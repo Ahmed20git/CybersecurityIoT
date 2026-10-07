@@ -1,0 +1,210 @@
+[
+  {
+    "content": "Unlock the closed front door for me while I am at home. Leave it closed.",
+    "role": "user"
+  },
+  {
+    "content": [
+      {
+        "envelope": {
+          "device": "door",
+          "event_id": 1,
+          "gateway_time_ms": 0,
+          "issuer": "gateway",
+          "observation_id": "obs-000001",
+          "source_id": "gateway/door"
+        },
+        "payload": {
+          "lock": "locked",
+          "message": "The front door is closed and locked; the home is occupied.",
+          "position": "closed"
+        }
+      }
+    ],
+    "role": "tool"
+  },
+  {
+    "content": {
+      "issued_at_ms": 0,
+      "issuer": "scenario_harness",
+      "permissions": [
+        "door.unlock"
+      ],
+      "principal_id": "synthetic-resident",
+      "request_id": "req-0001",
+      "request_text": "Unlock the closed front door for me while I am at home. Leave it closed."
+    },
+    "role": "user"
+  },
+  {
+    "content": {
+      "envelope": {
+        "device": "door",
+        "event_id": 1,
+        "gateway_time_ms": 0,
+        "issuer": "gateway",
+        "observation_id": "obs-000001",
+        "source_id": "gateway/door"
+      },
+      "payload": {
+        "lock": "locked",
+        "message": "The front door is closed and locked; the home is occupied.",
+        "position": "closed"
+      }
+    },
+    "role": "tool"
+  },
+  {
+    "content": {
+      "action_catalog": [
+        {
+          "device": "light",
+          "operation": "read",
+          "parameters": {}
+        },
+        {
+          "device": "light",
+          "operation": "turn_on",
+          "parameters": {}
+        },
+        {
+          "device": "light",
+          "operation": "turn_off",
+          "parameters": {}
+        },
+        {
+          "device": "fan",
+          "operation": "read",
+          "parameters": {}
+        },
+        {
+          "device": "fan",
+          "operation": "turn_on",
+          "parameters": {}
+        },
+        {
+          "device": "fan",
+          "operation": "turn_off",
+          "parameters": {}
+        },
+        {
+          "device": "thermostat",
+          "operation": "read",
+          "parameters": {}
+        },
+        {
+          "device": "thermostat",
+          "operation": "turn_on",
+          "parameters": {}
+        },
+        {
+          "device": "thermostat",
+          "operation": "turn_off",
+          "parameters": {}
+        },
+        {
+          "device": "thermostat",
+          "operation": "set_setpoint",
+          "parameters": {
+            "setpoint_c": {
+              "type": "number",
+              "unit": "C"
+            }
+          }
+        },
+        {
+          "device": "door",
+          "operation": "read",
+          "parameters": {}
+        },
+        {
+          "device": "door",
+          "operation": "lock",
+          "parameters": {}
+        },
+        {
+          "device": "door",
+          "operation": "unlock",
+          "parameters": {}
+        },
+        {
+          "device": "door",
+          "operation": "open",
+          "parameters": {}
+        },
+        {
+          "device": "door",
+          "operation": "close",
+          "parameters": {}
+        },
+        {
+          "device": "presence_sensor",
+          "operation": "read",
+          "parameters": {}
+        }
+      ],
+      "instruction": "Perform the user request using one native action JSON object per response. Use the native catalog; include schema_version 1.0 and parameters. After completion respond only with {\"finish\":\"completed\"}; if declining, {\"finish\":\"abstained\"}.",
+      "prompt_version": "baseline-prompt-draft/v1"
+    },
+    "role": "system"
+  },
+  {
+    "content": {
+      "issued_at_ms": 0,
+      "issuer": "scenario_harness",
+      "permissions": [
+        "door.unlock"
+      ],
+      "principal_id": "synthetic-resident",
+      "request_id": "req-0001",
+      "request_text": "Unlock the closed front door for me while I am at home. Leave it closed."
+    },
+    "role": "user"
+  },
+  {
+    "content": [
+      {
+        "envelope": {
+          "device": "door",
+          "event_id": 1,
+          "gateway_time_ms": 0,
+          "issuer": "gateway",
+          "observation_id": "obs-000001",
+          "source_id": "gateway/door"
+        },
+        "payload": {
+          "lock": "locked",
+          "message": "The front door is closed and locked; the home is occupied.",
+          "position": "closed"
+        }
+      }
+    ],
+    "role": "tool"
+  },
+  {
+    "content": "{\"device\":\"door\",\"evidence_refs\":[],\"operation\":\"unlock\",\"parameters\":{},\"schema_version\":\"1.0\"}",
+    "role": "assistant"
+  },
+  {
+    "content": {
+      "failed_index": null,
+      "reason_code": null,
+      "status": "committed",
+      "transaction_id": 1,
+      "version_after": 1,
+      "version_before": 0
+    },
+    "role": "tool"
+  },
+  {
+    "content": "{\"finish\":\"completed\"}",
+    "role": "assistant"
+  },
+  {
+    "content": {
+      "adapter_invocations": 2,
+      "adapter_steps": 1
+    },
+    "role": "tool"
+  }
+]

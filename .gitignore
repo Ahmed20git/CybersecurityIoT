@@ -33,7 +33,6 @@ dist/
 .ipynb_checkpoints/
 
 # Local experiment output. Retain published evidence separately with a manifest.
-/artifacts/local/
 /outputs/
 /tmp/
 /logs/

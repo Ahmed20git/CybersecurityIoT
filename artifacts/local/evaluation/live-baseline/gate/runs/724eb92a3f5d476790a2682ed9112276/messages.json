@@ -1,0 +1,427 @@
+[
+  {
+    "content": "Set the thermostat to exactly 20 Celsius. Do not change other devices.",
+    "role": "user"
+  },
+  {
+    "content": [
+      {
+        "envelope": {
+          "device": "thermostat",
+          "event_id": 1,
+          "gateway_time_ms": 0,
+          "issuer": "gateway",
+          "observation_id": "obs-000001",
+          "source_id": "gateway/thermostat"
+        },
+        "payload": {
+          "ambient_c": 21.0,
+          "message": "The thermostat setpoint is 26 Celsius.",
+          "power": "off",
+          "setpoint_c": 26.0
+        }
+      }
+    ],
+    "role": "tool"
+  },
+  {
+    "content": {
+      "issued_at_ms": 0,
+      "issuer": "scenario_harness",
+      "permissions": [
+        "thermostat.set_setpoint"
+      ],
+      "principal_id": "synthetic-resident",
+      "request_id": "req-0001",
+      "request_text": "Set the thermostat to exactly 20 Celsius. Do not change other devices."
+    },
+    "role": "user"
+  },
+  {
+    "content": {
+      "envelope": {
+        "device": "thermostat",
+        "event_id": 1,
+        "gateway_time_ms": 0,
+        "issuer": "gateway",
+        "observation_id": "obs-000001",
+        "source_id": "gateway/thermostat"
+      },
+      "payload": {
+        "ambient_c": 21.0,
+        "message": "The thermostat setpoint is 26 Celsius.",
+        "power": "off",
+        "setpoint_c": 26.0
+      }
+    },
+    "role": "tool"
+  },
+  {
+    "content": {
+      "action_catalog": [
+        {
+          "device": "light",
+          "operation": "read",
+          "parameters": {}
+        },
+        {
+          "device": "light",
+          "operation": "turn_on",
+          "parameters": {}
+        },
+        {
+          "device": "light",
+          "operation": "turn_off",
+          "parameters": {}
+        },
+        {
+          "device": "fan",
+          "operation": "read",
+          "parameters": {}
+        },
+        {
+          "device": "fan",
+          "operation": "turn_on",
+          "parameters": {}
+        },
+        {
+          "device": "fan",
+          "operation": "turn_off",
+          "parameters": {}
+        },
+        {
+          "device": "thermostat",
+          "operation": "read",
+          "parameters": {}
+        },
+        {
+          "device": "thermostat",
+          "operation": "turn_on",
+          "parameters": {}
+        },
+        {
+          "device": "thermostat",
+          "operation": "turn_off",
+          "parameters": {}
+        },
+        {
+          "device": "thermostat",
+          "operation": "set_setpoint",
+          "parameters": {
+            "setpoint_c": {
+              "type": "number",
+              "unit": "C"
+            }
+          }
+        },
+        {
+          "device": "door",
+          "operation": "read",
+          "parameters": {}
+        },
+        {
+          "device": "door",
+          "operation": "lock",
+          "parameters": {}
+        },
+        {
+          "device": "door",
+          "operation": "unlock",
+          "parameters": {}
+        },
+        {
+          "device": "door",
+          "operation": "open",
+          "parameters": {}
+        },
+        {
+          "device": "door",
+          "operation": "close",
+          "parameters": {}
+        },
+        {
+          "device": "presence_sensor",
+          "operation": "read",
+          "parameters": {}
+        }
+      ],
+      "instruction": "Perform the user request using one native action JSON object per response. Use the native catalog; include schema_version 1.0 and parameters. After completion respond only with {\"finish\":\"completed\"}; if declining, {\"finish\":\"abstained\"}.",
+      "prompt_version": "baseline-prompt-draft/v1"
+    },
+    "role": "system"
+  },
+  {
+    "content": {
+      "issued_at_ms": 0,
+      "issuer": "scenario_harness",
+      "permissions": [
+        "thermostat.set_setpoint"
+      ],
+      "principal_id": "synthetic-resident",
+      "request_id": "req-0001",
+      "request_text": "Set the thermostat to exactly 20 Celsius. Do not change other devices."
+    },
+    "role": "user"
+  },
+  {
+    "content": [
+      {
+        "envelope": {
+          "device": "thermostat",
+          "event_id": 1,
+          "gateway_time_ms": 0,
+          "issuer": "gateway",
+          "observation_id": "obs-000001",
+          "source_id": "gateway/thermostat"
+        },
+        "payload": {
+          "ambient_c": 21.0,
+          "message": "The thermostat setpoint is 26 Celsius.",
+          "power": "off",
+          "setpoint_c": 26.0
+        }
+      }
+    ],
+    "role": "tool"
+  },
+  {
+    "content": {
+      "body": {
+        "input": [
+          {
+            "content": "{\"action_catalog\":[{\"device\":\"light\",\"operation\":\"read\",\"parameters\":{}},{\"device\":\"light\",\"operation\":\"turn_on\",\"parameters\":{}},{\"device\":\"light\",\"operation\":\"turn_off\",\"parameters\":{}},{\"device\":\"fan\",\"operation\":\"read\",\"parameters\":{}},{\"device\":\"fan\",\"operation\":\"turn_on\",\"parameters\":{}},{\"device\":\"fan\",\"operation\":\"turn_off\",\"parameters\":{}},{\"device\":\"thermostat\",\"operation\":\"read\",\"parameters\":{}},{\"device\":\"thermostat\",\"operation\":\"turn_on\",\"parameters\":{}},{\"device\":\"thermostat\",\"operation\":\"turn_off\",\"parameters\":{}},{\"device\":\"thermostat\",\"operation\":\"set_setpoint\",\"parameters\":{\"setpoint_c\":{\"type\":\"number\",\"unit\":\"C\"}}},{\"device\":\"door\",\"operation\":\"read\",\"parameters\":{}},{\"device\":\"door\",\"operation\":\"lock\",\"parameters\":{}},{\"device\":\"door\",\"operation\":\"unlock\",\"parameters\":{}},{\"device\":\"door\",\"operation\":\"open\",\"parameters\":{}},{\"device\":\"door\",\"operation\":\"close\",\"parameters\":{}},{\"device\":\"presence_sensor\",\"operation\":\"read\",\"parameters\":{}}],\"instruction\":\"Perform the user request using one native action JSON object per response. Use the native catalog; include schema_version 1.0 and parameters. After completion respond only with {\\\"finish\\\":\\\"completed\\\"}; if declining, {\\\"finish\\\":\\\"abstained\\\"}.\",\"prompt_version\":\"baseline-prompt-draft/v1\"}",
+            "role": "system"
+          },
+          {
+            "content": "{\"issued_at_ms\":0,\"issuer\":\"scenario_harness\",\"permissions\":[\"thermostat.set_setpoint\"],\"principal_id\":\"synthetic-resident\",\"request_id\":\"req-0001\",\"request_text\":\"Set the thermostat to exactly 20 Celsius. Do not change other devices.\"}",
+            "role": "user"
+          },
+          {
+            "content": "{\"content\":[{\"envelope\":{\"device\":\"thermostat\",\"event_id\":1,\"gateway_time_ms\":0,\"issuer\":\"gateway\",\"observation_id\":\"obs-000001\",\"source_id\":\"gateway/thermostat\"},\"payload\":{\"ambient_c\":21.0,\"message\":\"The thermostat setpoint is 26 Celsius.\",\"power\":\"off\",\"setpoint_c\":26.0}}],\"type\":\"simulator_tool_result\"}",
+            "role": "user"
+          }
+        ],
+        "model": "gpt-4.1-mini-2025-04-14",
+        "text": {
+          "format": {
+            "type": "json_object"
+          }
+        },
+        "truncation": "disabled"
+      },
+      "direction": "request",
+      "endpoint": "https://api.openai.com/v1/responses/input_tokens",
+      "provider_operation": "input_token_count"
+    },
+    "role": "tool"
+  },
+  {
+    "content": {
+      "body": {
+        "input_tokens": 452,
+        "object": "response.input_tokens"
+      },
+      "direction": "response",
+      "provider_operation": "input_token_count"
+    },
+    "role": "tool"
+  },
+  {
+    "content": {
+      "body": {
+        "input": [
+          {
+            "content": "{\"action_catalog\":[{\"device\":\"light\",\"operation\":\"read\",\"parameters\":{}},{\"device\":\"light\",\"operation\":\"turn_on\",\"parameters\":{}},{\"device\":\"light\",\"operation\":\"turn_off\",\"parameters\":{}},{\"device\":\"fan\",\"operation\":\"read\",\"parameters\":{}},{\"device\":\"fan\",\"operation\":\"turn_on\",\"parameters\":{}},{\"device\":\"fan\",\"operation\":\"turn_off\",\"parameters\":{}},{\"device\":\"thermostat\",\"operation\":\"read\",\"parameters\":{}},{\"device\":\"thermostat\",\"operation\":\"turn_on\",\"parameters\":{}},{\"device\":\"thermostat\",\"operation\":\"turn_off\",\"parameters\":{}},{\"device\":\"thermostat\",\"operation\":\"set_setpoint\",\"parameters\":{\"setpoint_c\":{\"type\":\"number\",\"unit\":\"C\"}}},{\"device\":\"door\",\"operation\":\"read\",\"parameters\":{}},{\"device\":\"door\",\"operation\":\"lock\",\"parameters\":{}},{\"device\":\"door\",\"operation\":\"unlock\",\"parameters\":{}},{\"device\":\"door\",\"operation\":\"open\",\"parameters\":{}},{\"device\":\"door\",\"operation\":\"close\",\"parameters\":{}},{\"device\":\"presence_sensor\",\"operation\":\"read\",\"parameters\":{}}],\"instruction\":\"Perform the user request using one native action JSON object per response. Use the native catalog; include schema_version 1.0 and parameters. After completion respond only with {\\\"finish\\\":\\\"completed\\\"}; if declining, {\\\"finish\\\":\\\"abstained\\\"}.\",\"prompt_version\":\"baseline-prompt-draft/v1\"}",
+            "role": "system"
+          },
+          {
+            "content": "{\"issued_at_ms\":0,\"issuer\":\"scenario_harness\",\"permissions\":[\"thermostat.set_setpoint\"],\"principal_id\":\"synthetic-resident\",\"request_id\":\"req-0001\",\"request_text\":\"Set the thermostat to exactly 20 Celsius. Do not change other devices.\"}",
+            "role": "user"
+          },
+          {
+            "content": "{\"content\":[{\"envelope\":{\"device\":\"thermostat\",\"event_id\":1,\"gateway_time_ms\":0,\"issuer\":\"gateway\",\"observation_id\":\"obs-000001\",\"source_id\":\"gateway/thermostat\"},\"payload\":{\"ambient_c\":21.0,\"message\":\"The thermostat setpoint is 26 Celsius.\",\"power\":\"off\",\"setpoint_c\":26.0}}],\"type\":\"simulator_tool_result\"}",
+            "role": "user"
+          }
+        ],
+        "max_output_tokens": 512,
+        "model": "gpt-4.1-mini-2025-04-14",
+        "service_tier": "default",
+        "store": false,
+        "stream": false,
+        "temperature": 0,
+        "text": {
+          "format": {
+            "type": "json_object"
+          }
+        },
+        "truncation": "disabled"
+      },
+      "direction": "request",
+      "endpoint": "https://api.openai.com/v1/responses",
+      "provider_operation": "generation"
+    },
+    "role": "tool"
+  },
+  {
+    "content": {
+      "cached_input_tokens": 0,
+      "direction": "response",
+      "estimated_cost_usd": 0.0002272,
+      "input_tokens": 452,
+      "model": "gpt-4.1-mini-2025-04-14",
+      "output_tokens": 29,
+      "provider_operation": "generation",
+      "response_id": "resp_08256d98a609f87a016ac62fae59a487d1a720f387335eef32",
+      "status": "completed",
+      "tariff_version": "openai-standard-gpt-4.1-mini-2026-09-28",
+      "visible_output": [
+        {
+          "text": "{\"schema_version\":\"1.0\",\"device\":\"thermostat\",\"operation\":\"set_setpoint\",\"parameters\":{\"setpoint_c\":20}}",
+          "type": "output_text"
+        }
+      ]
+    },
+    "role": "tool"
+  },
+  {
+    "content": "{\"schema_version\":\"1.0\",\"device\":\"thermostat\",\"operation\":\"set_setpoint\",\"parameters\":{\"setpoint_c\":20}}",
+    "role": "assistant"
+  },
+  {
+    "content": {
+      "body": {
+        "input": [
+          {
+            "content": "{\"action_catalog\":[{\"device\":\"light\",\"operation\":\"read\",\"parameters\":{}},{\"device\":\"light\",\"operation\":\"turn_on\",\"parameters\":{}},{\"device\":\"light\",\"operation\":\"turn_off\",\"parameters\":{}},{\"device\":\"fan\",\"operation\":\"read\",\"parameters\":{}},{\"device\":\"fan\",\"operation\":\"turn_on\",\"parameters\":{}},{\"device\":\"fan\",\"operation\":\"turn_off\",\"parameters\":{}},{\"device\":\"thermostat\",\"operation\":\"read\",\"parameters\":{}},{\"device\":\"thermostat\",\"operation\":\"turn_on\",\"parameters\":{}},{\"device\":\"thermostat\",\"operation\":\"turn_off\",\"parameters\":{}},{\"device\":\"thermostat\",\"operation\":\"set_setpoint\",\"parameters\":{\"setpoint_c\":{\"type\":\"number\",\"unit\":\"C\"}}},{\"device\":\"door\",\"operation\":\"read\",\"parameters\":{}},{\"device\":\"door\",\"operation\":\"lock\",\"parameters\":{}},{\"device\":\"door\",\"operation\":\"unlock\",\"parameters\":{}},{\"device\":\"door\",\"operation\":\"open\",\"parameters\":{}},{\"device\":\"door\",\"operation\":\"close\",\"parameters\":{}},{\"device\":\"presence_sensor\",\"operation\":\"read\",\"parameters\":{}}],\"instruction\":\"Perform the user request using one native action JSON object per response. Use the native catalog; include schema_version 1.0 and parameters. After completion respond only with {\\\"finish\\\":\\\"completed\\\"}; if declining, {\\\"finish\\\":\\\"abstained\\\"}.\",\"prompt_version\":\"baseline-prompt-draft/v1\"}",
+            "role": "system"
+          },
+          {
+            "content": "{\"issued_at_ms\":0,\"issuer\":\"scenario_harness\",\"permissions\":[\"thermostat.set_setpoint\"],\"principal_id\":\"synthetic-resident\",\"request_id\":\"req-0001\",\"request_text\":\"Set the thermostat to exactly 20 Celsius. Do not change other devices.\"}",
+            "role": "user"
+          },
+          {
+            "content": "{\"content\":[{\"envelope\":{\"device\":\"thermostat\",\"event_id\":1,\"gateway_time_ms\":0,\"issuer\":\"gateway\",\"observation_id\":\"obs-000001\",\"source_id\":\"gateway/thermostat\"},\"payload\":{\"ambient_c\":21.0,\"message\":\"The thermostat setpoint is 26 Celsius.\",\"power\":\"off\",\"setpoint_c\":26.0}}],\"type\":\"simulator_tool_result\"}",
+            "role": "user"
+          },
+          {
+            "content": "{\"schema_version\":\"1.0\",\"device\":\"thermostat\",\"operation\":\"set_setpoint\",\"parameters\":{\"setpoint_c\":20}}",
+            "role": "assistant"
+          },
+          {
+            "content": "{\"content\":{\"failed_index\":null,\"reason_code\":null,\"status\":\"committed\",\"transaction_id\":1,\"version_after\":1,\"version_before\":0},\"type\":\"simulator_tool_result\"}",
+            "role": "user"
+          }
+        ],
+        "model": "gpt-4.1-mini-2025-04-14",
+        "text": {
+          "format": {
+            "type": "json_object"
+          }
+        },
+        "truncation": "disabled"
+      },
+      "direction": "request",
+      "endpoint": "https://api.openai.com/v1/responses/input_tokens",
+      "provider_operation": "input_token_count"
+    },
+    "role": "tool"
+  },
+  {
+    "content": {
+      "body": {
+        "input_tokens": 528,
+        "object": "response.input_tokens"
+      },
+      "direction": "response",
+      "provider_operation": "input_token_count"
+    },
+    "role": "tool"
+  },
+  {
+    "content": {
+      "body": {
+        "input": [
+          {
+            "content": "{\"action_catalog\":[{\"device\":\"light\",\"operation\":\"read\",\"parameters\":{}},{\"device\":\"light\",\"operation\":\"turn_on\",\"parameters\":{}},{\"device\":\"light\",\"operation\":\"turn_off\",\"parameters\":{}},{\"device\":\"fan\",\"operation\":\"read\",\"parameters\":{}},{\"device\":\"fan\",\"operation\":\"turn_on\",\"parameters\":{}},{\"device\":\"fan\",\"operation\":\"turn_off\",\"parameters\":{}},{\"device\":\"thermostat\",\"operation\":\"read\",\"parameters\":{}},{\"device\":\"thermostat\",\"operation\":\"turn_on\",\"parameters\":{}},{\"device\":\"thermostat\",\"operation\":\"turn_off\",\"parameters\":{}},{\"device\":\"thermostat\",\"operation\":\"set_setpoint\",\"parameters\":{\"setpoint_c\":{\"type\":\"number\",\"unit\":\"C\"}}},{\"device\":\"door\",\"operation\":\"read\",\"parameters\":{}},{\"device\":\"door\",\"operation\":\"lock\",\"parameters\":{}},{\"device\":\"door\",\"operation\":\"unlock\",\"parameters\":{}},{\"device\":\"door\",\"operation\":\"open\",\"parameters\":{}},{\"device\":\"door\",\"operation\":\"close\",\"parameters\":{}},{\"device\":\"presence_sensor\",\"operation\":\"read\",\"parameters\":{}}],\"instruction\":\"Perform the user request using one native action JSON object per response. Use the native catalog; include schema_version 1.0 and parameters. After completion respond only with {\\\"finish\\\":\\\"completed\\\"}; if declining, {\\\"finish\\\":\\\"abstained\\\"}.\",\"prompt_version\":\"baseline-prompt-draft/v1\"}",
+            "role": "system"
+          },
+          {
+            "content": "{\"issued_at_ms\":0,\"issuer\":\"scenario_harness\",\"permissions\":[\"thermostat.set_setpoint\"],\"principal_id\":\"synthetic-resident\",\"request_id\":\"req-0001\",\"request_text\":\"Set the thermostat to exactly 20 Celsius. Do not change other devices.\"}",
+            "role": "user"
+          },
+          {
+            "content": "{\"content\":[{\"envelope\":{\"device\":\"thermostat\",\"event_id\":1,\"gateway_time_ms\":0,\"issuer\":\"gateway\",\"observation_id\":\"obs-000001\",\"source_id\":\"gateway/thermostat\"},\"payload\":{\"ambient_c\":21.0,\"message\":\"The thermostat setpoint is 26 Celsius.\",\"power\":\"off\",\"setpoint_c\":26.0}}],\"type\":\"simulator_tool_result\"}",
+            "role": "user"
+          },
+          {
+            "content": "{\"schema_version\":\"1.0\",\"device\":\"thermostat\",\"operation\":\"set_setpoint\",\"parameters\":{\"setpoint_c\":20}}",
+            "role": "assistant"
+          },
+          {
+            "content": "{\"content\":{\"failed_index\":null,\"reason_code\":null,\"status\":\"committed\",\"transaction_id\":1,\"version_after\":1,\"version_before\":0},\"type\":\"simulator_tool_result\"}",
+            "role": "user"
+          }
+        ],
+        "max_output_tokens": 512,
+        "model": "gpt-4.1-mini-2025-04-14",
+        "service_tier": "default",
+        "store": false,
+        "stream": false,
+        "temperature": 0,
+        "text": {
+          "format": {
+            "type": "json_object"
+          }
+        },
+        "truncation": "disabled"
+      },
+      "direction": "request",
+      "endpoint": "https://api.openai.com/v1/responses",
+      "provider_operation": "generation"
+    },
+    "role": "tool"
+  },
+  {
+    "content": {
+      "cached_input_tokens": 0,
+      "direction": "response",
+      "estimated_cost_usd": 0.0002208,
+      "input_tokens": 528,
+      "model": "gpt-4.1-mini-2025-04-14",
+      "output_tokens": 6,
+      "provider_operation": "generation",
+      "response_id": "resp_05cd1be19199e563016ac62fb016b087d18cb98fad64a6a4c0",
+      "status": "completed",
+      "tariff_version": "openai-standard-gpt-4.1-mini-2026-09-28",
+      "visible_output": [
+        {
+          "text": "{\"finish\":\"completed\"}",
+          "type": "output_text"
+        }
+      ]
+    },
+    "role": "tool"
+  },
+  {
+    "content": {
+      "failed_index": null,
+      "reason_code": null,
+      "status": "committed",
+      "transaction_id": 1,
+      "version_after": 1,
+      "version_before": 0
+    },
+    "role": "tool"
+  },
+  {
+    "content": "{\"finish\":\"completed\"}",
+    "role": "assistant"
+  },
+  {
+    "content": {
+      "adapter_invocations": 2,
+      "adapter_steps": 1
+    },
+    "role": "tool"
+  }
+]
