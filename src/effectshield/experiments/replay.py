@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from effectshield.domain.actions import ActionProposal, parse_action
-from effectshield.domain.context import Permission
+from effectshield.domain.context import Observation, Permission
 from effectshield.domain.devices import (
     DeviceId,
     DoorPosition,
@@ -116,6 +116,7 @@ class NativeEvaluationBackend:
         )
         if canonical(issued.to_dict()) != canonical(request):
             raise ValueError("Trusted request differs from the native request registry record")
+        self._bind_request(issued.request_id)
         yield {"type": "message", "role": "user", "content": issued.to_dict()}
         for expected in observations:
             observed = run.gateway.observe(DeviceId(expected["envelope"]["device"]))
@@ -124,7 +125,15 @@ class NativeEvaluationBackend:
             delivered = with_payload_changes(observed, {"message": expected["payload"]["message"]})
             if canonical(delivered.to_agent_dict()) != canonical(expected):
                 raise ValueError("Initial observation changed protected gateway metadata or facts")
+            delivered = self._deliver(delivered)
             yield {"type": "message", "role": "tool", "content": delivered.to_agent_dict()}
+
+    def _bind_request(self, request_id: str) -> None:
+        """Hook: a protected backend binds the run's issued request. Unprotected runs do nothing."""
+
+    def _deliver(self, observation: Observation) -> Observation:
+        """Hook: a protected backend ingests every observation placed in the agent's context."""
+        return observation
 
     def _execute(self, proposal: ActionProposal) -> Generator[dict[str, Any], None, dict[str, Any]]:
         assert self.environment is not None
