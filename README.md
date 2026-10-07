@@ -34,6 +34,15 @@ Open the returned HTML file in your browser. It shows batch totals, every attemp
 .venv/bin/mypy
 ```
 
+To exercise the authorization/provenance cases across both available scripted baseline conditions:
+
+```sh
+python3 scripts/evaluate.py compare-baselines
+python3 scripts/evaluate.py verify-comparison PATH_TO_COMPARISON
+```
+
+The comparison preserves matching and outcome evidence. The protected condition remains `not_run` until the mediator exists; scripted responses do not measure prompt-only defense efficacy. See the [case matrix and commands](docs/evaluation_guide.md#authorization-and-provenance-development-cases) and the [draft research report](docs/research_report.md).
+
 ## Organization
 
 | Location | Purpose |

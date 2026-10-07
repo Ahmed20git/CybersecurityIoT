@@ -1,6 +1,6 @@
 # Evaluation interface
 
-Updated 2026-09-28. The evaluation tools consume the native simulator, gateway and action representations implemented by Ahmed. Their definitions are documented in [runtime interfaces](interfaces.md). Simon owns the development scenarios, attack construction, independent outcome grading and experiment evidence. Simulator replay uses the existing runtime; it does not reimplement its state machine. Live provider integration and the research protocol still require the decisions described in the [evaluation guide](evaluation_guide.md).
+Updated 2026-10-07. The evaluation tools consume the native simulator, gateway and action representations implemented by Ahmed. Their definitions are documented in [runtime interfaces](interfaces.md). Simon owns the development scenarios, attack construction, independent outcome grading and experiment evidence. Simulator replay uses the existing runtime; it does not reimplement its state machine. Live provider integration and the research protocol still require the decisions described in the [evaluation guide](evaluation_guide.md).
 
 The JSON wrappers below are evaluation formats, not replacements for the runtime action schema. Native device semantics remain proposed D04–D05 choices until jointly reviewed; see the [open decisions](requirements.md#open-decisions). The [project plan](project_plan.md) records the original baseline deadline and current schedule.
 
@@ -71,7 +71,7 @@ The runner checks the reset snapshot using exact JSON values and types. It passe
 | `usage` | Cumulative `input_tokens`, `output_tokens`, `calls`, `cost`, `currency`, `cost_status`, `model_version`, `model_date`, `seed_status`, `accounting_complete` |
 | `finish` | `status`, authoritative simulator `final_state`, native history `committed_count`, and optional sanitized `error` |
 
-Finish statuses are `completed`, `abstained`, `invalid_response`, `error`, `timeout` and `budget_exceeded`. Live final snapshots and history counts must come from the simulator and agree with all emitted entries. Harness control events such as `backend`, `reset` and `worker_done` are reserved.
+Finish statuses are `completed`, `abstained`, `escalated`, `invalid_response`, `error`, `timeout` and `budget_exceeded`. A completed escalation is terminal and does not trigger an automatic retry. Its trace can be complete without completing the task; the independent grader still evaluates the actual effects and retains any unsafe prefix. Escalation does not create permission, simulate a human response or hide an infrastructure failure. Live final snapshots and history counts must come from the simulator and agree with all emitted entries. Harness control events such as `backend`, `reset` and `worker_done` are reserved.
 
 Unknown usage is null, never an invented zero. An observed cumulative value cannot decrease or return to null. Costs are labelled `actual`, `estimated` or `unavailable`; `synthetic` is reserved for offline tests. Official live evidence requires actual model calls, complete known usage, and actual or explicitly estimated cost, with model version/date and seed-support provenance matching the frozen configuration. Provider token counts and a published-price monetary estimate have different provenance: a tariff-derived estimate is not an invoice. The reviewed protocol must identify the cost basis. If `accounting_complete` becomes false, it cannot later become true; report totals remain unknown while retaining known subtotals.
 
@@ -80,6 +80,14 @@ The harness acknowledges each visible event after retaining it, bounds event siz
 The OpenAI connector factory is `effectshield.experiments.openai_baseline:create_backend`; it targets the reviewed snapshot `gpt-4.1-mini-2025-04-14` through the Responses API. The official [GPT-4.1 mini model documentation](https://developers.openai.com/api/docs/models/gpt-4.1-mini) identifies this snapshot and its supported endpoint. The connector reads `OPENAI_API_KEY` from the process environment; it does not automatically load a `.env` file. An absent credential or zero spending budget must prevent generation.
 
 A live connector must reside under `src/effectshield/` so the approved implementation hash covers its source. The approval binds its actual factory path; a placeholder path is not an approved connector. Credentials stay in environment variables. Defensive redaction covers recognized credential fields, token patterns and credential environment values, but connectors must never intentionally emit secrets.
+
+## Named condition records
+
+The scripted baseline accepts the existing versioned [condition configurations](../configs/conditions/unprotected.json). Each named batch embeds its complete condition and `condition_sha256` in `manifest.json`; every started/finished attempt records `condition_id`, `condition_sha256` and the actual prompt version. Its summary and browser view identify the condition. `scripted_inputs.json` captures the authored responses' source fixture inside the audited bundle, bound by `scripted_inputs_sha256`. Workers read this captured input, so a later edit to the external fixture cannot change an in-flight named batch.
+
+The audit checks condition/configuration bindings and the recorded initial system, request and observation messages in addition to existing trace/grade checks. Older unnamed bundles remain readable. Named conditions currently run only through the scripted baseline; they do not enable a new live path or bypass freeze approvals. A condition requiring a mediator is rejected before creating a batch.
+
+`compare-baselines` writes a `baseline-comparison-plan/v1` plan and separate `unprotected` and `safety_prompt_only` evidence directories. Its `baseline-comparison/v1` report pairs scenario/repetition/attempt cells and checks shared scenario bytes, model/settings/seed, limits, retries, initial prompts apart from declared treatment fields, runtime and implementation identity. Missing or invalid cells make the comparison incomplete. `verify-comparison` audits both batches and regenerates the comparison. The third condition is explicitly `not_run` until the mediator exists. These checks establish input matching, not scientific treatment effects.
 
 ## Offline and live evidence boundaries
 

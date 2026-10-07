@@ -1,10 +1,12 @@
 # EffectShield phased project plan
 
-Updated 2026-09-28. **Week 4 ran from Monday September 21 to Friday September 25, 2026.** The submission window is Week 13, **November 23–27**; its exact submission day/time remains unconfirmed. The internal completion date is **Friday November 20**. All dates use Asia/Dubai.
+Updated 2026-10-07. **Week 4 ran from Monday September 21 to Friday September 25, 2026.** The submission window is Week 13, **November 23–27**; its exact submission day/time remains unconfirmed. The internal completion date is **Friday November 20**. All dates use Asia/Dubai.
 
 Aim for a complete deliverable candidate by **Friday November 6 (Week 10)**, joint review by **Friday November 13 (Week 11)**, and all corrections and internal sign-off by **Friday November 20 (Week 12)**. Week 13 is reserved for submission. The earlier proposal's Week 5 gate is superseded by the [revised contract](reference/EffectShield_Revised_Research_Project_Contract.docx)'s Week 4 gate. The original contract's Weeks 14–15 delivery schedule remains source history; the agreed Week 13 deadline and Weeks 10–12 completion goal control this plan. Technical scope, research deliverables and acceptance criteria remain unchanged.
 
-**Current status, September 28:** the typed interfaces, simulator, gateway, bounded baseline agent, provider connector, scenarios, independent grader and evaluation tools are integrated and verified offline. Offline verification covers software behavior, not language-model performance. No live model calls, official protocol freeze or assessable live gate result have occurred. OpenAI `gpt-4.1-mini-2025-04-14` is selected; access, a spending limit and approval of the live protocol remain pending, with the current cap at zero. The original **September 25 gate deadline has passed**. Its fallback disposition requires joint review before later enforcement work; the milestone dates below have not been moved.
+**Current status, October 7:** the baseline implementation and viewer are merged into `main`. Ahmed's `wp-05-agent-adapter` branch adds condition definitions and continuation behavior. Simon's Week 5 evaluation work is implemented on `authorization-evaluation`, based on that branch: authorization/provenance development cases, independent outcome fixtures, matched scripted baseline batches and condition-bound evidence. It remains for human review. The selected branch has no authorization/provenance mediator, so the Week 5 protected end-to-end checkpoint is still pending; agent-adapter completion is not mediator completion. October 7 is in Week 6; this update does not move the original milestones.
+
+Offline verification covers software behavior, not language-model performance. No live model calls, official protocol freeze or assessable live gate result are established by this work. OpenAI `gpt-4.1-mini-2025-04-14` remains the selected provider target, with access, spending and live-protocol decisions pending and the cap at zero. The original **September 25 gate deadline has passed**. Its fallback disposition still requires joint review before later enforcement work.
 
 Simon owns scenarios, attacks, independent grading, experiments and analysis. Ahmed owns runtime interfaces, the simulator, gateway and agent integration. Both review security-sensitive changes, threat-model assumptions, costs and results. The [requirements register](requirements.md) defines the requirement IDs used below; its [open decisions](requirements.md#open-decisions) specify unresolved acceptance choices. All device effects remain in the simulator.
 
@@ -40,6 +42,22 @@ These are the original September 21–25 commitments, retained for schedule acco
 | Friday September 25 | **BASE-A05:** Independently reproduce setup and replay saved actions. Verify reset/determinism, action-to-effect agreement and relevant tests; independently review labels and tallies. | **BASE-S05:** Execute the frozen gate, retain every attempt and report benign successes/denominator, repeated attack changes, automatic grades, versions, commands, ledger and cost. Cover DEL-01, EXP-10 and QA-04 at gate scope. | Both assess all three criteria as passed, not met or unassessable and record the next-scope/fallback decision. The original deadline is not silently extended. |
 
 Before official measurement, both must settle the working contract's authority; review device, observation and task-scope semantics; approve provider access, spending and execution limits; specify task/repetition populations, completion/unsafe/action-change predicates and reliability; decide how pilots/retries count against the run ceiling; and approve evidence storage. These choices are recorded in the requirements' open decisions. Freshness, replay consumption and full repair semantics may wait for their dependent enforcement work, but any baseline transaction behavior must already be explicit.
+
+## Week 5 implementation and remaining handoff
+
+The original window was September 28–October 2. The following implementation status was checked on October 7. No acceptance review or live gate result is inferred from merged code or passing offline checks.
+
+| Work item | Owner | State and evidence |
+| --- | --- | --- |
+| Authorization/provenance adversarial development cases | Simon | Implemented: seven clean/attacked pairs, three benign controls, bounded text mutations and protected-field/schema checks; DAT-02–DAT-03, DAT-05 and independent coverage for OBS-03–OBS-04/MED-03–MED-04 |
+| Independent expected outcomes | Simon | Implemented: native reference traces plus separate hand-assigned task/safety/reason labels; EXP-01–EXP-02 and QA-03. Proposed protected outcomes remain pending review and mediator integration |
+| Baseline configurations and fair matching | Simon, using Ahmed's adapter | Implemented: reuse the three condition definitions, run the two available baselines with matched inputs/model/limits, record actual prompts and verify condition-bound evidence; AGT-02–AGT-03 and LOG-01/LOG-05. Full EffectShield is explicitly not run |
+| Continuation evidence integration | Simon, using Ahmed's protocol | Implemented: terminal escalation is retained without automatic retry; completion and safety remain independent outcome checks. D09 acceptance remains pending |
+| Methods and report outline | Simon | Drafted in the [research report](research_report.md); measured research results and claims remain empty pending approved experiments |
+| Schema/authorization/provenance mediator | Ahmed | Not present on `wp-05-agent-adapter` at `e8e778e`; that commit implements WP-05 agent conditions/continuation, not WP-07 enforcement. Confirm another location or complete the mediator |
+| First protected end-to-end checkpoint | Both | Pending mediator availability, D05/D09 review and the outstanding gate/fallback disposition. Then connect the protected path, run adversarial and benign controls and review the actual evidence |
+
+The development corpus uses the existing five-device runtime without selecting or approving fallback scope. Later freshness/replay, door/temperature/sequence rules, repair and final-study work remain their own planned tasks. The [evaluation guide](evaluation_guide.md#authorization-and-provenance-development-cases) provides commands and the case matrix.
 
 ## Phase gates
 
