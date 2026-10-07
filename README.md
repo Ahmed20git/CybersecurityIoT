@@ -52,7 +52,7 @@ The comparison preserves matching and outcome evidence. The protected condition 
 | `src/effectshield/agent/` | Bounded proposal loop and isolated model clients |
 | `src/effectshield/scenarios.py`, `attacks.py`, `grading.py` | Development data, bounded mutations and independent outcome checks |
 | `src/effectshield/experiments/` | Execution, replay, evidence, summaries and protocol freezing |
-| `scenarios/development/`, `fixtures/evaluation/`, `configs/evaluation/` | Versioned tasks, labelled fixtures and draft gate settings |
+| `scenarios/development/`, `fixtures/evaluation/`, `configs/evaluation/` | Versioned tasks, labelled fixtures and approved baseline gate settings |
 | `tests/` | Unit, integration and security checks |
 
 ## Documentation

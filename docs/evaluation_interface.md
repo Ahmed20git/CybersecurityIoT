@@ -1,8 +1,8 @@
 # Evaluation interface
 
-Updated 2026-10-07. The evaluation tools consume the native simulator, gateway and action representations implemented by Ahmed. Their definitions are documented in [runtime interfaces](interfaces.md). Simon owns the development scenarios, attack construction, independent outcome grading and experiment evidence. Simulator replay uses the existing runtime; it does not reimplement its state machine. Live provider integration and the research protocol still require the decisions described in the [evaluation guide](evaluation_guide.md).
+Updated 2026-10-07. The evaluation tools consume the native simulator, gateway and action representations implemented by Ahmed. Their definitions are documented in [runtime interfaces](interfaces.md). Simon owns the development scenarios, attack construction, independent outcome grading and experiment evidence. Simulator replay uses the existing runtime; it does not reimplement its state machine. Simon approved the baseline live protocol and reports joint review completed on October 7; the [evaluation guide](evaluation_guide.md) describes its scope and evidence boundary.
 
-The JSON wrappers below are evaluation formats, not replacements for the runtime action schema. Native device semantics remain proposed D04–D05 choices until jointly reviewed; see the [open decisions](requirements.md#open-decisions). The [project plan](project_plan.md) records the original baseline deadline and current schedule.
+The JSON wrappers below are evaluation formats, not replacements for the runtime action schema. Native device semantics and the message-only attack boundary are approved at baseline scope under D04–D05; later enforcement choices remain separate; see the [open decisions](requirements.md#open-decisions). The [project plan](project_plan.md) records the original baseline deadline and current schedule.
 
 ## Development scenarios
 
