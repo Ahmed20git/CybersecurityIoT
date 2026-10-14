@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from effectshield.agent import BoundedAgent, CallEstimate, Condition, ModelClient, ModelResponse
+from effectshield.agent.baseline import AgentStep
 
 from .backends import load_fixture_trace
 from .replay import NativeEvaluationBackend
@@ -113,6 +114,7 @@ class BaselineBackend(NativeEvaluationBackend):
             if step.action is not None:
                 yield {"type": "proposed_action", "action": step.action.to_dict()}
             if step.status != "proposed":
+                self._stopped(step)
                 yield from self._history_events()
                 yield {
                     "type": "message",
@@ -123,20 +125,25 @@ class BaselineBackend(NativeEvaluationBackend):
                 return
             assert step.action is not None
             result = yield from self._execute(step.action)
-            feedback = (
-                result
-                if result["status"] == "observed"
-                else {
-                    key: result[key]
-                    for key in (
-                        "status",
-                        "transaction_id",
-                        "version_before",
-                        "version_after",
-                        "reason_code",
-                        "failed_index",
-                    )
-                }
-            )
+            feedback = self._feedback(result)
             # A physical rejection is visible feedback. The bounded agent may
             # propose another structurally valid action within the same budget.
+
+    def _feedback(self, result: dict[str, Any]) -> dict[str, Any]:
+        """Agent-visible continuation fields for one execution result."""
+        if result["status"] == "observed":
+            return result
+        return {
+            key: result[key]
+            for key in (
+                "status",
+                "transaction_id",
+                "version_before",
+                "version_after",
+                "reason_code",
+                "failed_index",
+            )
+        }
+
+    def _stopped(self, step: AgentStep) -> None:
+        """Hook: called once when the adapter stops. The unprotected baseline records nothing."""
