@@ -14,6 +14,7 @@ from .runner import run_suite
 from .storage import load_json, now
 
 ROOT = Path(__file__).resolve().parents[3]
+LIVE = ("rehearsal", "gate")  # Retained live baseline attempts counted under D11.
 
 
 def _output(mode: str) -> Path:
@@ -58,7 +59,9 @@ def main(argv: list[str] | None = None) -> int:
     verify.add_argument("path", type=Path)
     evidence = commands.add_parser("verify-evidence")
     evidence.add_argument("path", type=Path)
-    comparison = commands.add_parser("compare-baselines", help="Run matched scripted conditions")
+    comparison = commands.add_parser(
+        "compare-conditions", help="Run all three conditions on matched scripted inputs"
+    )
     comparison.add_argument("--config", type=Path, default=ROOT / "configs/evaluation/gate.json")
     comparison.add_argument(
         "--suite", type=Path, default=ROOT / "scenarios/development/authorization.json"
@@ -68,6 +71,17 @@ def main(argv: list[str] | None = None) -> int:
     )
     comparison.add_argument("--conditions", type=Path, default=ROOT / "configs/conditions")
     comparison.add_argument("--output", type=Path)
+    plan = commands.add_parser("preflight", help="Count a proposed run matrix against the ceiling")
+    plan.add_argument("--config", type=Path, default=ROOT / "configs/evaluation/gate.json")
+    plan.add_argument("--suite", type=Path, default=ROOT / "scenarios/pilot/pilot.json")
+    plan.add_argument("--conditions", type=Path, default=ROOT / "configs/conditions")
+    plan.add_argument("--repetitions", type=int, help="Defaults to the protocol's repetitions")
+    plan.add_argument(
+        "--consumed",
+        type=Path,
+        action="append",
+        help="Audited live evidence bundle counted against the ceiling (repeatable)",
+    )
     comparison_check = commands.add_parser("verify-comparison")
     comparison_check.add_argument("path", type=Path)
     visualize = commands.add_parser(
@@ -91,7 +105,7 @@ def main(argv: list[str] | None = None) -> int:
             result = verify_freeze(args.path)
         elif args.command == "verify-evidence":
             result = verify_evidence(args.path)
-        elif args.command == "compare-baselines":
+        elif args.command == "compare-conditions":
             from .comparison import run_comparison
 
             output = args.output or _output("comparison")
@@ -113,6 +127,19 @@ def main(argv: list[str] | None = None) -> int:
                 "conditions": summary["conditions"],
                 "notice": summary["notice"],
             }
+        elif args.command == "preflight":
+            from .preflight import preflight
+
+            config = load_json(args.config)
+            result = preflight(
+                args.suite,
+                config,
+                args.conditions,
+                repetitions=args.repetitions or config["repetitions"],
+                consumed=args.consumed
+                or [ROOT / f"artifacts/local/evaluation/live-baseline/{name}" for name in LIVE],
+                split_suites=sorted((ROOT / "scenarios").glob("*/*.json")),
+            )
         elif args.command == "verify-comparison":
             from .comparison import verify_comparison
 

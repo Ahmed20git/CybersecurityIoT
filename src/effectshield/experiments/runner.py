@@ -37,6 +37,7 @@ PUBLIC_EVENTS = {
     "message",
     "usage",
     "finish",
+    "mediator_decision",
 }
 
 
@@ -52,13 +53,19 @@ def _worker(
     try:
         backend: Any
         if fixture_path and config["mode"] == "baseline":
-            from .baseline import BaselineBackend
+            condition = parse_condition(config["condition"]) if "condition" in config else None
+            if condition is not None and condition.requires_mediator:
+                from .protected import ProtectedRunBackend
 
-            backend = BaselineBackend(
-                fixture_path,
-                scenario["scenario_id"],
-                condition=parse_condition(config["condition"]) if "condition" in config else None,
-            )
+                backend = ProtectedRunBackend(
+                    fixture_path, scenario["scenario_id"], condition=condition
+                )
+            else:
+                from .baseline import BaselineBackend
+
+                backend = BaselineBackend(
+                    fixture_path, scenario["scenario_id"], condition=condition
+                )
         elif fixture_path and config["mode"] == "simulator-replay":
             from .replay import SimulatorReplayBackend
 
@@ -80,6 +87,12 @@ def _worker(
         channel.put({"type": "reset", "state": reset})
         if canonical(reset) != canonical(scenario["initial_state"]):
             raise ValueError("Backend failed deterministic reset/isolation check")
+        if "evidence_schedule" in scenario:
+            # Trusted pre-agent deliveries, clock and environment steps (v2 scenarios).
+            schedule_evidence = getattr(backend, "schedule_evidence", None)
+            if not callable(schedule_evidence):
+                raise ValueError("Backend cannot reproduce the scenario evidence schedule")
+            schedule_evidence(deepcopy(scenario["evidence_schedule"]))
         public_config = {
             key: deepcopy(config[key]) for key in ("model", "limits", "prompt_version")
         }
@@ -201,6 +214,8 @@ def run_attempt(
         )
     )
     usage.update(currency=config["limits"]["currency"], cost_status="unavailable")
+    protected = (config.get("condition") or {}).get("enforcement") == "effectshield"
+    decisions: list[dict[str, Any]] = []
     context = multiprocessing.get_context("spawn")
     channel = context.Queue(maxsize=64)
     acknowledged = context.Queue(maxsize=1)
@@ -267,7 +282,8 @@ def run_attempt(
                 if transition.get("kind") == "action":
                     trace["executed_actions"].append(transition["action"])
                 trace["final_state"] = deepcopy(transition["after"])
-                if len(trace["transitions"]) > config["limits"]["max_steps"]:
+                # Scheduled clock/environment entries are retained but are not agent steps.
+                if len(trace["executed_actions"]) > config["limits"]["max_steps"]:
                     trace["termination"] = "budget_exceeded"
                     error = "Committed-transition limit exceeded"
                     break
@@ -283,6 +299,12 @@ def run_attempt(
                     trace["termination"] = "budget_exceeded"
                     error = "Reported usage exceeds approved per-attempt budget"
                     break
+            elif event_type == "mediator_decision":
+                if not protected:
+                    raise ValueError("Only the protected condition may emit mediator decisions")
+                decisions.append(safe_event["record"])
+                if len(decisions) > config["limits"]["max_steps"] + 1:
+                    raise ValueError("Mediator decision count exceeds the proposal limit")
             elif event_type == "message":
                 if safe_event.get("role") not in {"system", "user", "assistant", "tool"}:
                     raise ValueError("Invalid visible-message role")
@@ -367,6 +389,18 @@ def run_attempt(
         # Preserve known subtotals without treating them as complete billing.
         usage.update(accounting_complete=False, cost_status="unavailable")
     latency = time.monotonic() - start
+    if protected:
+        from .protected import DECISION_SCHEMA_VERSION, repairs_from_decisions
+
+        try:
+            trace["repairs"] = repairs_from_decisions(decisions, trace["transitions"])
+        except ValueError as failure:
+            trace["termination"], trace["complete"] = "invalid_response", False
+            error = str(failure)
+        write_json(
+            directory / "decisions.json",
+            {"schema_version": DECISION_SCHEMA_VERSION, "decisions": decisions},
+        )
     verdict = grade(scenario, trace)
     if not verdict["trace_valid"] and trace["termination"] == "completed":
         trace["termination"] = "invalid_response"
@@ -375,7 +409,7 @@ def run_attempt(
     write_json(directory / "trace.json", trace)
     write_json(directory / "grade.json", verdict)
     write_json(directory / "messages.json", redact(messages))
-    return {
+    result: dict[str, Any] = {
         "status": trace["termination"],
         "error": error,
         "backend_kind": backend_kind,
@@ -389,6 +423,11 @@ def run_attempt(
         "proposed_actions": trace["proposed_actions"],
         "executed_actions": trace["executed_actions"],
     }
+    if protected:
+        from .protected import decision_summary
+
+        result["mediator"] = decision_summary(decisions)
+    return result
 
 
 def run_suite(
@@ -422,10 +461,6 @@ def run_suite(
         parsed = parse_condition(condition)
         if mode != "baseline" or backend_spec or not fixture_path:
             raise ValueError("Named conditions currently require scripted baseline mode")
-        if parsed.requires_mediator:
-            raise ValueError(
-                "EffectShield requires an implemented mediator; no protected run was made"
-            )
         if parsed.prompt_version != config["prompt_version"]:
             raise ValueError("Condition prompt version differs from the run protocol")
         if canonical(condition) != canonical(redact(condition)):
@@ -516,6 +551,7 @@ def run_suite(
             "task_id": scenario["task_id"],
             "variant": scenario["variant"],
             "repetition": repetition,
+            **scenario_labels(scenario),
         }
         for repetition in range(1, config["repetitions"] + 1)
         for scenario in scenarios
@@ -563,6 +599,10 @@ def run_suite(
             condition_sha256=digest(condition),
             scripted_inputs_sha256=digest(scripted_inputs),
         )
+        if condition["enforcement"] == "effectshield":
+            from .protected import mediator_policy_record
+
+            manifest["mediator_policy"] = mediator_policy_record()
         fixture_path = output / "scripted_inputs.json"
         write_json(fixture_path, scripted_inputs)
     write_json(output / "manifest.json", manifest)
@@ -617,6 +657,19 @@ def run_suite(
     }
     write_json(output / "evidence_manifest.json", evidence)
     return summary
+
+
+def scenario_labels(scenario: dict[str, Any]) -> dict[str, Any]:
+    """Population labels recorded per run for v2 scenarios (DAT-02, DAT-08).
+
+    v1 records keep their original fields, so retained evidence regrades unchanged.
+    """
+    if "feasibility" not in scenario:
+        return {}
+    labels: dict[str, Any] = {"split": scenario["split"], "feasibility": scenario["feasibility"]}
+    if scenario["variant"] == "attacked":
+        labels["attack_family"] = scenario["attack"]["family"]
+    return labels
 
 
 def claim_gate_once(freeze_path: Path, freeze_id: str, output: Path) -> None:

@@ -10,13 +10,62 @@ def _cell(row: dict[str, Any]) -> tuple[str, int]:
     return row["scenario_id"], row["repetition"]
 
 
+def _utility(row: dict[str, Any]) -> bool:
+    """Clean, feasible runs form the benign-completion denominator (DAT-02)."""
+    return bool(row["variant"] == "clean" and row.get("feasibility", "feasible") == "feasible")
+
+
+def _populations(records: list[dict[str, Any]], planned: list[dict[str, Any]]) -> dict[str, Any]:
+    """Outcome counts by split, feasibility and attack family for v2 suites (STA-07)."""
+    groups: dict[str, dict[str, Any]] = {}
+    for row in planned:
+        family = row.get("attack_family", "none")
+        key = f"{row['split']}/{row['variant']}/{row['feasibility']}/{family}"
+        groups.setdefault(
+            key, {"planned": 0, "attempts": 0, "task_completed": 0, "unsafe": 0, "invalid": 0}
+        )["planned"] += 1
+    for row in records:
+        family = row.get("attack_family", "none")
+        group = groups[f"{row['split']}/{row['variant']}/{row['feasibility']}/{family}"]
+        group["attempts"] += 1
+        group["task_completed"] += row["grade"]["task_completed"] is True
+        group["unsafe"] += row["grade"]["unsafe_effect"] is True
+        group["invalid"] += not row["grade"]["trace_valid"]
+    return dict(sorted(groups.items()))
+
+
+def _mediator(records: list[dict[str, Any]]) -> dict[str, Any]:
+    """Decision tallies for protected batches; never used as outcome labels (EXP-01)."""
+    totals: dict[str, Any] = {
+        "decisions": 0,
+        "escalations": 0,
+        "executed_repairs": 0,
+        "verdicts": {},
+        "reason_codes": {},
+        "runs_without_record": 0,
+    }
+    for row in records:
+        summary = row.get("mediator")
+        if summary is None:
+            totals["runs_without_record"] += 1
+            continue
+        for key in ("decisions", "escalations", "executed_repairs"):
+            totals[key] += summary[key]
+        for key in ("verdicts", "reason_codes"):
+            for name, count in summary[key].items():
+                totals[key][name] = totals[key].get(name, 0) + count
+    for key in ("verdicts", "reason_codes"):
+        totals[key] = dict(sorted(totals[key].items()))
+    return totals
+
+
 def summarize(records: list[dict[str, Any]], manifest: dict[str, Any]) -> dict[str, Any]:
     protocol = manifest["protocol"]
     planned = manifest["planned_runs"]
     observed = {_cell(row) for row in records}
     missing = [row for row in planned if _cell(row) not in observed]
-    clean = [row for row in records if row["variant"] == "clean"]
-    clean_missing = sum(row["variant"] == "clean" for row in missing)
+    clean = [row for row in records if _utility(row)]
+    clean_missing = sum(_utility(row) for row in missing)
     clean_success = sum(row["grade"]["task_completed"] is True for row in clean)
     clean_total = len(clean) + clean_missing
     clean_rate = clean_success / clean_total if clean_total else None
@@ -128,7 +177,17 @@ def summarize(records: list[dict[str, Any]], manifest: dict[str, Any]) -> dict[s
             "known_fixture_selfcheck": manifest.get("grader_selfcheck"),
         },
     }
+    extensions: dict[str, Any] = {}
+    if any("feasibility" in row for row in planned):
+        extensions["populations"] = _populations(records, planned)
+        extensions["excluded_infeasible_clean"] = sum(
+            row["variant"] == "clean" and row["feasibility"] == "infeasible" for row in planned
+        )
+    if "mediator_policy" in manifest:
+        extensions["mediator_policy"] = manifest["mediator_policy"]
+        extensions["mediator"] = _mediator(records)
     return {
+        **extensions,
         **(
             {"condition": manifest["condition"], "condition_sha256": manifest["condition_sha256"]}
             if "condition" in manifest
@@ -196,6 +255,13 @@ def write_report(output: str | Path, summary: dict[str, Any]) -> None:
             f"approval: `{summary['condition']['decision_status']}`.",
             "",
         ]
+    if "mediator" in summary:
+        rows[4:4] = [
+            "Protected condition: every proposal was decided by the mediator "
+            f"(policy `{summary['mediator_policy']['version']}`). Decision tallies "
+            "are records, not outcome labels; outcomes come from the independent grader.",
+            "",
+        ]
     for name, result in summary["criteria"].items():
         counts = (
             f"{result['successes']}/{result['total']}"
@@ -258,6 +324,11 @@ def write_report(output: str | Path, summary: dict[str, Any]) -> None:
         ),
         "```",
         "",
+        *(
+            ["## Mediator decisions", "", "```json", canonical(summary["mediator"]), "```", ""]
+            if "mediator" in summary
+            else []
+        ),
         "Run IDs: " + ", ".join(f"`{run_id}`" for run_id in summary["run_ids"]),
         "",
     ]
