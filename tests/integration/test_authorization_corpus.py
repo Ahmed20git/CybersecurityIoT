@@ -1,4 +1,4 @@
-"""Development attack boundaries and independent, hand-assigned outcome labels."""
+"""Authorization attack boundaries: forged authority, protected fields and trusted identity."""
 
 from copy import deepcopy
 from pathlib import Path
@@ -18,7 +18,6 @@ ROOT = Path(__file__).resolve().parents[2]
 SUITE = load_suite(ROOT / "scenarios/development/authorization.json")
 SCENARIOS = {s["scenario_id"]: s for s in SUITE["scenarios"]}
 FIXTURES = load_json(ROOT / "fixtures/evaluation/authorization_runs.json")["traces"]
-EXPECTED = load_json(ROOT / "fixtures/evaluation/authorization_expectations.json")
 CONDITIONS = load_conditions(ROOT / "configs/conditions")
 
 
@@ -65,48 +64,10 @@ def native_trace(scenario, condition):
     return trace, events
 
 
-def assert_expected(scenario, trace):
-    result = grade(scenario, trace)
-    expected = EXPECTED["cases"][scenario["scenario_id"]]
-    assert result["trace_valid"], result["errors"]
-    assert result["task_completed"] is expected["task_completed"]
-    assert result["unsafe_effect"] is expected["unsafe_effect"]
-    assert (
-        sorted({reason for step in result["unsafe_transitions"] for reason in step["reasons"]})
-        == (expected["unsafe_reasons"])
-    )
-
-
-def test_development_coverage_and_expected_outcomes_are_complete():
-    assert len(SCENARIOS) == 17
-    assert set(SCENARIOS) == set(FIXTURES) == set(EXPECTED["cases"])
-    assert {case["task_id"] for case in EXPECTED["coverage"]} == {
-        s["task_id"] for s in SCENARIOS.values()
-    }
-    assert EXPECTED["decision_status"] == "pending"
-    assert all(s["split"] == "development" for s in SCENARIOS.values())
-    assert sum(s["variant"] == "attacked" for s in SCENARIOS.values()) == 7
-    assert all(
-        c["acceptance_status"] == "pending_mediator_and_joint_review" for c in EXPECTED["coverage"]
-    )
-
-
-@pytest.mark.parametrize("scenario_id", SCENARIOS)
-def test_saved_reference_traces_match_hand_assigned_labels(scenario_id):
-    assert_expected(SCENARIOS[scenario_id], FIXTURES[scenario_id])
-
-
-@pytest.mark.parametrize("name", ["unprotected", "safety_prompt_only"])
-@pytest.mark.parametrize("scenario_id", SCENARIOS)
-def test_native_baselines_reproduce_reference_outcomes_without_hidden_protection(name, scenario_id):
-    scenario = SCENARIOS[scenario_id]
-    trace, events = native_trace(scenario, CONDITIONS[name])
-    assert canonical(trace) == canonical(FIXTURES[scenario_id])
-    assert_expected(scenario, trace)
-    system = next(e["content"] for e in events if e["type"] == "message" and e["role"] == "system")
-    assert system.get("safety_instruction") == CONDITIONS[name].safety_instruction
-    for message in (e for e in events if e["type"] == "message" and e["role"] == "system"):
-        assert not {"completion", "expected_result", "policy", "grade"} & set(message["content"])
+# Coverage, saved reference traces, baseline reproduction and protected outcomes for
+# this corpus are checked with the other development corpora in
+# test_development_expectations.py. This module keeps authorization-specific
+# boundary checks.
 
 
 @pytest.mark.parametrize("scenario", [s for s in SCENARIOS.values() if s["variant"] == "attacked"])
