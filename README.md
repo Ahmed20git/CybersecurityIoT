@@ -34,14 +34,15 @@ Open the returned HTML file in your browser. It shows batch totals, every attemp
 .venv/bin/mypy
 ```
 
-To exercise the authorization/provenance cases across both available scripted baseline conditions:
+To exercise the authorization/provenance cases across all three conditions, including the mediator-protected one, using scripted proposals:
 
 ```sh
-python3 scripts/evaluate.py compare-baselines
+python3 scripts/evaluate.py compare-conditions
 python3 scripts/evaluate.py verify-comparison PATH_TO_COMPARISON
+python3 scripts/evaluate.py preflight --repetitions 1
 ```
 
-The comparison preserves matching and outcome evidence. The protected condition remains `not_run` until the mediator exists; scripted responses do not measure prompt-only defense efficacy. See the [case matrix and commands](docs/evaluation_guide.md#authorization-and-provenance-development-cases) and the [draft research report](docs/research_report.md).
+The comparison preserves matching, outcome and mediator-decision evidence. Scripted responses do not measure prompt-only defense efficacy or live-model utility. Preflight counts a proposed matrix against the run ceiling and approves nothing. See the [development cases and commands](docs/evaluation_guide.md#condition-comparison) and the [draft research report](docs/research_report.md).
 
 ## Organization
 
@@ -50,9 +51,11 @@ The comparison preserves matching and outcome evidence. The protected condition 
 | `src/effectshield/domain/` | Typed states, actions, trusted context and errors |
 | `src/effectshield/simulator/`, `gateway/`, `environment.py` | State transitions, complete history, trusted observations and isolated runs |
 | `src/effectshield/agent/` | Bounded proposal loop and isolated model clients |
+| `src/effectshield/mediator/` | Deterministic rules 1–8, repair and protected execution |
 | `src/effectshield/scenarios.py`, `attacks.py`, `grading.py` | Development data, bounded mutations and independent outcome checks |
 | `src/effectshield/experiments/` | Execution, replay, evidence, summaries and protocol freezing |
-| `scenarios/development/`, `fixtures/evaluation/`, `configs/evaluation/` | Versioned tasks, labelled fixtures and approved baseline gate settings |
+| `scenarios/development/`, `scenarios/pilot/` | Development corpora and the draft held-out pilot, separated by split |
+| `fixtures/evaluation/`, `configs/` | Reference traces, hand-assigned expectations, conditions and approved baseline gate settings |
 | `tests/` | Unit, integration and security checks |
 
 ## Documentation
@@ -60,7 +63,7 @@ The comparison preserves matching and outcome evidence. The protected condition 
 - [Setup and troubleshooting](docs/running.md)
 
 - [Evaluation commands and integration status](docs/evaluation_guide.md)
-- [Runtime interfaces](docs/interfaces.md) and [evaluation records](docs/evaluation_interface.md)
+- [Runtime interfaces](docs/interfaces.md), [mediator design](docs/mediator_design.md) and [evaluation records](docs/evaluation_interface.md)
 - [Requirements](docs/requirements.md) and [project plan](docs/project_plan.md)
 - [Development and verification log](docs/development_log.md)
 - [Live baseline gate review record](artifacts/local/evaluation/live-baseline/review/README.md)
@@ -76,6 +79,6 @@ The [open decisions](docs/requirements.md#open-decisions) record the October 7 b
 | Simon | Scenarios, attacks, independent grading, experiments, analysis and reproducibility |
 | Both | Interface and security reviews, interpretation, report and demonstration |
 
-On October 7 the approval-bound live baseline gate (33 attempts, OpenAI `gpt-4.1-mini-2025-04-14`) passed all three criteria at baseline scope: 30/30 benign completions, 3/3 executed action changes and 33/33 attempts automatically graded with no invalid traces. D14 records that full scope is retained. Execution, automated audit and an independent re-execution reproduction are complete (see the [review record](artifacts/local/evaluation/live-baseline/review/README.md)). Ahmed and Simon jointly accepted these results on October 7, completing WP-06. No mediator or protected-condition result exists yet. The project plan preserves that checkpoint and records the outstanding work. Target a complete candidate by November 6, joint review by November 13 and internal completion by November 20. Submission remains November 23–27, with its exact due time pending.
+On October 7 the approval-bound live baseline gate (33 attempts, OpenAI `gpt-4.1-mini-2025-04-14`) passed all three criteria at baseline scope: 30/30 benign completions, 3/3 executed action changes and 33/33 attempts automatically graded with no invalid traces. D14 records that full scope is retained. Execution, automated audit and an independent re-execution reproduction are complete (see the [review record](artifacts/local/evaluation/live-baseline/review/README.md)). Ahmed and Simon jointly accepted these results on October 7, completing WP-06. Ahmed's mediator (WP-07 to WP-09) was merged on October 14, and the protected condition now runs offline through the evaluation runner with scripted proposals; its Proposed semantics await joint review, and no live protected result exists. The project plan preserves that checkpoint and records the outstanding work. Target a complete candidate by November 6, joint review by November 13 and internal completion by November 20. Submission remains November 23–27, with its exact due time pending.
 
 Implement and verify one coherent component at a time. Keep credentials in environment configuration, retain research evidence and commit related source, tests and documentation together. Use Git for source history; remove disposable verification outputs and tool caches after checks instead of keeping backup copies. No real devices or smart-home accounts are used.
