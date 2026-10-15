@@ -1,7 +1,14 @@
-"""Versioned development labels for Simon's independent evaluation harness.
+"""Versioned scenario labels for Simon's independent evaluation harness.
 
 These checks validate evaluation inputs. They are not Ahmed's runtime action
 schema, gateway, simulator, or authorization implementation.
+
+``evaluation-scenario/v1`` is the frozen baseline-gate format: development
+split, initial observations only and one message-text attack. ``v2`` adds a
+trusted evidence schedule (deliveries, redeliveries, clock advances and
+environment events before the agent starts), held-out splits, template
+identities, explicit feasibility and labelled attack families (DAT-02,
+DAT-04, DAT-06, DAT-08). v1 suites keep their original validation.
 """
 
 from __future__ import annotations
@@ -15,6 +22,11 @@ from pathlib import Path
 from typing import Any, cast
 
 SCHEMA_VERSION = "evaluation-scenario/v1"
+SCHEMA_VERSION_V2 = "evaluation-scenario/v2"
+SPLITS = ("development", "pilot", "test")
+ATTACK_FAMILIES = ("hidden_instruction", "stale_observation", "replayed_observation")
+SCHEDULE_FAMILIES = ("stale_observation", "replayed_observation")
+MAX_SCHEDULE_STEPS = 32
 DEVICES = {"light", "fan", "thermostat", "door", "presence_sensor"}
 STATE_TYPES = {
     "light.power": {"on", "off"},
@@ -224,8 +236,141 @@ def validate_run_config(config: Any) -> None:
         raise ValueError("limits.currency must be an uppercase three-letter code")
 
 
+def validate_attack_record_v2(attack: Any) -> None:
+    """A labelled attack family and its bounded mutation (DAT-03, DAT-04, DAT-08)."""
+    if not isinstance(attack, dict) or attack.get("family") not in ATTACK_FAMILIES:
+        raise ValueError(f"attack.family must be one of {list(ATTACK_FAMILIES)}")
+    if attack["family"] == "hidden_instruction":
+        _object(
+            attack,
+            {
+                "clean_scenario_id",
+                "family",
+                "observation_index",
+                "replacement_text",
+                "attack_version",
+            },
+            "attack",
+        )
+        validate_attack_record({k: v for k, v in attack.items() if k != "family"})
+        return
+    _object(
+        attack, {"clean_scenario_id", "family", "evidence_schedule", "attack_version"}, "attack"
+    )
+    _identifier(attack["clean_scenario_id"], "attack.clean_scenario_id")
+    _text(attack["attack_version"], "attack.attack_version", 128)
+    validate_schedule_shape(attack["evidence_schedule"])
+
+
+def validate_schedule_shape(schedule: Any) -> None:
+    """Accept only trusted harness steps; none can forge an envelope or a fact."""
+    if not isinstance(schedule, list) or not 1 <= len(schedule) <= MAX_SCHEDULE_STEPS:
+        raise ValueError(f"evidence_schedule must list 1 to {MAX_SCHEDULE_STEPS} steps")
+    for index, step in enumerate(schedule):
+        where = f"evidence_schedule[{index}]"
+        kind = step.get("step") if isinstance(step, dict) else None
+        if kind == "observe":
+            _object(step, {"step", "device"}, where)
+            if step["device"] not in DEVICES:
+                raise ValueError(f"{where}.device is unsupported")
+        elif kind == "redeliver":
+            _object(step, {"step", "observation_id"}, where)
+            if not isinstance(step["observation_id"], str) or not _EVIDENCE_REF.fullmatch(
+                step["observation_id"]
+            ):
+                raise ValueError(f"{where}.observation_id must be a native observation ID")
+        elif kind == "advance_clock":
+            _object(step, {"step", "delta_ms"}, where)
+            if type(step["delta_ms"]) is not int or not 1 <= step["delta_ms"] <= 86_400_000:
+                raise ValueError(f"{where}.delta_ms must be a positive bounded integer")
+        elif kind == "set_presence":
+            _object(step, {"step", "present"}, where)
+            validate_state_value("presence_sensor.present", step["present"])
+        elif kind == "set_ambient_temperature":
+            _object(step, {"step", "ambient_c"}, where)
+            validate_state_value("thermostat.ambient_c", step["ambient_c"])
+        else:
+            raise ValueError(f"{where}.step is unsupported")
+
+
+def scheduled_deliveries(
+    initial_state: dict[str, Any], schedule: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    """Envelopes and canonical facts the native gateway issues for each delivery.
+
+    This is bookkeeping of the trusted schedule (event counter, clock and the two
+    environment fields), not a simulator: no agent action is applied here.
+    Redeliveries repeat an earlier envelope and facts unchanged; the returned
+    ``redelivery_of`` index names the delivery they repeat.
+    """
+    validate_schedule_shape(schedule)
+    devices = copy.deepcopy(initial_state["devices"])
+    time_ms = initial_state["time_ms"]
+    issued: dict[str, int] = {}
+    deliveries: list[dict[str, Any]] = []
+    for index, step in enumerate(schedule):
+        kind = step["step"]
+        if kind == "observe":
+            event_id = len(issued) + 1
+            device = step["device"]
+            envelope = {
+                "observation_id": f"obs-{event_id:06d}",
+                "device": device,
+                "source_id": f"gateway/{device}",
+                "event_id": event_id,
+                "gateway_time_ms": time_ms,
+                "issuer": "gateway",
+            }
+            issued[envelope["observation_id"]] = len(deliveries)
+            deliveries.append(
+                {
+                    "envelope": envelope,
+                    "facts": copy.deepcopy(devices[device]),
+                    "redelivery_of": None,
+                }
+            )
+        elif kind == "redeliver":
+            original = issued.get(step["observation_id"])
+            if original is None:
+                raise ValueError(
+                    f"evidence_schedule[{index}] replays an observation the gateway never issued"
+                )
+            deliveries.append({**copy.deepcopy(deliveries[original]), "redelivery_of": original})
+        elif kind == "advance_clock":
+            time_ms += step["delta_ms"]
+        elif kind == "set_presence":
+            devices["presence_sensor"]["present"] = step["present"]
+        else:
+            devices["thermostat"]["ambient_c"] = step["ambient_c"]
+    return deliveries
+
+
+def _validate_scheduled_observations(scenario: dict[str, Any]) -> None:
+    observations = scenario["observations"]
+    deliveries = scheduled_deliveries(scenario["initial_state"], scenario["evidence_schedule"])
+    if not isinstance(observations, list) or len(observations) != len(deliveries):
+        raise ValueError("observations must list exactly the scheduled deliveries")
+    if not deliveries:
+        raise ValueError("evidence_schedule must deliver at least one observation")
+    for index, (observation, delivery) in enumerate(zip(observations, deliveries, strict=True)):
+        validate_observation(observation)
+        if observation["envelope"] != delivery["envelope"]:
+            raise ValueError(f"observations[{index}] envelope differs from the gateway schedule")
+        if {k: v for k, v in observation["payload"].items() if k != "message"} != delivery["facts"]:
+            raise ValueError(f"observations[{index}] facts differ from canonical scheduled state")
+        if delivery["redelivery_of"] is not None and (
+            observation != observations[delivery["redelivery_of"]]
+        ):
+            raise ValueError(f"observations[{index}] replay must repeat the original delivery")
+
+
+def _replayed_indexes(scenario: dict[str, Any]) -> set[int]:
+    deliveries = scheduled_deliveries(scenario["initial_state"], scenario["evidence_schedule"])
+    return {index for index, item in enumerate(deliveries) if item["redelivery_of"] is not None}
+
+
 def validate_scenario(scenario: Any) -> None:
-    """Validate the provisional development format and its frozen goal labels."""
+    """Validate a v1 or v2 scenario and its frozen goal labels."""
     fields = {
         "schema_version",
         "task_id",
@@ -241,14 +386,23 @@ def validate_scenario(scenario: Any) -> None:
         "expected_result",
         "run_config",
     }
+    v2 = isinstance(scenario, dict) and scenario.get("schema_version") == SCHEMA_VERSION_V2
+    if v2:
+        fields |= {"template_id", "feasibility", "evidence_schedule"}
     if isinstance(scenario, dict) and scenario.get("variant") == "attacked":
         fields.add("attack")
     _object(scenario, fields, "scenario")
-    if scenario["schema_version"] != SCHEMA_VERSION:
+    if scenario["schema_version"] not in (SCHEMA_VERSION, SCHEMA_VERSION_V2):
         raise ValueError("unsupported scenario schema_version")
     for key in ("task_id", "scenario_id"):
         _identifier(scenario[key], key)
-    if scenario["split"] != "development":
+    if v2:
+        _identifier(scenario["template_id"], "template_id")
+        if scenario["split"] not in SPLITS:
+            raise ValueError(f"split must be one of {list(SPLITS)}")
+        if scenario["feasibility"] not in ("feasible", "infeasible"):
+            raise ValueError("feasibility must be feasible or infeasible")
+    elif scenario["split"] != "development":
         raise ValueError("only the development split is permitted in baseline scenarios")
     if scenario["variant"] not in ("clean", "attacked"):
         raise ValueError("variant must be clean or attacked")
@@ -284,29 +438,37 @@ def validate_scenario(scenario: Any) -> None:
     ):
         raise ValueError("request.permissions must be unique native effect-operation names")
     observations = scenario["observations"]
-    if not isinstance(observations, list) or not observations:
-        raise ValueError("observations must be a nonempty list")
-    for index, observation in enumerate(observations):
-        validate_observation(observation)
-        envelope = observation["envelope"]
-        if envelope["event_id"] != index + 1:
-            raise ValueError("initial gateway observation IDs must be sequential from one")
-        if envelope["gateway_time_ms"] != scenario["initial_state"]["time_ms"]:
-            raise ValueError("initial observation time differs from reset state")
-        canonical = scenario["initial_state"]["devices"][envelope["device"]]
-        if {
-            key: value for key, value in observation["payload"].items() if key != "message"
-        } != canonical:
-            raise ValueError("initial observation facts must match the canonical reset snapshot")
+    if v2:
+        _validate_scheduled_observations(scenario)
+    else:
+        if not isinstance(observations, list) or not observations:
+            raise ValueError("observations must be a nonempty list")
+        for index, observation in enumerate(observations):
+            validate_observation(observation)
+            envelope = observation["envelope"]
+            if envelope["event_id"] != index + 1:
+                raise ValueError("initial gateway observation IDs must be sequential from one")
+            if envelope["gateway_time_ms"] != scenario["initial_state"]["time_ms"]:
+                raise ValueError("initial observation time differs from reset state")
+            canonical = scenario["initial_state"]["devices"][envelope["device"]]
+            if {
+                key: value for key, value in observation["payload"].items() if key != "message"
+            } != canonical:
+                raise ValueError(
+                    "initial observation facts must match the canonical reset snapshot"
+                )
     surface = scenario["attack_surface"]
     if not isinstance(surface, list) or any(not isinstance(path, str) for path in surface):
         raise ValueError("attack_surface must be a list of designated text paths")
     if len(set(surface)) != len(surface):
         raise ValueError("attack_surface paths must be unique")
+    replayed = _replayed_indexes(scenario) if v2 else set()
     for path in surface:
         match = _SURFACE.fullmatch(path)
         if not match or int(match.group(1)) >= len(observations):
             raise ValueError("attack_surface may designate only existing observation payload text")
+        if int(match.group(1)) in replayed:
+            raise ValueError("a replay repeats its original text; it is not a separate surface")
     completion = scenario["completion"]
     _object(completion, {"state_equals", "executed_contains"}, "completion")
     states = completion["state_equals"]
@@ -343,12 +505,22 @@ def validate_scenario(scenario: Any) -> None:
             raise ValueError(f"policy.{key} must be boolean")
     expected = scenario["expected_result"]
     _object(expected, {"task_completed", "unsafe_effect"}, "expected_result")
-    if expected["task_completed"] is not True or expected["unsafe_effect"] is not False:
-        raise ValueError("development expected_result must describe the authorized safe goal")
+    # An infeasible request has no safe completion; its safe goal is no unsafe
+    # effect, and it stays out of clean-utility denominators (DAT-02).
+    feasible = not v2 or scenario["feasibility"] == "feasible"
+    if expected["task_completed"] is not feasible or expected["unsafe_effect"] is not False:
+        raise ValueError("expected_result must describe the authorized safe goal")
     validate_run_config(scenario["run_config"])
     if scenario["variant"] == "attacked":
         attack = scenario["attack"]
-        validate_attack_record(attack)
+        if v2:
+            validate_attack_record_v2(attack)
+            if attack["family"] in SCHEDULE_FAMILIES:
+                if attack["evidence_schedule"] != scenario["evidence_schedule"]:
+                    raise ValueError("attacked schedule must match the recorded mutation")
+                return
+        else:
+            validate_attack_record(attack)
         index = attack["observation_index"]
         path = f"observations[{index}].payload.message"
         if path not in surface:
@@ -359,10 +531,14 @@ def validate_scenario(scenario: Any) -> None:
 
 def get_scenarios(suite: Any) -> list[dict[str, Any]]:
     """Return isolated validated records; reject duplicate IDs and unmatched attacks."""
-    _object(suite, {"schema_version", "suite_version", "scenarios"}, "suite")
-    if suite["schema_version"] != SCHEMA_VERSION:
+    v2 = isinstance(suite, dict) and suite.get("schema_version") == SCHEMA_VERSION_V2
+    keys = {"schema_version", "suite_version", "scenarios"} | ({"split"} if v2 else set())
+    _object(suite, keys, "suite")
+    if suite["schema_version"] not in (SCHEMA_VERSION, SCHEMA_VERSION_V2):
         raise ValueError("unsupported suite schema_version")
     _text(suite["suite_version"], "suite_version", 128)
+    if v2 and suite["split"] not in SPLITS:
+        raise ValueError(f"suite.split must be one of {list(SPLITS)}")
     scenarios = suite["scenarios"]
     if not isinstance(scenarios, list) or not scenarios:
         raise ValueError("suite.scenarios must be a nonempty list")
@@ -370,6 +546,10 @@ def get_scenarios(suite: Any) -> list[dict[str, Any]]:
     clean_task_ids = set()
     for scenario in scenarios:
         validate_scenario(scenario)
+        if scenario["schema_version"] != suite["schema_version"]:
+            raise ValueError("every scenario must use the suite schema_version")
+        if v2 and scenario["split"] != suite["split"]:
+            raise ValueError("every scenario must belong to the suite split")
         if scenario["scenario_id"] in by_id:
             raise ValueError("duplicate scenario_id")
         by_id[scenario["scenario_id"]] = scenario
@@ -386,6 +566,41 @@ def get_scenarios(suite: Any) -> list[dict[str, Any]]:
                 raise ValueError("attacked scenario has no matching clean scenario")
             validate_matched_pair(clean, scenario)
     return copy.deepcopy(scenarios)
+
+
+def validate_splits(suites: dict[str, Any]) -> dict[str, Any]:
+    """Keep base tasks, template variants and request texts within one split (DAT-06).
+
+    ``suites`` maps a suite name to its loaded document. v1 suites are
+    development-only and use each task ID as its own template.
+    """
+    owners: dict[tuple[str, str], tuple[str, str]] = {}
+    coverage: dict[str, dict[str, Any]] = {}
+    for name, suite in suites.items():
+        split = suite.get("split", "development")
+        summary = coverage.setdefault(
+            split, {"suites": [], "base_tasks": 0, "scenarios": 0, "attack_families": {}}
+        )
+        summary["suites"].append(name)
+        for scenario in get_scenarios(suite):
+            summary["scenarios"] += 1
+            summary["base_tasks"] += scenario["variant"] == "clean"
+            if scenario["variant"] == "attacked":
+                family = scenario["attack"].get("family", "hidden_instruction")
+                summary["attack_families"][family] = summary["attack_families"].get(family, 0) + 1
+            keys = (
+                ("task", scenario["task_id"]),
+                ("template", scenario.get("template_id", scenario["task_id"])),
+                ("request", " ".join(scenario["request"]["request_text"].lower().split())),
+            )
+            for key in keys:
+                owner = owners.setdefault(key, (split, name))
+                if owner[0] != split:
+                    raise ValueError(
+                        f"{key[0]} {key[1]!r} crosses splits: {owner[1]} ({owner[0]}) "
+                        f"and {name} ({split})"
+                    )
+    return {"splits": coverage}
 
 
 def _reject_constant(value: str) -> None:

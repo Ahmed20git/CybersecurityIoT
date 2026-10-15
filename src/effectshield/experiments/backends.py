@@ -59,6 +59,12 @@ class FixtureBackend:
     def __init__(self, fixture_path: str | Path, scenario_id: str) -> None:
         self.trace = load_fixture_trace(fixture_path, scenario_id)
 
+    def schedule_evidence(self, schedule: list[dict[str, Any]]) -> None:
+        """Static replay executes nothing; the recorded trace already holds scheduled entries."""
+        from effectshield.scenarios import validate_schedule_shape
+
+        validate_schedule_shape(schedule)
+
     def reset(self, initial_state: dict[str, Any], seed: int | None) -> dict[str, Any]:
         if canonical(initial_state) != canonical(self.trace["initial_state"]):
             raise ValueError("Fixture initial state differs from requested reset")
