@@ -145,7 +145,8 @@ class Mediator:
         self._history = history
         self._deliveries = deliveries
         self._bound_request_id = bound_request_id
-        self._intents: Mapping[str, TaskIntent] = MappingProxyType(_checked_intents(intents))
+        self._issued_intents = _checked_intents(intents)
+        self._intents: Mapping[str, TaskIntent] = MappingProxyType(self._issued_intents)
         self._rule_table = _checked_rule_table(rule_table)
         self._committed: list[dict[str, Any]] = []
 
@@ -157,12 +158,25 @@ class Mediator:
     def bound_request_id(self) -> str | None:
         return self._bound_request_id
 
-    def bind_request(self, request_id: str) -> None:
-        """Bind the run's harness-issued request. Allowed once."""
+    def bind_request(self, request_id: str, *, intent: TaskIntent | None = None) -> None:
+        """Bind the run's harness-issued request, and optionally its task intent. Allowed once.
+
+        The harness learns the request ID only when it issues the request, so it
+        files the request's trusted intent here (Proposed D05/D08). An intent for
+        another request, or one that differs from an intent already supplied at
+        construction, is inconsistent trusted context and is rejected.
+        """
         if self._bound_request_id is not None:
             raise ValueError("this mediator is already bound to a request")
         if not isinstance(request_id, str) or self._requests.lookup(request_id) is None:
             raise ValueError("only an issued request can be bound")
+        if intent is not None:
+            if not isinstance(intent, TaskIntent) or intent.request_id != request_id:
+                raise ValueError("the intent must be a TaskIntent issued for the bound request")
+            existing = self._issued_intents.get(request_id)
+            if existing is not None and existing != intent:
+                raise ValueError("a different intent was already issued for this request")
+            self._issued_intents[request_id] = intent
         self._bound_request_id = request_id
 
     def record_commit(self, decision: Decision, result: ExecutionResult) -> None:

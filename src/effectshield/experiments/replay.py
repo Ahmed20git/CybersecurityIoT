@@ -32,7 +32,7 @@ from effectshield.domain.errors import ActionSchemaError
 from effectshield.domain.events import SetAmbientTemperature, SetPresence
 from effectshield.environment import RunEnvironment, create_run
 from effectshield.gateway.observations import with_payload_changes
-from effectshield.scenarios import validate_schedule_shape, validate_state
+from effectshield.scenarios import validate_schedule_shape, validate_state, validate_task_intent
 
 from .backends import load_fixture_trace, synthetic_usage
 from .storage import canonical
@@ -68,6 +68,21 @@ class NativeEvaluationBackend:
         self._emitted_history = 0
         self._started = False
         self._schedule: list[dict[str, Any]] | None = None
+        self._task_intent: dict[str, Any] | None = None
+
+    def issue_task_intent(self, intent: dict[str, Any], permissions: list[str]) -> None:
+        """Accept the scenario's trusted task intent (v2 scenarios, Proposed D05/D08).
+
+        Called by the harness after ``reset`` and before ``run``, like the
+        evidence schedule. It is trusted harness input that is never shown to
+        the agent; only a protected backend uses it, to decide whether a clamp
+        repair preserves the task. Unprotected runs receive the same scenario
+        and ignore it, so the conditions stay matched.
+        """
+        if self.environment is None or self._started or self._task_intent is not None:
+            raise ValueError("Issue the task intent once, after a fresh reset and before the run")
+        validate_task_intent(intent, permissions)
+        self._task_intent = deepcopy(intent)
 
     def schedule_evidence(self, schedule: list[dict[str, Any]]) -> None:
         """Accept the scenario's trusted pre-agent evidence schedule (v2 scenarios).
@@ -89,6 +104,7 @@ class NativeEvaluationBackend:
         self._emitted_history = 0
         self._started = False
         self._schedule = None
+        self._task_intent = None
         return self.environment.simulator.snapshot().to_dict()
 
     def _history_events(self) -> Iterator[dict[str, Any]]:

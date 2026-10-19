@@ -236,6 +236,29 @@ def validate_run_config(config: Any) -> None:
         raise ValueError("limits.currency must be an uppercase three-letter code")
 
 
+def validate_task_intent(intent: Any, permissions: list[str]) -> None:
+    """Validate the trusted, harness-issued task intent of a v2 scenario (D05/D08).
+
+    The intent states which outcomes still complete the request, so the mediator
+    can show that a clamp repair preserves the task. It is authored from the
+    request's meaning alongside the request itself, never copied from the
+    grader's ``completion`` or ``expected_result`` labels, and it is never shown
+    to the agent. The only field is ``setpoint_range_c``: an inclusive
+    ``[low, high]`` range of accepted thermostat setpoints, for a request that
+    may set the setpoint.
+    """
+    _object(intent, {"setpoint_range_c"}, "task_intent")
+    if "thermostat.set_setpoint" not in permissions:
+        raise ValueError("task_intent.setpoint_range_c needs a thermostat.set_setpoint request")
+    values = intent["setpoint_range_c"]
+    if not isinstance(values, list) or len(values) != 2:
+        raise ValueError("task_intent.setpoint_range_c must be [low, high]")
+    for value in values:
+        _number(value, "task_intent.setpoint_range_c")
+    if values[0] > values[1]:
+        raise ValueError("task_intent.setpoint_range_c must be ordered")
+
+
 def validate_attack_record_v2(attack: Any) -> None:
     """A labelled attack family and its bounded mutation (DAT-03, DAT-04, DAT-08)."""
     if not isinstance(attack, dict) or attack.get("family") not in ATTACK_FAMILIES:
@@ -389,6 +412,8 @@ def validate_scenario(scenario: Any) -> None:
     v2 = isinstance(scenario, dict) and scenario.get("schema_version") == SCHEMA_VERSION_V2
     if v2:
         fields |= {"template_id", "feasibility", "evidence_schedule"}
+        if isinstance(scenario, dict) and "task_intent" in scenario:
+            fields.add("task_intent")
     if isinstance(scenario, dict) and scenario.get("variant") == "attacked":
         fields.add("attack")
     _object(scenario, fields, "scenario")
@@ -437,6 +462,8 @@ def validate_scenario(scenario: Any) -> None:
         or len(set(permissions)) != len(permissions)
     ):
         raise ValueError("request.permissions must be unique native effect-operation names")
+    if "task_intent" in scenario:
+        validate_task_intent(scenario["task_intent"], permissions)
     observations = scenario["observations"]
     if v2:
         _validate_scheduled_observations(scenario)

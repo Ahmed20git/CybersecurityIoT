@@ -65,6 +65,12 @@ class FixtureBackend:
 
         validate_schedule_shape(schedule)
 
+    def issue_task_intent(self, intent: dict[str, Any], permissions: list[str]) -> None:
+        """Static replay decides nothing; the intent is validated and otherwise unused."""
+        from effectshield.scenarios import validate_task_intent
+
+        validate_task_intent(intent, permissions)
+
     def reset(self, initial_state: dict[str, Any], seed: int | None) -> dict[str, Any]:
         if canonical(initial_state) != canonical(self.trace["initial_state"]):
             raise ValueError("Fixture initial state differs from requested reset")
