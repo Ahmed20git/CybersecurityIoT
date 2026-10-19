@@ -172,7 +172,7 @@ Status: **implemented for review, 2026-10-07**. Covers contract rules 1–8, MED
 
 ### Protected integration path
 
-`MediatedBackend` runs the `effectshield` condition with the same bounded agent, prompt and limits as the unprotected baseline. `BaselineBackend` still refuses that condition. The backend is pinned to the `full` policy and passes no task intents, so clamp repair is disabled end to end until a trusted intent field is approved; intents are never derived from grader labels or request text.
+`MediatedBackend` runs the `effectshield` condition with the same bounded agent, prompt and limits as the unprotected baseline. `BaselineBackend` still refuses that condition. The backend is pinned to the `full` policy. Clamp repair runs only for a scenario that declares the trusted `task_intent` field ([evaluation interface](evaluation_interface.md)): the runner calls `issue_task_intent` after reset, and the backend binds it to the issued request with `ProtectedExecutor.bind_request(request_id, intent=TaskIntent(...))`. A scenario without one keeps clamp repair off. Intents are never derived from grader labels or request text, and unprotected backends accept and ignore them so the conditions stay matched. The field is implemented for joint review under Proposed D05/D08 (October 19).
 
 With the scripted fixtures in `fixtures/evaluation/runs.json`:
 

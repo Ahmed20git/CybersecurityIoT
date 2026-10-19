@@ -8,9 +8,10 @@ execution capability, so the inherited direct execution path is unreachable.
 
 The policy is pinned to the full preset: running an ablation under the
 ``effectshield`` condition would be an undeclared treatment difference. Clamp
-repair is disabled end to end (no task intents) until D05/D08 approve a trusted,
-harness-issued intent field; intents are never derived from grader labels or
-request text.
+repair runs only for a scenario that declares a trusted, harness-issued
+``task_intent`` (Proposed D05/D08): the harness hands it over before the run and
+it is bound to the issued request. Without one, no clamp is ever shown to
+preserve the task. Intents are never derived from grader labels or request text.
 
 When the adapter stops with ``invalid_response``, only a rule-1 outcome is
 logged (MED-02): a response the native parser rejects becomes a logged
@@ -43,6 +44,7 @@ from effectshield.mediator import (
     Ablation,
     MediatorPolicy,
     ProtectedExecutor,
+    TaskIntent,
     outcome_record,
     policy_for,
 )
@@ -88,7 +90,11 @@ class MediatedBackend(BaselineBackend):
         return self.executor
 
     def _bind_request(self, request_id: str) -> None:
-        self._protected().bind_request(request_id)
+        intent = None
+        if self._task_intent is not None:
+            low, high = self._task_intent["setpoint_range_c"]
+            intent = TaskIntent(request_id, (low, high))
+        self._protected().bind_request(request_id, intent=intent)
         self._request_id = request_id
 
     def _deliver(self, observation: Observation) -> Observation:

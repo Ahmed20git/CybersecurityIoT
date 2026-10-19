@@ -325,7 +325,7 @@ Not run or not possible:
 - **Statistics.** The 3/3 action change is one attack scenario repeated with byte-identical responses. The lower limits of the exact two-sided 95% intervals are 0.29 for 3/3 and 0.88 for 30/30.
 - **Behaviour.** The behaviour notes for the mediator are in the review record. In brief: no `evidence_refs` were cited, no presence was read before `door.unlock`, no refusal feedback was observed live, JSON key order varied at temperature 0, and tool output arrives as user-role items.
 
-Formal joint acceptance of the results by Ahmed and Simon is the only remaining WP-06 step. No mediator or protected-condition result exists. Narrowing the ignore rules for disposable runs under `artifacts/local/` is left as a team decision. This continuation made no commit or push; committing these files is left to Ahmed's review. The local prompt history is not present in this worktree and was not updated.
+Formal joint acceptance of the results by Ahmed and Simon is the only remaining WP-06 step. No mediator or protected-condition result exists. Narrowing the ignore rules for disposable runs under `artifacts/local/` is left as a team decision. This continuation made no commit or push itself; Ahmed reviewed these files and committed them as `16d64c9` (correction recorded October 19). The local prompt history is not present in this worktree and was not updated.
 
 ## 2026-10-07 — WP-06 joint acceptance
 
@@ -395,3 +395,19 @@ Disposable outputs were written to a session scratch directory, not to `artifact
 Not run: no live model or provider call; no pilot run; no human review of the protected labels, Proposed semantics, pilot tasks or new scenario format; no clean-environment install. The HTML viewer renders protected bundles, but it has no dedicated decision panel.
 
 **Limitations and open points.** Scripted proposals do not adapt to blocks, so protected completion here is not a utility estimate. Out-of-order delivery of a never-delivered older ID cannot be produced through the native gateway. The baseline action-change measure includes `evidence_refs` (D10). Clamp repair stays disabled end to end until a trusted task-intent field is approved (D05/D08). Two pilot stale/replay tasks share the unlock-and-open pattern with each other but not with development tasks; template closeness still needs joint review. The final 432-run matrix needs an explicit D11 decision.
+
+## 2026-10-19 — Trusted task intent for clamp repair (Proposed D05/D08)
+
+Ahmed's Week 8 item on the mediator side. A v2 scenario may now declare an optional `task_intent` with `setpoint_range_c: [low, high]`, the inclusive setpoints that still complete the request. It is validated with the scenario (ordered finite pair; the request must permit `thermostat.set_setpoint`; v1 scenarios cannot carry it) and is protected by the matched-pair check, so an attack cannot add, drop or change it. The runner passes it to `issue_task_intent` after the evidence schedule. `MediatedBackend` binds it to the issued request through `ProtectedExecutor.bind_request(request_id, intent=...)`; the mediator rejects an intent for another request or one that contradicts an intent supplied at construction. Unprotected and fixture backends validate it and otherwise ignore it, and it never enters the agent's messages.
+
+No existing scenario declares an intent, so every development and pilot outcome is unchanged. Every current thermostat task asks for an exact value inside 16–30 °C, or (35 °C) outside it, so a clamp could not preserve any of them even with an intent declared. Clamp repair can only be measured with a range-type request, which is a final task-set decision.
+
+Also corrected the October 7 entry, which still said the evidence was left uncommitted; Ahmed committed it as `16d64c9`.
+
+| Check | Result |
+| --- | --- |
+| `pytest` | 2,361 passed, 116 subtests passed (29 new in `tests/integration/test_task_intent.py`) |
+| `ruff check` and `ruff format --check` | Passed |
+| `mypy` (strict) | No issues in 48 source files |
+
+Not run: no live model or provider call; no change to scenarios, expectations, fixtures or retained evidence. The field and the Proposed D05/D08 semantics await joint review.

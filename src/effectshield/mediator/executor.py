@@ -188,9 +188,9 @@ class ProtectedExecutor:
         """Fresh copies of every final decision record, in submission order."""
         return tuple(deepcopy(record) for record in self._records)
 
-    def bind_request(self, request_id: str) -> None:
-        """The harness binds the run's issued request once."""
-        self._mediator.bind_request(request_id)
+    def bind_request(self, request_id: str, *, intent: TaskIntent | None = None) -> None:
+        """The harness binds the run's issued request, and optionally its task intent, once."""
+        self._mediator.bind_request(request_id, intent=intent)
 
     def deliver(self, observation: Observation) -> Observation:
         """Ingest an observation; the caller must place exactly it in the agent's context."""

@@ -312,7 +312,7 @@ class ProtectedExecutor:
     @classmethod
     def from_run(cls, run: RunEnvironment, *, request_id: str | None = None, ...) -> ProtectedExecutor  # keeps no `run`
     mediator, ledger (read-only properties); decisions -> tuple[dict, ...]
-    def bind_request(self, request_id: str) -> None     # harness binds the issued request once
+    def bind_request(self, request_id: str, *, intent: TaskIntent | None = None) -> None  # once; intent must match
     def deliver(self, observation: Observation) -> Observation   # ingest; the caller must put it in the agent's context
     def submit(self, proposal: object, *, request_id: str | None = None) -> MediatedOutcome  # default: bound request
 ```
@@ -334,8 +334,10 @@ and a deliveries lambda); it never receives the `EnvironmentCapability`. `submit
 
 `BaselineBackend` keeps refusing `effectshield` (unchanged test). `MediatedBackend(BaselineBackend)`:
 * Requires `condition.enforcement == "effectshield"`; calls `super().__init__(fixture_path, scenario_id, model=model)`
-  without the condition, then sets `self.condition`; pinned to `policy_for(FULL)`; `intents=None` (clamp repair disabled
-  end to end until D05/D08 approve a trusted harness-issued intent field; never derive it from grader labels or text).
+  without the condition, then sets `self.condition`; pinned to `policy_for(FULL)`. Intents come only from a scenario's
+  trusted `task_intent` field, which the runner passes to `issue_task_intent` before the run; `_bind_request` binds it to
+  the issued request (`bind_request(request_id, intent=...)`). Without one, clamp repair cannot show task preservation.
+  Never derive an intent from grader labels or text.
 * `reset` builds a fresh `ProtectedExecutor` and clears `decisions`. `_prepare` (hook added to `replay.py`) must route each
   delivered initial observation through `executor.deliver` and bind the issued request ID (record `self._request_id`).
 * Overrides `_execute` so the inherited direct `simulator.execute` path is unreachable; the executor emits read receipts.

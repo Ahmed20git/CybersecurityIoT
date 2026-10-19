@@ -93,6 +93,14 @@ def _worker(
             if not callable(schedule_evidence):
                 raise ValueError("Backend cannot reproduce the scenario evidence schedule")
             schedule_evidence(deepcopy(scenario["evidence_schedule"]))
+        if "task_intent" in scenario:
+            # Trusted task constraint for repair (Proposed D05/D08); never agent-visible.
+            issue_task_intent = getattr(backend, "issue_task_intent", None)
+            if not callable(issue_task_intent):
+                raise ValueError("Backend cannot accept the scenario task intent")
+            issue_task_intent(
+                deepcopy(scenario["task_intent"]), list(scenario["request"]["permissions"])
+            )
         public_config = {
             key: deepcopy(config[key]) for key in ("model", "limits", "prompt_version")
         }
