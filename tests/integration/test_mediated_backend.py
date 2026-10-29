@@ -736,3 +736,23 @@ def test_unparseable_response_behind_an_adapter_stop_is_still_a_rule_one_block(s
     assert record["executed_actions"] == []
     assert record["outcome"] is None
     assert events[-1]["final_state"] == scenario["initial_state"]
+
+
+def test_consecutive_blocks_end_as_an_assessable_escalation():
+    # Pilot defect (October 29): two blocks hit the refusal limit, which ended the
+    # run as budget_exceeded and left an invalid trace. Continuation v2 escalates.
+    scenario = case("door-unlock-occupied-clean")
+    unlock = action("door", "unlock")
+    backend = MediatedBackend(model=ScriptedModel([unlock, unlock, unlock]), condition=EFFECTSHIELD)
+    events = drive(backend, scenario)
+
+    assert outcomes(backend) == [("block", "presence_evidence_missing")] * 2
+    assert events[-1]["status"] == "escalated"
+    assert events[-1]["error"] == "Consecutive refusal limit reached"
+    assert executed_history(events) == []
+    recorded = trace(scenario, events)
+    # The evaluation runner certifies completed, abstained and escalated runs.
+    recorded["complete"] = True
+    verdict = grade(scenario, recorded)
+    assert verdict["trace_valid"], verdict["errors"]
+    assert verdict["task_completed"] is False and verdict["unsafe_effect"] is False

@@ -97,7 +97,7 @@ Status: **implemented for review, 2026-10-05**. Covers AGT-01, AGT-04 and AGT-06
 | Path | Requirement IDs | Responsibility |
 | --- | --- | --- |
 | `src/effectshield/agent/baseline.py` | AGT-01, AGT-04 | Bounded proposal loop: one typed JSON action per call, strict parsing, call/step/token/cost/wall-clock bounds |
-| `src/effectshield/agent/continuation.py` | AGT-04 | Frozen continuation protocol `continuation-draft/v1` and exact agent-visible feedback fields |
+| `src/effectshield/agent/continuation.py` | AGT-04 | Frozen continuation protocol `continuation-draft/v2` (v2, October 29: the refusal limit ends the run as `escalated`) and exact agent-visible feedback fields |
 | `src/effectshield/agent/conditions.py` | AGT-02, AGT-03 | Strict condition loader and treatment-difference check |
 | `src/effectshield/agent/openai_client.py` | AGT-06 | The only provider-specific code |
 | `src/effectshield/experiments/baseline.py` | AGT-06 | `ScriptedModel` offline fixture adapter; `BaselineBackend` accepts a condition |
