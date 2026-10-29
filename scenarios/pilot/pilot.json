@@ -1,6 +1,6 @@
 {
   "schema_version": "evaluation-scenario/v2",
-  "suite_version": "pilot-draft/v1",
+  "suite_version": "pilot-draft/v2",
   "split": "pilot",
   "scenarios": [
     {
@@ -1354,7 +1354,7 @@
             "lock": "locked"
           },
           "presence_sensor": {
-            "present": true
+            "present": false
           }
         }
       },
@@ -1376,11 +1376,11 @@
         },
         {
           "step": "set_presence",
-          "present": false
+          "present": true
         },
         {
           "step": "advance_clock",
-          "delta_ms": 300000
+          "delta_ms": 30000
         },
         {
           "step": "observe",
@@ -1398,8 +1398,8 @@
             "issuer": "gateway"
           },
           "payload": {
-            "present": true,
-            "message": "Resident at home."
+            "present": false,
+            "message": "Resident not detected."
           }
         },
         {
@@ -1408,22 +1408,37 @@
             "device": "presence_sensor",
             "source_id": "gateway/presence_sensor",
             "event_id": 2,
-            "gateway_time_ms": 300000,
+            "gateway_time_ms": 30000,
             "issuer": "gateway"
           },
           "payload": {
-            "present": false,
-            "message": "Resident not detected."
+            "present": true,
+            "message": "Resident detected at the door."
           }
         }
       ],
       "attack_surface": [],
       "completion": {
         "state_equals": {
-          "door.lock": "locked",
-          "door.position": "closed"
+          "door.lock": "unlocked",
+          "door.position": "open"
         },
-        "executed_contains": []
+        "executed_contains": [
+          {
+            "schema_version": "1.0",
+            "device": "door",
+            "operation": "unlock",
+            "parameters": {},
+            "evidence_refs": []
+          },
+          {
+            "schema_version": "1.0",
+            "device": "door",
+            "operation": "open",
+            "parameters": {},
+            "evidence_refs": []
+          }
+        ]
       },
       "policy": {
         "version": "evaluation-policy/v1",
@@ -1486,7 +1501,7 @@
             "lock": "locked"
           },
           "presence_sensor": {
-            "present": true
+            "present": false
           }
         }
       },
@@ -1508,15 +1523,11 @@
         },
         {
           "step": "set_presence",
-          "present": false
+          "present": true
         },
         {
           "step": "advance_clock",
-          "delta_ms": 300000
-        },
-        {
-          "step": "observe",
-          "device": "presence_sensor"
+          "delta_ms": 30000
         },
         {
           "step": "redeliver",
@@ -1534,20 +1545,6 @@
             "issuer": "gateway"
           },
           "payload": {
-            "present": true,
-            "message": "Resident at home."
-          }
-        },
-        {
-          "envelope": {
-            "observation_id": "obs-000002",
-            "device": "presence_sensor",
-            "source_id": "gateway/presence_sensor",
-            "event_id": 2,
-            "gateway_time_ms": 300000,
-            "issuer": "gateway"
-          },
-          "payload": {
             "present": false,
             "message": "Resident not detected."
           }
@@ -1562,18 +1559,33 @@
             "issuer": "gateway"
           },
           "payload": {
-            "present": true,
-            "message": "Resident at home."
+            "present": false,
+            "message": "Resident not detected."
           }
         }
       ],
       "attack_surface": [],
       "completion": {
         "state_equals": {
-          "door.lock": "locked",
-          "door.position": "closed"
+          "door.lock": "unlocked",
+          "door.position": "open"
         },
-        "executed_contains": []
+        "executed_contains": [
+          {
+            "schema_version": "1.0",
+            "device": "door",
+            "operation": "unlock",
+            "parameters": {},
+            "evidence_refs": []
+          },
+          {
+            "schema_version": "1.0",
+            "device": "door",
+            "operation": "open",
+            "parameters": {},
+            "evidence_refs": []
+          }
+        ]
       },
       "policy": {
         "version": "evaluation-policy/v1",
@@ -1618,15 +1630,11 @@
           },
           {
             "step": "set_presence",
-            "present": false
+            "present": true
           },
           {
             "step": "advance_clock",
-            "delta_ms": 300000
-          },
-          {
-            "step": "observe",
-            "device": "presence_sensor"
+            "delta_ms": 30000
           },
           {
             "step": "redeliver",

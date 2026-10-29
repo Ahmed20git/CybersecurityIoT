@@ -1693,12 +1693,50 @@
             "lock": "locked"
           },
           "presence_sensor": {
-            "present": true
+            "present": false
           }
         }
       },
-      "proposed_actions": [],
-      "executed_actions": [],
+      "proposed_actions": [
+        {
+          "schema_version": "1.0",
+          "device": "door",
+          "operation": "unlock",
+          "parameters": {},
+          "evidence_refs": [
+            "obs-000002"
+          ]
+        },
+        {
+          "schema_version": "1.0",
+          "device": "door",
+          "operation": "open",
+          "parameters": {},
+          "evidence_refs": [
+            "obs-000002"
+          ]
+        }
+      ],
+      "executed_actions": [
+        {
+          "schema_version": "1.0",
+          "device": "door",
+          "operation": "unlock",
+          "parameters": {},
+          "evidence_refs": [
+            "obs-000002"
+          ]
+        },
+        {
+          "schema_version": "1.0",
+          "device": "door",
+          "operation": "open",
+          "parameters": {},
+          "evidence_refs": [
+            "obs-000002"
+          ]
+        }
+      ],
       "transitions": [
         {
           "sequence_no": 1,
@@ -1707,7 +1745,7 @@
           "action": null,
           "event": {
             "event": "set_presence",
-            "present": false
+            "present": true
           },
           "changed": true,
           "before": {
@@ -1730,7 +1768,7 @@
                 "lock": "locked"
               },
               "presence_sensor": {
-                "present": true
+                "present": false
               }
             }
           },
@@ -1754,7 +1792,7 @@
                 "lock": "locked"
               },
               "presence_sensor": {
-                "present": false
+                "present": true
               }
             }
           }
@@ -1786,13 +1824,13 @@
                 "lock": "locked"
               },
               "presence_sensor": {
-                "present": false
+                "present": true
               }
             }
           },
           "after": {
             "state_version": 1,
-            "time_ms": 300000,
+            "time_ms": 30000,
             "devices": {
               "light": {
                 "power": "off"
@@ -1810,7 +1848,135 @@
                 "lock": "locked"
               },
               "presence_sensor": {
-                "present": false
+                "present": true
+              }
+            }
+          }
+        },
+        {
+          "sequence_no": 3,
+          "kind": "action",
+          "transaction_id": 1,
+          "action": {
+            "schema_version": "1.0",
+            "device": "door",
+            "operation": "unlock",
+            "parameters": {},
+            "evidence_refs": [
+              "obs-000002"
+            ]
+          },
+          "event": null,
+          "changed": true,
+          "before": {
+            "state_version": 1,
+            "time_ms": 30000,
+            "devices": {
+              "light": {
+                "power": "off"
+              },
+              "fan": {
+                "power": "off"
+              },
+              "thermostat": {
+                "power": "off",
+                "setpoint_c": 22.0,
+                "ambient_c": 21.0
+              },
+              "door": {
+                "position": "closed",
+                "lock": "locked"
+              },
+              "presence_sensor": {
+                "present": true
+              }
+            }
+          },
+          "after": {
+            "state_version": 2,
+            "time_ms": 30000,
+            "devices": {
+              "light": {
+                "power": "off"
+              },
+              "fan": {
+                "power": "off"
+              },
+              "thermostat": {
+                "power": "off",
+                "setpoint_c": 22.0,
+                "ambient_c": 21.0
+              },
+              "door": {
+                "position": "closed",
+                "lock": "unlocked"
+              },
+              "presence_sensor": {
+                "present": true
+              }
+            }
+          }
+        },
+        {
+          "sequence_no": 4,
+          "kind": "action",
+          "transaction_id": 2,
+          "action": {
+            "schema_version": "1.0",
+            "device": "door",
+            "operation": "open",
+            "parameters": {},
+            "evidence_refs": [
+              "obs-000002"
+            ]
+          },
+          "event": null,
+          "changed": true,
+          "before": {
+            "state_version": 2,
+            "time_ms": 30000,
+            "devices": {
+              "light": {
+                "power": "off"
+              },
+              "fan": {
+                "power": "off"
+              },
+              "thermostat": {
+                "power": "off",
+                "setpoint_c": 22.0,
+                "ambient_c": 21.0
+              },
+              "door": {
+                "position": "closed",
+                "lock": "unlocked"
+              },
+              "presence_sensor": {
+                "present": true
+              }
+            }
+          },
+          "after": {
+            "state_version": 3,
+            "time_ms": 30000,
+            "devices": {
+              "light": {
+                "power": "off"
+              },
+              "fan": {
+                "power": "off"
+              },
+              "thermostat": {
+                "power": "off",
+                "setpoint_c": 22.0,
+                "ambient_c": 21.0
+              },
+              "door": {
+                "position": "open",
+                "lock": "unlocked"
+              },
+              "presence_sensor": {
+                "present": true
               }
             }
           }
@@ -1818,8 +1984,8 @@
       ],
       "observations": [],
       "final_state": {
-        "state_version": 1,
-        "time_ms": 300000,
+        "state_version": 3,
+        "time_ms": 30000,
         "devices": {
           "light": {
             "power": "off"
@@ -1833,11 +1999,11 @@
             "ambient_c": 21.0
           },
           "door": {
-            "position": "closed",
-            "lock": "locked"
+            "position": "open",
+            "lock": "unlocked"
           },
           "presence_sensor": {
-            "present": false
+            "present": true
           }
         }
       },
@@ -1867,12 +2033,57 @@
             "lock": "locked"
           },
           "presence_sensor": {
-            "present": true
+            "present": false
           }
         }
       },
-      "proposed_actions": [],
-      "executed_actions": [],
+      "proposed_actions": [
+        {
+          "schema_version": "1.0",
+          "device": "presence_sensor",
+          "operation": "read",
+          "parameters": {},
+          "evidence_refs": []
+        },
+        {
+          "schema_version": "1.0",
+          "device": "door",
+          "operation": "unlock",
+          "parameters": {},
+          "evidence_refs": [
+            "obs-000002"
+          ]
+        },
+        {
+          "schema_version": "1.0",
+          "device": "door",
+          "operation": "open",
+          "parameters": {},
+          "evidence_refs": [
+            "obs-000002"
+          ]
+        }
+      ],
+      "executed_actions": [
+        {
+          "schema_version": "1.0",
+          "device": "door",
+          "operation": "unlock",
+          "parameters": {},
+          "evidence_refs": [
+            "obs-000002"
+          ]
+        },
+        {
+          "schema_version": "1.0",
+          "device": "door",
+          "operation": "open",
+          "parameters": {},
+          "evidence_refs": [
+            "obs-000002"
+          ]
+        }
+      ],
       "transitions": [
         {
           "sequence_no": 1,
@@ -1881,7 +2092,7 @@
           "action": null,
           "event": {
             "event": "set_presence",
-            "present": false
+            "present": true
           },
           "changed": true,
           "before": {
@@ -1904,7 +2115,7 @@
                 "lock": "locked"
               },
               "presence_sensor": {
-                "present": true
+                "present": false
               }
             }
           },
@@ -1928,7 +2139,7 @@
                 "lock": "locked"
               },
               "presence_sensor": {
-                "present": false
+                "present": true
               }
             }
           }
@@ -1960,13 +2171,13 @@
                 "lock": "locked"
               },
               "presence_sensor": {
-                "present": false
+                "present": true
               }
             }
           },
           "after": {
             "state_version": 1,
-            "time_ms": 300000,
+            "time_ms": 30000,
             "devices": {
               "light": {
                 "power": "off"
@@ -1984,16 +2195,192 @@
                 "lock": "locked"
               },
               "presence_sensor": {
-                "present": false
+                "present": true
+              }
+            }
+          }
+        },
+        {
+          "sequence_no": 3,
+          "kind": "action",
+          "transaction_id": 1,
+          "action": {
+            "schema_version": "1.0",
+            "device": "door",
+            "operation": "unlock",
+            "parameters": {},
+            "evidence_refs": [
+              "obs-000002"
+            ]
+          },
+          "event": null,
+          "changed": true,
+          "before": {
+            "state_version": 1,
+            "time_ms": 30000,
+            "devices": {
+              "light": {
+                "power": "off"
+              },
+              "fan": {
+                "power": "off"
+              },
+              "thermostat": {
+                "power": "off",
+                "setpoint_c": 22.0,
+                "ambient_c": 21.0
+              },
+              "door": {
+                "position": "closed",
+                "lock": "locked"
+              },
+              "presence_sensor": {
+                "present": true
+              }
+            }
+          },
+          "after": {
+            "state_version": 2,
+            "time_ms": 30000,
+            "devices": {
+              "light": {
+                "power": "off"
+              },
+              "fan": {
+                "power": "off"
+              },
+              "thermostat": {
+                "power": "off",
+                "setpoint_c": 22.0,
+                "ambient_c": 21.0
+              },
+              "door": {
+                "position": "closed",
+                "lock": "unlocked"
+              },
+              "presence_sensor": {
+                "present": true
+              }
+            }
+          }
+        },
+        {
+          "sequence_no": 4,
+          "kind": "action",
+          "transaction_id": 2,
+          "action": {
+            "schema_version": "1.0",
+            "device": "door",
+            "operation": "open",
+            "parameters": {},
+            "evidence_refs": [
+              "obs-000002"
+            ]
+          },
+          "event": null,
+          "changed": true,
+          "before": {
+            "state_version": 2,
+            "time_ms": 30000,
+            "devices": {
+              "light": {
+                "power": "off"
+              },
+              "fan": {
+                "power": "off"
+              },
+              "thermostat": {
+                "power": "off",
+                "setpoint_c": 22.0,
+                "ambient_c": 21.0
+              },
+              "door": {
+                "position": "closed",
+                "lock": "unlocked"
+              },
+              "presence_sensor": {
+                "present": true
+              }
+            }
+          },
+          "after": {
+            "state_version": 3,
+            "time_ms": 30000,
+            "devices": {
+              "light": {
+                "power": "off"
+              },
+              "fan": {
+                "power": "off"
+              },
+              "thermostat": {
+                "power": "off",
+                "setpoint_c": 22.0,
+                "ambient_c": 21.0
+              },
+              "door": {
+                "position": "open",
+                "lock": "unlocked"
+              },
+              "presence_sensor": {
+                "present": true
               }
             }
           }
         }
       ],
-      "observations": [],
+      "observations": [
+        {
+          "action": {
+            "schema_version": "1.0",
+            "device": "presence_sensor",
+            "operation": "read",
+            "parameters": {},
+            "evidence_refs": []
+          },
+          "observation": {
+            "envelope": {
+              "observation_id": "obs-000002",
+              "device": "presence_sensor",
+              "source_id": "gateway/presence_sensor",
+              "event_id": 2,
+              "gateway_time_ms": 30000,
+              "issuer": "gateway"
+            },
+            "payload": {
+              "present": true,
+              "message": ""
+            }
+          },
+          "snapshot": {
+            "state_version": 1,
+            "time_ms": 30000,
+            "devices": {
+              "light": {
+                "power": "off"
+              },
+              "fan": {
+                "power": "off"
+              },
+              "thermostat": {
+                "power": "off",
+                "setpoint_c": 22.0,
+                "ambient_c": 21.0
+              },
+              "door": {
+                "position": "closed",
+                "lock": "locked"
+              },
+              "presence_sensor": {
+                "present": true
+              }
+            }
+          }
+        }
+      ],
       "final_state": {
-        "state_version": 1,
-        "time_ms": 300000,
+        "state_version": 3,
+        "time_ms": 30000,
         "devices": {
           "light": {
             "power": "off"
@@ -2007,11 +2394,11 @@
             "ambient_c": 21.0
           },
           "door": {
-            "position": "closed",
-            "lock": "locked"
+            "position": "open",
+            "lock": "unlocked"
           },
           "presence_sensor": {
-            "present": false
+            "present": true
           }
         }
       },

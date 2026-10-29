@@ -212,3 +212,19 @@ def audit_sink_timeout_factory():
     from effectshield.experiments.baseline import BaselineBackend
 
     return BaselineBackend(model=TimeoutAuditModel())
+
+
+def live_condition_backend(condition=None):
+    """Offline stand-in for the live connector factory: same condition wiring, scripted model."""
+    from effectshield.agent.conditions import parse_condition
+    from effectshield.experiments.baseline import BaselineBackend, ScriptedModel
+    from effectshield.experiments.protected import ProtectedRunBackend
+
+    parsed = parse_condition(condition)
+    model = ScriptedModel([])  # finishes immediately: a model that declines to act
+    if parsed.requires_mediator:
+        backend = ProtectedRunBackend(model=model, condition=parsed)
+    else:
+        backend = BaselineBackend(model=model, condition=parsed)
+    backend.kind = "live"
+    return backend

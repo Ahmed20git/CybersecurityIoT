@@ -24,7 +24,7 @@ CONDITIONS = load_conditions(ROOT / "configs/conditions")
 CORPORA = {
     "authorization": 17,
     "freshness_replay": 8,
-    "repair_sequence": 6,
+    "repair_sequence": 7,
 }
 
 
@@ -63,6 +63,9 @@ def execute(scenario, proposals, condition):
     initial = backend.reset(scenario["initial_state"], 0)
     if "evidence_schedule" in scenario:
         backend.schedule_evidence(scenario["evidence_schedule"])
+    if "task_intent" in scenario:
+        # As the runner does: trusted intent, ignored by unprotected backends.
+        backend.issue_task_intent(scenario["task_intent"], scenario["request"]["permissions"])
     events = list(
         backend.run(scenario["request"], scenario["observations"], configuration(condition))
     )
@@ -98,7 +101,7 @@ def assert_labels(result, labels):
 
 
 @pytest.mark.parametrize("name", CORPORA)
-def test_expectations_cover_every_case_and_remain_pending_review(name):
+def test_expectations_cover_every_case_with_recorded_review_status(name):
     scenarios, fixtures, expectations = LOADED[name]
     assert expectations["schema_version"] == "development-expectations/v1"
     assert len(scenarios) == CORPORA[name]
@@ -106,10 +109,13 @@ def test_expectations_cover_every_case_and_remain_pending_review(name):
     assert {item["task_id"] for item in expectations["coverage"]} == {
         s["task_id"] for s in scenarios.values()
     }
-    assert expectations["decision_status"] == "pending"
-    assert all(
-        item["acceptance_status"] == "pending_joint_review" for item in expectations["coverage"]
-    )
+    # D06-D08 and the first 31 labels were jointly accepted on October 29; later cases
+    # stay pending until both collaborators review them.
+    assert expectations["decision_status"] == "accepted"
+    assert {item["acceptance_status"] for item in expectations["coverage"]} <= {
+        "accepted_2026-10-29",
+        "pending_joint_review",
+    }
     assert all(s["split"] == "development" for s in scenarios.values())
     for labels in expectations["cases"].values():
         assert set(labels) == {"unprotected", "effectshield"}

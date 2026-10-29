@@ -46,11 +46,13 @@ def synthetic_usage(config: dict[str, Any], *, replay: bool = False) -> dict[str
     }
 
 
-def load_backend(specification: str) -> Backend:
+def load_backend(specification: str, condition: dict[str, Any] | None = None) -> Backend:
+    """Load a trusted connector; a named condition is passed to the factory."""
     module, separator, factory = specification.partition(":")
     if not separator or not module or not factory or "." in factory:
         raise ValueError("Backend must be a trusted module:factory")
-    return cast(Backend, getattr(import_module(module), factory)())
+    create = getattr(import_module(module), factory)
+    return cast(Backend, create() if condition is None else create(condition=condition))
 
 
 class FixtureBackend:

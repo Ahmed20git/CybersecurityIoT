@@ -88,10 +88,14 @@ def verify_evidence(directory: str | Path) -> dict[str, Any]:
         if (
             digest(condition.to_dict()) != batch.get("condition_sha256")
             or condition.prompt_version != batch["protocol"]["prompt_version"]
-            or batch["mode"] != "baseline"
+            or batch["mode"] not in ("baseline", "pilot")
             or condition.requires_mediator != ("mediator_policy" in batch)
-            or digest(load_json(directory / "scripted_inputs.json"))
-            != batch.get("scripted_inputs_sha256")
+            or ("scripted_inputs_sha256" in batch) != (batch["mode"] == "baseline")
+            or (
+                batch["mode"] == "baseline"
+                and digest(load_json(directory / "scripted_inputs.json"))
+                != batch["scripted_inputs_sha256"]
+            )
         ):
             raise ValueError("Condition identity or execution mode differs from the batch")
     records: list[dict[str, Any]] = []
@@ -150,7 +154,7 @@ def verify_evidence(directory: str | Path) -> dict[str, Any]:
                     "scenario_sha256": digest(scenario),
                     "batch_id": batch["batch_id"],
                     "mode": batch["mode"],
-                    "backend_kind": "fixture",
+                    "backend_kind": "fixture" if batch["mode"] == "baseline" else "live",
                 }
                 if any(
                     canonical(row.get(key)) != canonical(value) for key, value in expected.items()

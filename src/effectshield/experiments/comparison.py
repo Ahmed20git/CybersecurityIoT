@@ -25,6 +25,10 @@ NOTICE = (
     "defense efficacy or live-model susceptibility. "
     "EffectShield was not executed: mediator pending."
 )
+NOTICE_PILOT = (
+    "Live held-out pilot with one repetition. Conditions ran in sequence through the approved "
+    "connector; results inform protocol fixes only and are not final-study measurements."
+)
 NOTICE_V2 = (
     "Scripted development comparison only. Authored responses do not measure prompt-only "
     "defense efficacy or live-model susceptibility. EffectShield decides the same authored "
@@ -203,7 +207,7 @@ def comparison_summary(directory: str | Path) -> dict[str, Any]:
         "schema_version": "condition-comparison/v2",
         "plan_sha256": digest(plan),
         "status": "matched" if complete else "incomplete",
-        "notice": NOTICE_V2,
+        "notice": plan["notice"],
         "declared_treatment_differences": {
             name: treatment_differences(conditions["unprotected"], conditions[name])
             for name in CONDITION_ORDER[1:]
@@ -216,27 +220,36 @@ def comparison_summary(directory: str | Path) -> dict[str, Any]:
 
 def run_comparison(
     suite_path: Path,
-    fixture_path: Path,
+    fixture_path: Path | None,
     config: dict[str, Any],
     condition_directory: Path,
     output: Path,
     *,
     invocation: list[str] | None = None,
+    backend_spec: str | None = None,
 ) -> dict[str, Any]:
-    """Run all three conditions on matched scripted inputs; protection is the mediator."""
+    """Run all three conditions on matched inputs; protection is the mediator.
+
+    With scripted fixtures the model is the scripted adapter. With an approved
+    live connector (``backend_spec``) the batches are a non-official pilot.
+    """
+    if (fixture_path is None) == (backend_spec is None):
+        raise ValueError("Choose scripted fixtures or a live connector")
     conditions = load_conditions(condition_directory)
     for condition in conditions.values():
         treatment_differences(conditions["unprotected"], condition)
-    protocol = scripted_protocol(config)
+    protocol = scripted_protocol(config) if backend_spec is None else deepcopy(config)
     validate_protocol(protocol, official=False)
     suite = load_suite(suite_path)
-    fixtures = load_json(fixture_path)
-    if fixtures.get("schema_version") != "evaluation-fixtures/v1":
-        raise ValueError("Unsupported scripted input schema")
-    for scenario in suite["scenarios"]:
-        trace = fixtures["traces"][scenario["scenario_id"]]
-        if canonical(trace["initial_state"]) != canonical(scenario["initial_state"]):
-            raise ValueError("Scripted input reset differs from scenario")
+    fixtures = None
+    if fixture_path is not None:
+        fixtures = load_json(fixture_path)
+        if fixtures.get("schema_version") != "evaluation-fixtures/v1":
+            raise ValueError("Unsupported scripted input schema")
+        for scenario in suite["scenarios"]:
+            trace = fixtures["traces"][scenario["scenario_id"]]
+            if canonical(trace["initial_state"]) != canonical(scenario["initial_state"]):
+                raise ValueError("Scripted input reset differs from scenario")
     inputs = [protocol, suite, fixtures, {name: c.to_dict() for name, c in conditions.items()}]
     if canonical(inputs) != canonical(redact(inputs)):
         raise ValueError("Comparison inputs contain recognizable credentials")
@@ -248,9 +261,10 @@ def run_comparison(
             "schema_version": PLAN_V2,
             "protocol": protocol,
             "suite_sha256": digest(suite),
-            "scripted_inputs_sha256": digest(fixtures),
+            "scripted_inputs_sha256": None if fixtures is None else digest(fixtures),
             "conditions": {name: condition.to_dict() for name, condition in conditions.items()},
-            "notice": NOTICE_V2,
+            "notice": NOTICE_V2 if backend_spec is None else NOTICE_PILOT,
+            **({} if backend_spec is None else {"backend": backend_spec}),
         },
     )
     for name in CONDITION_ORDER:
@@ -260,8 +274,9 @@ def run_comparison(
             suite_path,
             selected,
             output / name,
-            mode="baseline",
+            mode="baseline" if backend_spec is None else "pilot",
             fixture_path=fixture_path,
+            backend_spec=backend_spec,
             condition=conditions[name].to_dict(),
             invocation=invocation,
         )

@@ -76,7 +76,7 @@ def _worker(
             else:
                 if backend_spec is None:
                     raise ValueError("Backend factory is required")
-                backend = load_backend(backend_spec)
+                backend = load_backend(backend_spec, config.get("condition"))
         kind = getattr(backend, "kind", None)
         if kind not in {"fixture", "live"}:
             raise ValueError("Backend must declare kind fixture or live")
@@ -455,10 +455,12 @@ def run_suite(
     from .freeze import implementation_hash, validate_protocol, verify_freeze
     from .report import summarize, write_report
 
-    if mode not in {"offline", "simulator-replay", "baseline", "rehearsal", "gate"}:
+    if mode not in {"offline", "simulator-replay", "baseline", "rehearsal", "pilot", "gate"}:
         raise ValueError("Unknown experiment mode")
     if mode in {"simulator-replay", "baseline"} and not fixture_path:
         raise ValueError("Offline simulator/agent checks require fixture proposals")
+    if mode == "pilot" and (fixture_path or not backend_spec or condition is None):
+        raise ValueError("A pilot runs one named condition through the approved live connector")
     if mode == "gate" and (fixture_path or not freeze_path):
         raise ValueError("Official gate requires verified freeze and live backend")
     if not fixture_path and not backend_spec:
@@ -467,8 +469,11 @@ def run_suite(
         raise ValueError("Choose one backend")
     if condition is not None:
         parsed = parse_condition(condition)
-        if mode != "baseline" or backend_spec or not fixture_path:
-            raise ValueError("Named conditions currently require scripted baseline mode")
+        if not (
+            (mode == "baseline" and fixture_path and not backend_spec)
+            or (mode == "pilot" and backend_spec and not fixture_path)
+        ):
+            raise ValueError("Named conditions require scripted baseline or live pilot mode")
         if parsed.prompt_version != config["prompt_version"]:
             raise ValueError("Condition prompt version differs from the run protocol")
         if canonical(condition) != canonical(redact(condition)):
@@ -483,8 +488,7 @@ def run_suite(
         raise ValueError("Execution requires concrete repetitions, threshold and run limits")
     suite = load_suite(suite_path)
     scripted_inputs = None
-    if condition is not None:
-        assert fixture_path is not None
+    if condition is not None and fixture_path is not None:
         scripted_inputs = load_json(fixture_path)
         if canonical(scripted_inputs) != canonical(redact(scripted_inputs)):
             raise ValueError("Scripted inputs contain recognizable credentials")
@@ -583,6 +587,8 @@ def run_suite(
             if mode == "simulator-replay"
             else "fixture evaluation"
             if fixture_path
+            else "live pilot (not an official gate)"
+            if mode == "pilot"
             else mode
         ),
         "grader_selfcheck": selfcheck["passed"],
@@ -602,15 +608,14 @@ def run_suite(
         },
     }
     if condition is not None:
-        manifest.update(
-            condition=condition,
-            condition_sha256=digest(condition),
-            scripted_inputs_sha256=digest(scripted_inputs),
-        )
+        manifest.update(condition=condition, condition_sha256=digest(condition))
+        if scripted_inputs is not None:
+            manifest["scripted_inputs_sha256"] = digest(scripted_inputs)
         if condition["enforcement"] == "effectshield":
             from .protected import mediator_policy_record
 
             manifest["mediator_policy"] = mediator_policy_record()
+    if scripted_inputs is not None:
         fixture_path = output / "scripted_inputs.json"
         write_json(fixture_path, scripted_inputs)
     write_json(output / "manifest.json", manifest)

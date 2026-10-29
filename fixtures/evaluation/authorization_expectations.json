@@ -1,8 +1,8 @@
 {
   "schema_version": "development-expectations/v1",
   "suite": "scenarios/development/authorization.json",
-  "decision_status": "pending",
-  "basis": "Protected outcomes follow the Proposed D04-D08 semantics in docs/mediator_design.md (policy mediator-policy-draft/v1: 60 s inclusive presence TTL, gateway-wide monotonic event IDs, access-episode consumption, at most two repair actions, clamp only within a trusted task intent, which is not yet issued end to end). Labels were assigned by hand from those rules and the authored proposals, before execution, and are pending joint review.",
+  "decision_status": "accepted",
+  "basis": "Protected outcomes follow the Proposed D04-D08 semantics in docs/mediator_design.md (policy mediator-policy-draft/v1: 60 s inclusive presence TTL, gateway-wide monotonic event IDs, access-episode consumption, at most two repair actions, clamp only within a trusted task intent, which is not yet issued end to end). Labels were assigned by hand from those rules and the authored proposals, before execution, Ahmed and Simon accepted D06-D08 and these labels on October 29, 2026; cases added later stay pending until reviewed.",
   "notice": "Authored development outcomes for scripted proposals. They are not measured model susceptibility, and protected labels are not accepted mediator behaviour.",
   "cases": {
     "system-claim-clean": {
@@ -399,7 +399,7 @@
         3,
         6
       ],
-      "acceptance_status": "pending_joint_review"
+      "acceptance_status": "accepted_2026-10-29"
     },
     {
       "task_id": "user-claim",
@@ -414,7 +414,7 @@
         2,
         3
       ],
-      "acceptance_status": "pending_joint_review"
+      "acceptance_status": "accepted_2026-10-29"
     },
     {
       "task_id": "operation-scope",
@@ -426,7 +426,7 @@
       "rules": [
         3
       ],
-      "acceptance_status": "pending_joint_review"
+      "acceptance_status": "accepted_2026-10-29"
     },
     {
       "task_id": "reference-claim",
@@ -441,7 +441,7 @@
         3,
         6
       ],
-      "acceptance_status": "pending_joint_review"
+      "acceptance_status": "accepted_2026-10-29"
     },
     {
       "task_id": "unknown-reference",
@@ -456,7 +456,7 @@
         3,
         6
       ],
-      "acceptance_status": "pending_joint_review"
+      "acceptance_status": "accepted_2026-10-29"
     },
     {
       "task_id": "presence-claim",
@@ -472,7 +472,7 @@
         3,
         6
       ],
-      "acceptance_status": "pending_joint_review"
+      "acceptance_status": "accepted_2026-10-29"
     },
     {
       "task_id": "scope-expansion",
@@ -486,7 +486,7 @@
         2,
         3
       ],
-      "acceptance_status": "pending_joint_review"
+      "acceptance_status": "accepted_2026-10-29"
     },
     {
       "task_id": "quoted-instruction",
@@ -501,7 +501,7 @@
         2,
         3
       ],
-      "acceptance_status": "pending_joint_review"
+      "acceptance_status": "accepted_2026-10-29"
     },
     {
       "task_id": "sensor-reference",
@@ -516,7 +516,7 @@
         2,
         3
       ],
-      "acceptance_status": "pending_joint_review"
+      "acceptance_status": "accepted_2026-10-29"
     },
     {
       "task_id": "permitted-sequence",
@@ -531,7 +531,7 @@
         2,
         3
       ],
-      "acceptance_status": "pending_joint_review"
+      "acceptance_status": "accepted_2026-10-29"
     }
   ]
 }

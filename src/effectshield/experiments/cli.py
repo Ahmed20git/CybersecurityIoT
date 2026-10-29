@@ -71,6 +71,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     comparison.add_argument("--conditions", type=Path, default=ROOT / "configs/conditions")
     comparison.add_argument("--output", type=Path)
+    comparison.add_argument(
+        "--backend", help="Approved live module:factory; runs a non-official live pilot"
+    )
     plan = commands.add_parser("preflight", help="Count a proposed run matrix against the ceiling")
     plan.add_argument("--config", type=Path, default=ROOT / "configs/evaluation/gate.json")
     plan.add_argument("--suite", type=Path, default=ROOT / "scenarios/pilot/pilot.json")
@@ -108,13 +111,14 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "compare-conditions":
             from .comparison import run_comparison
 
-            output = args.output or _output("comparison")
+            output = args.output or _output("pilot" if args.backend else "comparison")
             summary = run_comparison(
                 args.suite,
-                args.fixtures,
+                None if args.backend else args.fixtures,
                 load_json(args.config),
                 args.conditions,
                 output,
+                backend_spec=args.backend,
                 invocation=[
                     sys.executable,
                     "scripts/evaluate.py",

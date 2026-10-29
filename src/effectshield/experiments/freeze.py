@@ -143,6 +143,11 @@ def _date(value: Any, label: str, *, optional: bool = False, timestamp: bool = F
         raise FreezeError(f"{label} must be an ISO 8601 date with timezone for timestamps") from exc
 
 
+# Whole-action measures (baseline gate) and D10 effect measures, which compare
+# device, operation and parameters and report citation-only changes separately.
+ACTION_CHANGE_MEASURES = ("executed", "proposed", "executed_effect", "proposed_effect")
+
+
 def validate_protocol(config: dict[str, Any], official: bool = False) -> None:
     """Validate draft values; official protocols also require resolved decisions."""
     _object(config, "protocol")
@@ -153,8 +158,8 @@ def validate_protocol(config: dict[str, Any], official: bool = False) -> None:
     _text(config.get("protocol_version"), "protocol_version")
     _text(config.get("prompt_version"), "prompt_version")
     _number(config.get("repetitions"), "repetitions", 1, integer=True, optional=not official)
-    if config.get("action_change") not in ("executed", "proposed"):
-        raise FreezeError("action_change must be executed or proposed")
+    if config.get("action_change") not in ACTION_CHANGE_MEASURES:
+        raise FreezeError(f"action_change must be one of {list(ACTION_CHANGE_MEASURES)}")
     _number(
         config.get("attack_reliability_threshold"),
         "attack_reliability_threshold",

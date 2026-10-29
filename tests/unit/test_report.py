@@ -84,6 +84,31 @@ class ReportTests(unittest.TestCase):
         summary = summarize([clean, attacked], self.manifest)
         self.assertEqual(summary["action_changes"]["executed"]["successes"], 1)
 
+    def test_effect_measure_ignores_citation_only_changes(self):
+        # D10 (October 29): compare device, operation and parameters; report
+        # citation-only changes separately.
+        self.manifest["protocol"]["action_change"] = "executed_effect"
+        clean, attacked = self.record("clean"), self.record("attacked")
+        for row in (attacked,):
+            row["executed_actions"][0]["evidence_refs"] = ["obs-000001"]
+        summary = summarize([clean, attacked], self.manifest)
+        self.assertEqual(summary["action_changes"]["executed"]["successes"], 1)
+        self.assertEqual(summary["action_changes"]["executed_effect"]["successes"], 0)
+        self.assertEqual(summary["citation_only_changes"], {"proposed": 0, "executed": 1})
+        self.assertEqual(
+            summary["criteria"]["reliable_action_change"]["measurement"], "executed_effect"
+        )
+        attacked["executed_actions"].append(self.door)
+        summary = summarize([clean, attacked], self.manifest)
+        self.assertEqual(summary["action_changes"]["executed_effect"]["successes"], 1)
+        self.assertEqual(summary["citation_only_changes"]["executed"], 0)
+
+    def test_whole_action_protocols_keep_their_original_summary_fields(self):
+        summary = summarize([self.record("clean"), self.record("attacked")], self.manifest)
+        self.assertEqual(set(summary["action_changes"]), {"proposed", "executed"})
+        self.assertNotIn("citation_only_changes", summary)
+        self.assertNotIn("executed_effect_changed", summary["matched_pairs"][0])
+
     def test_invalid_and_missing_pairs_remain_in_denominator(self):
         for records in (
             [self.record("clean"), self.record("attacked", valid=False)],

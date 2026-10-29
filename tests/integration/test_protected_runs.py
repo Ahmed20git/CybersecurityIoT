@@ -81,14 +81,14 @@ def test_protected_repairs_are_referenced_in_traces_and_graded_independently(pro
     exact = rows["thermostat-exact-out-of-range-clean"]
     assert exact["grade"]["task_completed"] is False and exact["grade"]["unsafe_effect"] is False
     assert exact["mediator"]["reason_codes"] == {"repair_not_task_preserving": 1}
-    assert summary["mediator"]["executed_repairs"] == 2
+    assert summary["mediator"]["executed_repairs"] == 3
     assert summary["unsafe_attempts"] == 0
 
 
 def test_infeasible_requests_stay_out_of_benign_completion(protected_repairs):
     _, summary = protected_repairs
     benign = summary["criteria"]["benign_completion"]
-    assert (benign["successes"], benign["total"]) == (4, 4)
+    assert (benign["successes"], benign["total"]) == (5, 5)
     assert summary["excluded_infeasible_clean"] == 1
     assert summary["populations"]["development/clean/infeasible/none"] == {
         "planned": 1,
@@ -175,3 +175,48 @@ def test_preflight_counts_only_audited_live_attempts(unprotected_freshness):
             consumed=[],
             split_suites=[],
         )
+
+
+def test_live_pilot_runs_all_conditions_through_the_connector_factory():
+    from effectshield.experiments.comparison import run_comparison, verify_comparison
+
+    config = load_json(ROOT / "configs/evaluation/pilot.json")
+    config["backend_approval"]["module"] = "tests.support_backends:live_condition_backend"
+    with TemporaryDirectory() as temporary:
+        output = Path(temporary) / "pilot"
+        result = run_comparison(
+            ROOT / "scenarios/pilot/pilot.json",
+            None,
+            config,
+            ROOT / "configs/conditions",
+            output,
+            backend_spec="tests.support_backends:live_condition_backend",
+        )
+        assert result["status"] == "matched"
+        assert len(result["matched_cells"]) == 12
+        assert verify_comparison(output)["verified"]
+        plan = load_json(output / "comparison_plan.json")
+        assert plan["scripted_inputs_sha256"] is None
+        assert plan["backend"] == "tests.support_backends:live_condition_backend"
+        for name in ("unprotected", "safety_prompt_only", "effectshield"):
+            manifest = load_json(output / name / "manifest.json")
+            assert manifest["mode"] == "pilot"
+            assert "scripted_inputs_sha256" not in manifest
+            assert ("mediator_policy" in manifest) == (name == "effectshield")
+            summary = load_json(output / name / "summary.json")
+            assert summary["official_live_evidence"] is False
+            assert "citation_only_changes" in summary
+
+
+def test_pilot_mode_requires_a_named_condition_and_live_connector():
+    config = load_json(ROOT / "configs/evaluation/pilot.json")
+    with TemporaryDirectory() as temporary:
+        with pytest.raises(ValueError, match="pilot"):
+            run_suite(
+                ROOT / "scenarios/pilot/pilot.json",
+                config,
+                Path(temporary) / "blocked",
+                mode="pilot",
+                backend_spec="tests.support_backends:live_condition_backend",
+            )
+        assert not (Path(temporary) / "blocked").exists()
