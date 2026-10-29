@@ -411,3 +411,28 @@ Also corrected the October 7 entry, which still said the evidence was left uncom
 | `mypy` (strict) | No issues in 48 source files |
 
 Not run: no live model or provider call; no change to scenarios, expectations, fixtures or retained evidence. The field and the Proposed D05/D08 semantics await joint review.
+
+## 2026-10-29 — Decisions, PR #1, live held-out pilot and pilot fixes
+
+Simon asked to finish his work through Week 9 and to answer Ahmed's October 27 requests. The work was AI-assisted (Claude Code). Simon accepted Ahmed's positions on D06–D08 and the 31 development outcomes, D10 (effect-only action change) and D11 (USD 0.004 cap; the 432 ceiling covers only the frozen benchmark). He also approved the task-intent field with a range-type thermostat task, and a 36-attempt live pilot.
+
+**Integration.** PR #1 (`wp-09-task-intent`, `5881658` and `c295398`) was fast-forwarded into `authorization-evaluation` after review; 2,361 tests passed on it unchanged.
+
+**Changes before the pilot.** `pilot-replay-arrival` became genuinely occupied: the resident arrives, and the attack replays the old "absent" reading. `thermostat-range-clamp` (intent 30–32 °C) was added to the repair corpus and labelled by hand as a successful clamp repair; the 31 earlier labels are marked accepted on October 29, the new one pending Ahmed's review. Protocols can select `executed_effect` or `proposed_effect` and then report citation-only changes; whole-action protocols, and so all retained summaries, are unchanged. The OpenAI factory takes a named condition, the runner has a live `pilot` mode, the audit accepts live condition bundles, and `compare-conditions --backend` runs a live pilot. `configs/evaluation/pilot.json` defines `pilot-v1`.
+
+**Pilot.** It ran from implementation hash `52607f9d…` (the next commit reproduces it exactly) from 07:41:35 to 07:46:09 UTC (11:41–11:46 +04:00). Evidence is in `artifacts/local/evaluation/pilot-2026-10-29/`. Results and findings are in the [project plan](project_plan.md#held-out-pilot-october-29). Unsafe runs were 5/12 unprotected, 3/12 safety-prompt-only and 0/12 EffectShield; 3 of 36 runs were invalid; known cost was USD 0.0228. Nothing was tuned on the results.
+
+**Fixes after the pilot.** The connector reserves a 64-token input margin (2 of 90 calls were billed 24 tokens above the count). Preflight follows D11: it counts only test-split plans against the ceiling and reports spending against the USD 2 budget. The refusal-limit defect belongs to the continuation protocol and is left for Ahmed.
+
+**Verification** (macOS, Python 3.14.6, caches disabled where supported):
+
+| Check | Result |
+| --- | --- |
+| `pytest` | 2,372 passed, 116 subtests passed |
+| `ruff check`, `ruff format --check`, strict `mypy` | Passed; no issues in 48 source files |
+| `verify-evidence` on the five earlier bundles and the three pilot bundles | All verified |
+| `verify-comparison` on the October 7 and pilot comparisons | Verified; pilot status `incomplete` (3 invalid runs) |
+| Gate under `executed_effect` | Still 3/3, 0 citation-only changes |
+| Credential scan of the pilot evidence | No key material found |
+
+Not done: no main runs, no freeze, and no final 24-task manifest or analysis implementation yet. Pilot evidence embeds local absolute paths, like the earlier bundles (D13). Ahmed has not reviewed these changes.

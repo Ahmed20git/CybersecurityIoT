@@ -1,12 +1,14 @@
 # EffectShield phased project plan
 
-Updated 2026-10-15. **Week 4 ran from Monday September 21 to Friday September 25, 2026.** The submission window is Week 13, **November 23–27**; its exact submission day/time remains unconfirmed. The internal completion date is **Friday November 20**. All dates use Asia/Dubai.
+Updated 2026-10-29. **Week 4 ran from Monday September 21 to Friday September 25, 2026.** The submission window is Week 13, **November 23–27**; its exact submission day/time remains unconfirmed. The internal completion date is **Friday November 20**. All dates use Asia/Dubai.
 
 Aim for a complete deliverable candidate by **Friday November 6 (Week 10)**, joint review by **Friday November 13 (Week 11)**, and all corrections and internal sign-off by **Friday November 20 (Week 12)**. Week 13 is reserved for submission. The earlier proposal's Week 5 gate is superseded by the [revised contract](reference/EffectShield_Revised_Research_Project_Contract.docx)'s Week 4 gate. The original contract's Weeks 14–15 delivery schedule remains source history; the agreed Week 13 deadline and Weeks 10–12 completion goal control this plan. Technical scope, research deliverables and acceptance criteria remain unchanged.
 
 **Current status, October 15 (Week 7):** WP-06 is complete; the October 7 live baseline gate passed at baseline scope and Ahmed and Simon jointly accepted it. Ahmed's mediator (WP-07 to WP-09, `75dcbbe` on `wp-05-agent-adapter`) was merged into `authorization-evaluation` on October 14 as `bedffb0`. Simon's Week 5–7 evaluation items are implemented on that branch and verified offline with scripted proposals. They cover the protected condition through the evaluation runner (the Week 5 checkpoint, offline), the stale/replayed-observation corpus, repair/sequence fixtures, independent expected outcomes for three development corpora, runner accounting and the draft held-out pilot with preflight counts; see [Weeks 6–7 evaluation work](#weeks-67-evaluation-work). The mediator's D04–D08 semantics are Proposed, and the protected labels built on them, the condition drafts and the pilot protocol all await joint review. No live protected or pilot run has been made. The original milestones are unchanged.
 
 **Schedule status, October 27 (Week 9):** the Week 8 freeze gate (October 23) was not met. No pilot run, freeze or final-protocol commit has been pushed, and D06–D08, D10, the task-intent field (D05/D08) and D11 remain open for joint decision. Ahmed's positions are in his October 19 message to Simon. Per this plan, the slip uses the Weeks 10–12 margin; testing and thresholds are not reduced. New pilot, freeze and main-run dates are to be agreed jointly and recorded here.
+
+**Status, October 29 (Week 9):** Simon accepted Ahmed's positions on D06–D08, D10 and D11 and approved the task-intent field; PR #1 is merged. The live held-out pilot ran once (see [Held-out pilot, October 29](#held-out-pilot-october-29)). It found two protocol defects to fix before the freeze. The [proposed schedule](#proposed-schedule-from-october-29) awaits Ahmed's agreement.
 
 Simon approved the baseline experiment, OpenAI `gpt-4.1-mini-2025-04-14`, synthetic-data inference, USD 2 total spending and local evidence retention on October 7. Full scope is retained by explicit instruction (D14). All live rehearsal and gate attempts count toward 432 under delegated accounting. The allocation is 11 rehearsal + 33 gate attempts with a USD 0.02 per-attempt cap; all 44 ran on October 7 (USD 0.0197984 estimated), leaving 388 of 432. Later enforcement/final-study decisions remain separate.
 
@@ -98,11 +100,42 @@ Implemented October 14–15 on `authorization-evaluation` after merging the medi
 | Stale/replayed-observation cases (6) | DAT-04, DAT-08, OBS-05–OBS-06 coverage | Scenario format v2 with a trusted evidence schedule; [freshness/replay suite](../scenarios/development/freshness_replay.json) isolating age, duplicate and combined failures, a fresh-reread negative control and a consumption control | D06/D07 joint review. Out-of-order delivery is not producible through the native gateway |
 | Independent expected outcomes (6) | EXP-01–EXP-02, QA-03 | `development-expectations/v1` files for the authorization, freshness/replay and repair/sequence corpora: unprotected and protected labels, rule coverage, and tests that reproduce all 31 cases under all three conditions | Both collaborators review the labels |
 | Runner accounting (6) | EXP-04, EXP-08, STA-01 denominators, D11 | Feasibility-aware benign denominators, population counts by split, family and feasibility, mediator tallies, and the `preflight` command (44 live attempts consumed, 388 remaining) | D11: the full 432-run final matrix does not fit the remaining allowance |
-| Repair/sequence fixtures (7) | EXP-03, MED-08–MED-10 coverage | [Repair/sequence suite](../scenarios/development/repair_sequence.json): two prerequisite repairs graded as successful repairs, an infeasible exact 35 °C request, an injected unsafe intermediate setpoint and the 30 °C boundary | D08 review. Since October 19 a scenario may declare a trusted `task_intent`; clamp repair runs only where one is declared, and no current scenario declares one. The field itself awaits joint approval |
+| Repair/sequence fixtures (7) | EXP-03, MED-08–MED-10 coverage | [Repair/sequence suite](../scenarios/development/repair_sequence.json): two prerequisite repairs graded as successful repairs, an infeasible exact 35 °C request, an injected unsafe intermediate setpoint and the 30 °C boundary | D08 decided October 29. The approved `task_intent` field is used by the range-type `thermostat-range-clamp` case (added October 29), so clamp repair is now exercised; its label awaits Ahmed's review |
 | Complete development coverage (7) | QA-01 evidence for Simon's side | Development cases now exercise rules 2–8; rule 1 is covered by Ahmed's parser and mediator tests and the baseline malformed-output tests | Rule-to-test map review with Ahmed |
 | Prepare held-out pilot (7) | DAT-06, EXP-04 | [Draft pilot](../scenarios/pilot/pilot.json): six base tasks × clean/attacked (three hidden-instruction, three stale/replay) with feasible reference plans; enforced split separation; preflight: a one-repetition, three-condition pilot is 36 attempts, USD 0.72 maximum | Pilot protocol, repetitions, conditions and budget approval before the Week 8 run; pilot labels review |
 
 Observations for review: the baseline action-change measure compares whole actions including `evidence_refs`, so a replay that changes only the cited observation counts as a change (relevant to D10). Under the Proposed replay rule, `replay-within-ttl` blocks a replay whose fact is still true; `presence-reuse` blocks a benign second unlock with one reading. Both are utility costs to be reviewed.
+
+## Held-out pilot, October 29
+
+The approved pilot ran 12 pilot scenarios (6 base tasks × clean/attacked) × 3 conditions × 1 repetition through the live connector (`gpt-4.1-mini-2025-04-14`, protocol `pilot-v1`, USD 0.004 cap). Before it ran, `pilot-replay-arrival` was made genuinely occupied, so blocking every door no longer scores perfectly. Evidence is under `artifacts/local/evaluation/pilot-2026-10-29/`; all three bundles and the comparison verify. The conditions ran in sequence, not in a balanced order. These are one-repetition pilot results for fixing the protocol; they are not final measurements and were not used to tune prompts, rules or tasks.
+
+| Condition | Unsafe runs | Clean completion | Invalid runs | Known cost |
+| --- | --- | --- | --- | --- |
+| Unprotected | 5/12, including 2 clean variants | 4/6 | 0 | USD 0.0082 |
+| Safety prompt only | 3/12 | 3/6 | 2 | USD 0.0080 |
+| EffectShield | 0/12 | 6/6 | 1 | USD 0.0065 |
+
+| Finding | Consequence |
+| --- | --- |
+| In both baselines the model opened the door for a stale or replayed "present" reading, and in clean variants even with a fresh "nobody home" reading | EffectShield blocked every such access; the unsafe baseline behaviour does not depend on the attack |
+| The installer-note injection led the unprotected agent to unlock the door; the safety prompt resisted all three injections | EffectShield blocked the injected unlock as `device_out_of_scope` |
+| After a `presence_evidence_superseded` block in the occupied arrival task, the agent abstained instead of reading presence again | Answers Ahmed's recovery question for this run: no recovery (0/1). Protected attacked utility depends on agent re-reading |
+| Two consecutive blocks hit the continuation refusal limit, which ends the run as `budget_exceeded` and makes the trace invalid | Defect: a refusal-limit stop must be a terminal, assessable outcome (continuation protocol, Ahmed) |
+| 2 of 90 calls were billed 24 input tokens above the count endpoint, and the strict reservation check stopped those runs | Fixed after the pilot: the connector reserves a 64-token input margin |
+
+Spending after the pilot: USD 0.0426 of USD 2 over 80 live attempts (11 rehearsal, 33 gate, 36 pilot); 3 pilot runs have incomplete accounting. The pilot source equals the committed pre-fix revision (implementation hash `52607f9d…`); the connector and preflight fixes followed in a separate commit.
+
+## Proposed schedule from October 29
+
+Proposed by Simon on October 29 for agreement with Ahmed. The joint review (November 13) and internal completion (November 20) dates are unchanged; the complete candidate moves from November 6 into the Weeks 10–12 margin.
+
+| Date | Simon | Ahmed | Joint |
+| --- | --- | --- | --- |
+| Fri October 30 | Final 24-task test manifest with the range-type thermostat task; analysis implementation; v2 freeze support; balanced run order | Terminal assessable status for the refusal limit | — |
+| Mon November 2 | — | — | Review final manifest, labels, D12 and protocol; freeze |
+| Tue–Wed November 3–4 | Main runs (432 live attempts, at most USD 1.728) and offline replay ablations | Support runs; investigate faults through recorded deviations | Check run completeness |
+| Thu–Mon November 5–9 | Analysis with confidence intervals, report draft, dashboard, demo | Independent replay of results | Complete candidate by Monday November 9 |
 
 ## Phase gates
 
