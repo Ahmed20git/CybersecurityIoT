@@ -71,7 +71,7 @@ def test_repeated_simulator_rejections_terminate_with_no_effect():
     locked_open = action("door", "open")
     events = run(CONDITIONS["unprotected"], "light-on-clean", [locked_open] * 5)
     finish = events[-1]
-    assert finish["status"] == "budget_exceeded"
+    assert finish["status"] == "escalated"
     assert finish["error"] == "Consecutive refusal limit reached"
     proposals = [e for e in events if e["type"] == "proposed_action"]
     assert len(proposals) == 2

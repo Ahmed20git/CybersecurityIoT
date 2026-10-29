@@ -277,8 +277,10 @@ class BoundedAgent:
                 )
             self.consecutive_refusals = self.consecutive_refusals + 1 if directive.refusal else 0
             if self.consecutive_refusals >= MAX_CONSECUTIVE_REFUSALS:
+                # A terminal, assessable outcome: the harness hands the stuck run
+                # to a human rather than failing it like a resource overrun.
                 return self._stop(
-                    "budget_exceeded", "Consecutive refusal limit reached", messages=visible
+                    "escalated", "Consecutive refusal limit reached", messages=visible
                 )
         limits = self.config["limits"]
         timeout = limits.get("wall_timeout_s")

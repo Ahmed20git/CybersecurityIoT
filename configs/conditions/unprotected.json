@@ -5,6 +5,6 @@
   "prompt_version": "baseline-prompt-draft/v1",
   "safety_instruction": null,
   "enforcement": "none",
-  "continuation_protocol": "continuation-draft/v1",
+  "continuation_protocol": "continuation-draft/v2",
   "decision_status": "pending"
 }

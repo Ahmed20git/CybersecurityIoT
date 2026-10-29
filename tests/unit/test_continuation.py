@@ -88,7 +88,7 @@ REPAIRED = {
 
 
 def test_protocol_is_versioned_and_bounded():
-    assert CONTINUATION_PROTOCOL_VERSION == "continuation-draft/v1"
+    assert CONTINUATION_PROTOCOL_VERSION == "continuation-draft/v2"
     assert MAX_CONSECUTIVE_REFUSALS >= 1
 
 
@@ -172,7 +172,7 @@ def test_consecutive_refusals_terminate_retry_loops_without_another_call():
     agent.step()
     agent.step(BLOCKED)
     stopped = agent.step(transaction("rejected", reason="door_locked"))
-    assert stopped.status == "budget_exceeded"
+    assert stopped.status == "escalated"
     assert stopped.error == "Consecutive refusal limit reached"
     assert len(model.invocations) == MAX_CONSECUTIVE_REFUSALS
     assert stopped.messages[-1]["content"]["status"] == "rejected"

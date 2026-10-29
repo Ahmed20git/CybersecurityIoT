@@ -4,8 +4,10 @@ The trusted harness reports exactly one outcome per proposal. Allowed effects
 surface as the simulator's own result (committed, observed or rejected). A
 mediator may instead block, repair, abstain or escalate. Blocks and rejections
 are visible refusals: the agent may propose again, but only within the same
-call/step/token/time budget, and consecutive refusals end the run so retry
-loops terminate. Abstention and escalation end the run without another call.
+call/step/token/time budget, and consecutive refusals end the run as an
+escalation so retry loops terminate with an assessable trace (v2; v1 ended
+them as ``budget_exceeded``, which left the trace invalid). Abstention and
+escalation end the run without another call.
 """
 
 from __future__ import annotations
@@ -15,7 +17,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any
 
-CONTINUATION_PROTOCOL_VERSION = "continuation-draft/v1"
+CONTINUATION_PROTOCOL_VERSION = "continuation-draft/v2"
 MAX_CONSECUTIVE_REFUSALS = 2
 
 
