@@ -6,6 +6,7 @@ import sys
 import uuid
 from copy import deepcopy
 from pathlib import Path
+from typing import Any
 
 from .audit import verify_evidence
 from .checks import grader_selfcheck
@@ -59,6 +60,13 @@ def main(argv: list[str] | None = None) -> int:
         elif command == "freeze":
             sub.add_argument("--approval", type=Path, required=True)
             sub.add_argument("--output", type=Path, required=True)
+        if command in {"freeze", "approval-hashes"}:
+            sub.add_argument(
+                "--conditions", type=Path, help="Condition directory; required for a test suite"
+            )
+    final = commands.add_parser("final", help="Run the frozen final study once (live)")
+    final.add_argument("--freeze", type=Path, required=True)
+    final.add_argument("--output", type=Path)
     gate = commands.add_parser("gate")
     gate.add_argument("--freeze", type=Path, required=True)
     gate.add_argument("--output", type=Path)
@@ -99,18 +107,44 @@ def main(argv: list[str] | None = None) -> int:
     )
     visualize.add_argument("path", type=Path)
     visualize.add_argument("--output", type=Path, help="New .html path outside the evidence bundle")
+    analysis = commands.add_parser("analyze", help="Metrics and paired bootstrap for a comparison")
+    analysis.add_argument("path", type=Path)
+    analysis.add_argument("--output", type=Path, help="New JSON file (default PATH/analysis.json)")
+    analysis.add_argument("--replicates", type=int, default=10_000)
+    analysis.add_argument("--seed", type=int, default=20261102)
     commands.add_parser("check-grader")
     args = parser.parse_args(argv)
+    result: dict[str, Any]
     try:
         if args.command == "approval-hashes":
-            result = approval_hashes(ROOT, args.config, args.suite)
+            result = approval_hashes(ROOT, args.config, args.suite, args.conditions)
             result["notice"] = "Hashes only: not an approval. Obtain human review before freezing."
         elif args.command == "freeze":
             from effectshield.scenarios import load_suite
 
             load_suite(args.suite)
             grader_selfcheck(ROOT / "fixtures/evaluation/grader_cases.json")
-            result = freeze_protocol(args.config, args.suite, args.output, args.approval)
+            result = freeze_protocol(
+                args.config, args.suite, args.output, args.approval, args.conditions
+            )
+        elif args.command == "final":
+            from .final import run_final
+
+            output = args.output or _output("final")
+            summary = run_final(
+                args.freeze,
+                output,
+                invocation=[
+                    sys.executable,
+                    "scripts/evaluate.py",
+                    *(sys.argv[1:] if argv is None else argv),
+                ],
+            )
+            result = {
+                "output": str(output.resolve()),
+                "status": summary["status"],
+                "matched_cells": len(summary["matched_cells"]),
+            }
         elif args.command == "verify-freeze":
             result = verify_freeze(args.path)
         elif args.command == "verify-evidence":
@@ -159,6 +193,21 @@ def main(argv: list[str] | None = None) -> int:
             from .visualize import write_visualization
 
             result = write_visualization(args.path, args.output)
+        elif args.command == "analyze":
+            from effectshield.analysis import analyze
+
+            from .storage import write_json
+
+            target = args.output or args.path / "analysis.json"
+            if target.exists():
+                raise FileExistsError("Analysis output already exists; choose a new path")
+            result = analyze(args.path, replicates=args.replicates, seed=args.seed)
+            write_json(target, result)
+            result = {
+                "output": str(target.resolve()),
+                "security_comparisons": result["security_comparisons"],
+                "utility": result["utility"],
+            }
         elif args.command == "check-grader":
             result = grader_selfcheck(ROOT / "fixtures/evaluation/grader_cases.json")
         else:

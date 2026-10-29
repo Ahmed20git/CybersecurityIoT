@@ -80,7 +80,7 @@ def _worker(
         kind = getattr(backend, "kind", None)
         if kind not in {"fixture", "live"}:
             raise ValueError("Backend must declare kind fixture or live")
-        if config["mode"] == "gate" and kind != "live":
+        if config["mode"] in OFFICIAL_MODES and kind != "live":
             raise ValueError("Official gate requires a live backend; fixtures cannot pass")
         channel.put({"type": "backend", "kind": kind})
         reset = backend.reset(deepcopy(scenario["initial_state"]), config["model"]["seed"])
@@ -333,7 +333,7 @@ def run_attempt(
                 trace["termination"] = finished
                 error = safe_event.get("error")
             elif event_type == "worker_done":
-                if config["mode"] == "gate":
+                if config["mode"] in OFFICIAL_MODES:
                     if any(
                         usage.get(key) is None
                         for key in ("input_tokens", "output_tokens", "calls", "cost")
@@ -438,6 +438,9 @@ def run_attempt(
     return result
 
 
+OFFICIAL_MODES = {"gate", "final"}
+
+
 def run_suite(
     suite_path: Path,
     config: dict[str, Any],
@@ -451,18 +454,132 @@ def run_suite(
     condition: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Each scheduled cell and every retry is retained; output paths are exclusive."""
+    batch = open_batch(
+        suite_path,
+        config,
+        output,
+        mode=mode,
+        backend_spec=backend_spec,
+        fixture_path=fixture_path,
+        freeze_path=freeze_path,
+        invocation=invocation,
+        condition=condition,
+    )
+    for cell in batch.planned:
+        if not batch.run_cell(cell):
+            break
+    return batch.close()
+
+
+class Batch:
+    """One condition's evidence bundle; cells may be run interleaved with other batches."""
+
+    def __init__(self, **fields: Any) -> None:
+        self.output: Path = fields["output"]
+        self.manifest: dict[str, Any] = fields["manifest"]
+        self.planned: list[dict[str, Any]] = fields["planned"]
+        self.scenarios: list[dict[str, Any]] = fields["scenarios"]
+        self.config: dict[str, Any] = fields["config"]
+        self.effective: dict[str, Any] = fields["effective"]
+        self.condition: dict[str, Any] | None = fields["condition"]
+        self.backend_spec: str | None = fields["backend_spec"]
+        self.fixture_path: Path | None = fields["fixture_path"]
+        self.records: list[dict[str, Any]] = []
+
+    def run_cell(self, cell: dict[str, Any]) -> bool:
+        """Run one planned cell with its retries; False once the user interrupts."""
+        config, condition, output = self.config, self.condition, self.output
+        scenario = next(s for s in self.scenarios if s["scenario_id"] == cell["scenario_id"])
+        for attempt in range(1, config["retry"]["max_attempts"] + 1):
+            run_id = uuid.uuid4().hex
+            prefix = {
+                **cell,
+                "attempt": attempt,
+                "run_id": run_id,
+                "batch_id": self.manifest["batch_id"],
+                "mode": self.manifest["mode"],
+                "scenario_sha256": digest(scenario),
+                "prompt_version": config["prompt_version"],
+                "schema_version": scenario["schema_version"],
+                "rule_version": scenario["policy"]["version"],
+                "model_config": config["model"],
+                "run_limits": config["limits"],
+            }
+            if condition is not None:
+                prefix.update(
+                    condition_id=condition["condition_id"], condition_sha256=digest(condition)
+                )
+            append_jsonl(output / "ledger.jsonl", {**prefix, "event": "started", "at": now()})
+            result = run_attempt(
+                scenario,
+                self.effective,
+                output / "runs" / run_id,
+                backend_spec=self.backend_spec,
+                fixture_path=self.fixture_path,
+            )
+            record = {**prefix, **result, "event": "finished", "evidence": f"runs/{run_id}"}
+            append_jsonl(output / "ledger.jsonl", record)
+            write_json(output / "runs" / run_id / "record.json", record)
+            self.records.append(record)
+            if result["status"] in {"completed", "abstained", "escalated", "interrupted"}:
+                break
+        return bool(self.records[-1]["status"] != "interrupted")
+
+    def close(self) -> dict[str, Any]:
+        from .report import summarize, write_report
+
+        summary = summarize(self.records, self.manifest)
+        write_report(self.output, summary)
+        evidence = {
+            "schema_version": "evaluation-artifacts/v1",
+            "files": {
+                str(p.relative_to(self.output)): hashlib.sha256(p.read_bytes()).hexdigest()
+                for p in sorted(self.output.rglob("*"))
+                if p.is_file()
+            },
+        }
+        write_json(self.output / "evidence_manifest.json", evidence)
+        return summary
+
+
+def open_batch(
+    suite_path: Path,
+    config: dict[str, Any],
+    output: Path,
+    *,
+    mode: str = "offline",
+    backend_spec: str | None = None,
+    fixture_path: Path | None = None,
+    freeze_path: Path | None = None,
+    invocation: list[str] | None = None,
+    condition: dict[str, Any] | None = None,
+    claim: bool = True,
+) -> Batch:
+    """Validate, write the manifest and suite, and return a batch ready to run cells.
+
+    ``claim=False`` is for a final comparison that claims its freeze once for all
+    three condition batches.
+    """
     from .checks import grader_selfcheck
     from .freeze import implementation_hash, validate_protocol, verify_freeze
-    from .report import summarize, write_report
 
-    if mode not in {"offline", "simulator-replay", "baseline", "rehearsal", "pilot", "gate"}:
+    if mode not in {
+        "offline",
+        "simulator-replay",
+        "baseline",
+        "rehearsal",
+        "pilot",
+        *OFFICIAL_MODES,
+    }:
         raise ValueError("Unknown experiment mode")
     if mode in {"simulator-replay", "baseline"} and not fixture_path:
         raise ValueError("Offline simulator/agent checks require fixture proposals")
     if mode == "pilot" and (fixture_path or not backend_spec or condition is None):
         raise ValueError("A pilot runs one named condition through the approved live connector")
-    if mode == "gate" and (fixture_path or not freeze_path):
+    if mode in OFFICIAL_MODES and (fixture_path or not freeze_path):
         raise ValueError("Official gate requires verified freeze and live backend")
+    if mode == "final" and condition is None:
+        raise ValueError("Final runs execute one named condition per batch")
     if not fixture_path and not backend_spec:
         raise ValueError("A fixture source or Ahmed's backend connector is required")
     if fixture_path and backend_spec:
@@ -471,15 +588,15 @@ def run_suite(
         parsed = parse_condition(condition)
         if not (
             (mode == "baseline" and fixture_path and not backend_spec)
-            or (mode == "pilot" and backend_spec and not fixture_path)
+            or (mode in {"pilot", "final"} and backend_spec and not fixture_path)
         ):
-            raise ValueError("Named conditions require scripted baseline or live pilot mode")
+            raise ValueError("Named conditions require scripted baseline, live pilot or final mode")
         if parsed.prompt_version != config["prompt_version"]:
             raise ValueError("Condition prompt version differs from the run protocol")
         if canonical(condition) != canonical(redact(condition)):
             raise ValueError("Condition contains recognizable credentials")
         condition = parsed.to_dict()
-    validate_protocol(config, official=mode == "gate")
+    validate_protocol(config, official=mode in OFFICIAL_MODES)
     if (
         config["repetitions"] is None
         or config["attack_reliability_threshold"] is None
@@ -506,12 +623,22 @@ def run_suite(
         )
     root = Path(__file__).resolve().parents[3]
     freeze_manifest = None
-    if mode == "gate":
+    if mode in OFFICIAL_MODES:
         assert freeze_path is not None and backend_spec is not None
         freeze_manifest = verify_freeze(Path(freeze_path))
         if freeze_manifest["implementation_sha256"] != implementation_hash(root):
             raise ValueError("Implementation changed after freeze; review and create a new freeze")
-        if canonical(config) != canonical(load_json(Path(freeze_path) / "protocol.json")):
+        frozen_protocol = load_json(Path(freeze_path) / "protocol.json")
+        if mode == "final":
+            # Each condition batch carries its condition's frozen prompt version.
+            assert condition is not None
+            frozen_condition = load_json(
+                Path(freeze_path) / "conditions" / f"{condition['condition_id']}.json"
+            )
+            if canonical(parse_condition(frozen_condition).to_dict()) != canonical(condition):
+                raise ValueError("Condition differs from frozen snapshot")
+            frozen_protocol = {**frozen_protocol, "prompt_version": config["prompt_version"]}
+        if canonical(config) != canonical(frozen_protocol):
             raise ValueError("Protocol differs from frozen snapshot")
         if canonical(suite) != canonical(load_json(Path(freeze_path) / "suite.json")):
             raise ValueError("Suite differs from frozen snapshot")
@@ -547,7 +674,7 @@ def run_suite(
     output = Path(output)
     if output.exists():
         raise FileExistsError("Evidence output already exists; never overwrite an earlier attempt")
-    if mode == "gate":
+    if mode in OFFICIAL_MODES and claim:
         assert freeze_path is not None and freeze_manifest is not None
         claim_gate_once(Path(freeze_path), freeze_manifest["freeze_id"], output)
     output.mkdir(parents=True, exist_ok=False)
@@ -589,6 +716,8 @@ def run_suite(
             if fixture_path
             else "live pilot (not an official gate)"
             if mode == "pilot"
+            else "frozen final study"
+            if mode == "final"
             else mode
         ),
         "grader_selfcheck": selfcheck["passed"],
@@ -620,56 +749,17 @@ def run_suite(
         write_json(fixture_path, scripted_inputs)
     write_json(output / "manifest.json", manifest)
     write_json(output / "suite.json", suite)
-    records = []
-    for cell in planned:
-        scenario = next(s for s in scenarios if s["scenario_id"] == cell["scenario_id"])
-        for attempt in range(1, config["retry"]["max_attempts"] + 1):
-            run_id = uuid.uuid4().hex
-            prefix = {
-                **cell,
-                "attempt": attempt,
-                "run_id": run_id,
-                "batch_id": batch_id,
-                "mode": mode,
-                "scenario_sha256": digest(scenario),
-                "prompt_version": config["prompt_version"],
-                "schema_version": scenario["schema_version"],
-                "rule_version": scenario["policy"]["version"],
-                "model_config": config["model"],
-                "run_limits": config["limits"],
-            }
-            if condition is not None:
-                prefix.update(
-                    condition_id=condition["condition_id"], condition_sha256=digest(condition)
-                )
-            append_jsonl(output / "ledger.jsonl", {**prefix, "event": "started", "at": now()})
-            result = run_attempt(
-                scenario,
-                effective,
-                output / "runs" / run_id,
-                backend_spec=backend_spec,
-                fixture_path=fixture_path,
-            )
-            record = {**prefix, **result, "event": "finished", "evidence": f"runs/{run_id}"}
-            append_jsonl(output / "ledger.jsonl", record)
-            write_json(output / "runs" / run_id / "record.json", record)
-            records.append(record)
-            if result["status"] in {"completed", "abstained", "escalated", "interrupted"}:
-                break
-        if records[-1]["status"] == "interrupted":
-            break
-    summary = summarize(records, manifest)
-    write_report(output, summary)
-    evidence = {
-        "schema_version": "evaluation-artifacts/v1",
-        "files": {
-            str(p.relative_to(output)): hashlib.sha256(p.read_bytes()).hexdigest()
-            for p in sorted(output.rglob("*"))
-            if p.is_file()
-        },
-    }
-    write_json(output / "evidence_manifest.json", evidence)
-    return summary
+    return Batch(
+        output=output,
+        manifest=manifest,
+        planned=planned,
+        scenarios=scenarios,
+        config=config,
+        effective=effective,
+        condition=condition,
+        backend_spec=backend_spec,
+        fixture_path=fixture_path,
+    )
 
 
 def scenario_labels(scenario: dict[str, Any]) -> dict[str, Any]:

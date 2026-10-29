@@ -4,6 +4,7 @@ Plan v2 runs all three conditions, the protected one through the mediator.
 Retained v1 plans (two baselines, EffectShield not run) still verify unchanged.
 """
 
+import random
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -14,7 +15,7 @@ from effectshield.scenarios import load_suite
 from .audit import verify_evidence
 from .baseline import ScriptedModel
 from .freeze import validate_protocol
-from .runner import run_suite
+from .runner import open_batch, run_suite
 from .storage import canonical, digest, load_json, redact, write_json
 
 BASELINES = ("unprotected", "safety_prompt_only")
@@ -28,6 +29,10 @@ NOTICE = (
 NOTICE_PILOT = (
     "Live held-out pilot with one repetition. Conditions ran in sequence through the approved "
     "connector; results inform protocol fixes only and are not final-study measurements."
+)
+NOTICE_FINAL = (
+    "Frozen final study: all three conditions ran in block-randomized order under one "
+    "approved freeze. Interpret results with the frozen analysis protocol."
 )
 NOTICE_V2 = (
     "Scripted development comparison only. Authored responses do not measure prompt-only "
@@ -227,14 +232,22 @@ def run_comparison(
     *,
     invocation: list[str] | None = None,
     backend_spec: str | None = None,
+    order_seed: int | None = None,
+    freeze_path: Path | None = None,
 ) -> dict[str, Any]:
     """Run all three conditions on matched inputs; protection is the mediator.
 
     With scripted fixtures the model is the scripted adapter. With an approved
-    live connector (``backend_spec``) the batches are a non-official pilot.
+    live connector (``backend_spec``) the batches are a non-official pilot, or,
+    with a verified freeze, the frozen final study. An ``order_seed`` interleaves
+    the conditions in block-randomized order (EXP-09): every repetition and
+    scenario forms a block whose three conditions run in a seeded random order,
+    recorded in the plan before any run starts.
     """
     if (fixture_path is None) == (backend_spec is None):
         raise ValueError("Choose scripted fixtures or a live connector")
+    if freeze_path is not None and (backend_spec is None or order_seed is None):
+        raise ValueError("A frozen final study needs the live connector and a seeded run order")
     conditions = load_conditions(condition_directory)
     for condition in conditions.values():
         treatment_differences(conditions["unprotected"], condition)
@@ -253,6 +266,22 @@ def run_comparison(
     inputs = [protocol, suite, fixtures, {name: c.to_dict() for name, c in conditions.items()}]
     if canonical(inputs) != canonical(redact(inputs)):
         raise ValueError("Comparison inputs contain recognizable credentials")
+    mode = "baseline" if backend_spec is None else "pilot" if freeze_path is None else "final"
+    order = None
+    if order_seed is not None:
+        generator = random.Random(order_seed)
+        order = []
+        for repetition in range(1, protocol["repetitions"] + 1):
+            for scenario in suite["scenarios"]:
+                names = list(CONDITION_ORDER)
+                generator.shuffle(names)
+                order.append(
+                    {
+                        "repetition": repetition,
+                        "scenario_id": scenario["scenario_id"],
+                        "conditions": names,
+                    }
+                )
     output = Path(output)
     output.mkdir(parents=True, exist_ok=False)
     write_json(
@@ -263,10 +292,61 @@ def run_comparison(
             "suite_sha256": digest(suite),
             "scripted_inputs_sha256": None if fixtures is None else digest(fixtures),
             "conditions": {name: condition.to_dict() for name, condition in conditions.items()},
-            "notice": NOTICE_V2 if backend_spec is None else NOTICE_PILOT,
+            "notice": NOTICE_V2
+            if backend_spec is None
+            else NOTICE_PILOT
+            if freeze_path is None
+            else NOTICE_FINAL,
             **({} if backend_spec is None else {"backend": backend_spec}),
+            **(
+                {}
+                if order is None
+                else {
+                    "execution_order": {
+                        "method": "block_randomized",
+                        "seed": order_seed,
+                        "blocks": order,
+                    }
+                }
+            ),
         },
     )
+    if order is not None:
+        batches = {}
+        for name in CONDITION_ORDER:
+            selected = deepcopy(protocol)
+            selected["prompt_version"] = conditions[name].prompt_version
+            batches[name] = open_batch(
+                suite_path,
+                selected,
+                output / name,
+                mode=mode,
+                fixture_path=fixture_path,
+                backend_spec=backend_spec,
+                freeze_path=freeze_path,
+                condition=conditions[name].to_dict(),
+                invocation=invocation,
+                claim=False,
+            )
+        running = True
+        for block in order:
+            for name in block["conditions"]:
+                cell = next(
+                    item
+                    for item in batches[name].planned
+                    if item["scenario_id"] == block["scenario_id"]
+                    and item["repetition"] == block["repetition"]
+                )
+                if not batches[name].run_cell(cell):
+                    running = False
+                    break
+            if not running:
+                break
+        for batch in batches.values():
+            batch.close()
+        summary = comparison_summary(output)
+        write_json(output / "comparison.json", summary)
+        return summary
     for name in CONDITION_ORDER:
         selected = deepcopy(protocol)
         selected["prompt_version"] = conditions[name].prompt_version
@@ -274,7 +354,7 @@ def run_comparison(
             suite_path,
             selected,
             output / name,
-            mode="baseline" if backend_spec is None else "pilot",
+            mode=mode,
             fixture_path=fixture_path,
             backend_spec=backend_spec,
             condition=conditions[name].to_dict(),

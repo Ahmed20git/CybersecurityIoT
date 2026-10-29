@@ -16,6 +16,9 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 REQUIRED_DECISIONS = ("D03", "D04", "D05", "D09", "D10", "D11", "D13")
+# A final-study freeze (test split) also binds the mediator semantics and analysis plan.
+FINAL_DECISIONS = (*REQUIRED_DECISIONS, "D06", "D07", "D08", "D12")
+CONDITION_FILES = ("unprotected", "safety_prompt_only", "effectshield")
 _HASH = re.compile(r"[0-9a-f]{64}\Z")
 _BACKEND = re.compile(r"[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*:[A-Za-z_]\w*\Z")
 _SECRET_KEY = re.compile(
@@ -209,6 +212,15 @@ def validate_protocol(config: dict[str, Any], official: bool = False) -> None:
     if module is not None or official:
         if not isinstance(module, str) or not _BACKEND.fullmatch(module):
             raise FreezeError("backend_approval.module must identify module:factory")
+    order = config.get("execution_order")
+    if order is not None and (
+        not isinstance(order, dict)
+        or set(order) != {"method", "seed"}
+        or order["method"] != "block_randomized"
+        or isinstance(order["seed"], bool)
+        or not isinstance(order["seed"], int)
+    ):
+        raise FreezeError("execution_order must be block_randomized with an integer seed")
     decisions = _object(config.get("decision_status"), "decision_status")
     for decision in REQUIRED_DECISIONS:
         if decisions.get(decision) not in ("pending", "approved"):
@@ -250,21 +262,41 @@ def implementation_hash(root: Path) -> str:
     return _implementation_digest(_source_bytes(Path(root)))
 
 
-def approval_hashes(root: Path, config_path: Path, suite_path: Path) -> dict[str, str]:
-    """Calculate review bindings without asserting approval or creating a freeze."""
+def _condition_files(conditions_path: Path | None) -> dict[str, bytes]:
+    if conditions_path is None:
+        return {}
     return {
+        f"conditions/{name}.json": _read(Path(conditions_path) / f"{name}.json")
+        for name in CONDITION_FILES
+    }
+
+
+def approval_hashes(
+    root: Path, config_path: Path, suite_path: Path, conditions_path: Path | None = None
+) -> dict[str, str]:
+    """Calculate review bindings without asserting approval or creating a freeze.
+
+    A final-study (test split) suite also binds the three condition definitions.
+    """
+    hashes = {
         "protocol_sha256": _sha(_read(Path(config_path))),
         "suite_sha256": _sha(_read(Path(suite_path))),
         "implementation_sha256": implementation_hash(Path(root)),
         "interface_sha256": _sha(_read(Path(root) / _REVIEW_FILES[0])),
         "grader_cases_sha256": _sha(_read(Path(root) / _REVIEW_FILES[1])),
     }
+    # Hashing only: the freeze itself validates the suite.
+    if _final(_json(_read(Path(suite_path)))):
+        if conditions_path is None:
+            raise FreezeError("A final-study freeze must bind the condition definitions")
+        hashes["conditions_sha256"] = _conditions_digest(_condition_files(conditions_path))
+    return hashes
 
 
 def _suite(data: bytes) -> dict[str, Any]:
     suite = _json(data)
     _no_secrets(suite)
-    if suite.get("schema_version") != "evaluation-scenario/v1":
+    if suite.get("schema_version") not in ("evaluation-scenario/v1", "evaluation-scenario/v2"):
         raise FreezeError("Unsupported scenario suite schema_version")
     _text(suite.get("suite_version"), "suite.suite_version")
     if not isinstance(suite.get("scenarios"), list) or not suite["scenarios"]:
@@ -277,6 +309,27 @@ def _suite(data: bytes) -> dict[str, Any]:
             raise FreezeError("Duplicate frozen scenario_id")
         ids.add(scenario["scenario_id"])
     return suite
+
+
+def _final(suite: dict[str, Any]) -> bool:
+    return suite.get("split") == "test"
+
+
+def _conditions_digest(files: dict[str, bytes]) -> str:
+    return _sha(
+        _canonical({name: _json(files[f"conditions/{name}.json"]) for name in CONDITION_FILES})
+    )
+
+
+def _final_checks(config: dict[str, Any], decisions: Any) -> None:
+    for decision in FINAL_DECISIONS:
+        if config["decision_status"].get(decision) != "approved":
+            raise FreezeError(f"A final-study freeze needs approved {decision}")
+    if not isinstance(decisions, list) or not set(FINAL_DECISIONS).issubset(decisions):
+        raise FreezeError("Final-study approval must include D06-D08 and D12")
+    order = config.get("execution_order")
+    if not isinstance(order, dict) or order.get("method") != "block_randomized":
+        raise FreezeError("A final-study protocol must declare block-randomized execution order")
 
 
 def _approval(approval: dict[str, Any], hashes: dict[str, str]) -> None:
@@ -298,7 +351,8 @@ def _approval(approval: dict[str, Any], hashes: dict[str, str]) -> None:
 
 
 def _semantics(config: dict[str, Any]) -> dict[str, Any]:
-    return {
+    optional = {key: config[key] for key in ("execution_order",) if key in config}
+    return optional | {
         key: config[key]
         for key in (
             "protocol_version",
@@ -319,7 +373,11 @@ def _semantics(config: dict[str, Any]) -> dict[str, Any]:
 
 
 def freeze_protocol(
-    config_path: Path, suite_path: Path, output: Path, approval_path: Path | None = None
+    config_path: Path,
+    suite_path: Path,
+    output: Path,
+    approval_path: Path | None = None,
+    conditions_path: Path | None = None,
 ) -> dict[str, Any]:
     """Create a new snapshot only after explicit, byte-bound human approvals."""
     config_path, suite_path, output = Path(config_path), Path(suite_path), Path(output)
@@ -343,11 +401,18 @@ def freeze_protocol(
         "grader_cases_sha256": _sha(review[_REVIEW_FILES[1]]),
     }
     approval = _json(approval_bytes)
+    condition_files = _condition_files(conditions_path) if _final(suite) else {}
+    if _final(suite):
+        if not condition_files:
+            raise FreezeError("A final-study freeze must bind the condition definitions")
+        hashes["conditions_sha256"] = _conditions_digest(condition_files)
+        _final_checks(config, approval.get("decisions"))
     _approval(approval, hashes)
     files = {
         "protocol.json": config_bytes,
         "suite.json": suite_bytes,
         "approval.json": approval_bytes,
+        **condition_files,
     }
     files.update({"source/" + name: data for name, data in {**source, **review}.items()})
     for name in ("pyproject.toml", "uv.lock", "requirements.lock"):
@@ -450,9 +515,14 @@ def verify_freeze(path: Path) -> dict[str, Any]:
         "interface_sha256": _sha(files["source/" + _REVIEW_FILES[0]]),
         "grader_cases_sha256": _sha(files["source/" + _REVIEW_FILES[1]]),
     }
+    config, suite = _json(files["protocol.json"]), _suite(files["suite.json"])
+    if _final(suite) or "conditions_sha256" in manifest:
+        if not all(f"conditions/{name}.json" in files for name in CONDITION_FILES):
+            raise FreezeError("Final-study freeze lacks its condition definitions")
+        hashes["conditions_sha256"] = _conditions_digest(files)
+        _final_checks(config, _json(files["approval.json"]).get("decisions"))
     if any(manifest.get(key) != value for key, value in hashes.items()):
         raise FreezeError("Manifest bindings disagree with frozen evidence")
-    config, suite = _json(files["protocol.json"]), _suite(files["suite.json"])
     validate_protocol(config, official=True)
     _approval(_json(files["approval.json"]), hashes)
     _no_secrets(_json(files["source/" + _REVIEW_FILES[1]]))
