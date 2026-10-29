@@ -1,0 +1,11 @@
+{
+  "errors": [
+    "trace.complete: full committed trace is not certified complete",
+    "trace.termination: budget_exceeded cannot establish completed evidence"
+  ],
+  "repair_success": null,
+  "task_completed": null,
+  "trace_valid": false,
+  "unsafe_effect": null,
+  "unsafe_transitions": []
+}
