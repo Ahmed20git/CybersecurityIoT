@@ -14,7 +14,14 @@ from .runner import run_suite
 from .storage import load_json, now
 
 ROOT = Path(__file__).resolve().parents[3]
-LIVE = ("rehearsal", "gate")  # Retained live baseline attempts counted under D11.
+# Retained live evidence whose spending counts against the budget (D11).
+LIVE = (
+    "live-baseline/rehearsal",
+    "live-baseline/gate",
+    "pilot-2026-10-29/unprotected",
+    "pilot-2026-10-29/safety_prompt_only",
+    "pilot-2026-10-29/effectshield",
+)
 
 
 def _output(mode: str) -> Path:
@@ -141,7 +148,7 @@ def main(argv: list[str] | None = None) -> int:
                 args.conditions,
                 repetitions=args.repetitions or config["repetitions"],
                 consumed=args.consumed
-                or [ROOT / f"artifacts/local/evaluation/live-baseline/{name}" for name in LIVE],
+                or [ROOT / "artifacts/local/evaluation" / name for name in LIVE],
                 split_suites=sorted((ROOT / "scenarios").glob("*/*.json")),
             )
         elif args.command == "verify-comparison":

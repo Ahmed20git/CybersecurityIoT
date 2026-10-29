@@ -11,6 +11,7 @@ from effectshield.agent.openai_client import (
     API_HOST,
     COUNT_PATH,
     GENERATE_PATH,
+    INPUT_COUNT_MARGIN_TOKENS,
     MODEL_DATE,
     MODEL_VERSION,
     HTTPResult,
@@ -149,12 +150,29 @@ def test_published_tariff_cost_is_estimated_and_cache_aware():
     assert result.messages[-1]["content"]["cached_input_tokens"] == 20
 
 
-def test_reservation_uses_uncached_price_and_capped_output():
+def test_reservation_uses_uncached_price_input_margin_and_capped_output():
     client, _ = client_for()
     reservation = client.estimate(MESSAGES, 300)
-    assert reservation.input_tokens == 100 and reservation.output_tokens == 200
-    assert reservation.cost >= (100 * 0.40 + 200 * 1.60) / 1_000_000
+    reserved = 100 + INPUT_COUNT_MARGIN_TOKENS
+    assert reservation.input_tokens == reserved and reservation.output_tokens == 300 - reserved
+    assert reservation.cost >= (reserved * 0.40 + (300 - reserved) * 1.60) / 1_000_000
     assert reservation.currency == "USD"
+
+
+@pytest.mark.parametrize(
+    "billed,stopped", [(124, False), (100 + INPUT_COUNT_MARGIN_TOKENS, False), (165, True)]
+)
+def test_count_variance_within_the_margin_does_not_stop_a_run(billed, stopped):
+    usage = {
+        "input_tokens": billed,
+        "output_tokens": 30,
+        "total_tokens": billed + 30,
+        "input_tokens_details": {"cached_tokens": 0},
+        "output_tokens_details": {"reasoning_tokens": 0},
+    }
+    client, _ = client_for(generation(usage=usage))
+    result = generated(client)
+    assert (result.stop_status == "budget_exceeded") is stopped
 
 
 @pytest.mark.parametrize("mutation", ["messages", "reservation", "settings", "reset"])

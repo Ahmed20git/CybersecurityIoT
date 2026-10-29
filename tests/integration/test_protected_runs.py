@@ -159,13 +159,15 @@ def test_preflight_counts_only_audited_live_attempts(unprotected_freshness):
         split_suites=sorted(ROOT.glob("scenarios/*/*.json")),
     )
     assert result["planned_runs"] == 36
-    assert result["ceiling"]["consumed_live_attempts"]["bundles"] == [
-        {"bundle": "unprotected", "live_attempts": 0},
-        {"bundle": "gate", "live_attempts": 33},
-    ]
-    assert result["ceiling"]["remaining"] == 399
+    used = result["spending"]["consumed_live"]
+    assert [row["live_attempts"] for row in used["bundles"]] == [0, 33]
+    assert used["known_cost"] == pytest.approx(0.0148488)
+    # D11 (October 29): the 432 ceiling covers only the frozen final benchmark.
+    assert result["ceiling"]["counted_from_this_plan"] == 0
     assert result["final_matrix"]["runs"] == 432
-    assert result["final_matrix"]["fits_remaining_without_this_plan"] is False
+    assert result["final_matrix"]["fits_ceiling"] is True
+    assert result["final_matrix"]["maximum_cost"] == pytest.approx(432 * 0.02)
+    assert result["final_matrix"]["fits_budget_after_this_plan"] is False
     with pytest.raises(ValueError, match="Repetitions"):
         preflight(
             ROOT / "scenarios/pilot/pilot.json",

@@ -1,10 +1,11 @@
-"""Preflight run accounting against the 432-run ceiling (EXP-04, D11, DAT-06).
+"""Preflight run and spending accounting (EXP-04, D11, DAT-06).
 
 Counts a proposed run matrix before any execution: unique run keys, maximum
-attempts and reported cost under the protocol's retry and cost limits, and the
-live attempts already consumed according to audited evidence bundles. Fixture
-and scripted attempts never count toward the ceiling. The count approves
-nothing; budget and protocol approvals remain separate human decisions.
+attempts and reported cost under the protocol's retry and cost limits. Under
+D11 (decided October 29, 2026) the 432-run ceiling covers only the frozen final
+benchmark; rehearsal, gate and pilot attempts are reported separately, and all
+live spending counts against the USD 2 budget. Spending is taken from audited
+evidence bundles; fixture attempts cost nothing. The count approves nothing.
 """
 
 from __future__ import annotations
@@ -20,21 +21,42 @@ from .audit import verify_evidence
 from .storage import _pairs
 
 RUN_CEILING = 432
+BUDGET_USD = 2.0
 FINAL_MATRIX = {"base_tasks": 24, "forms": 2, "conditions": 3, "repetitions": 3}
 NOTICE = "Preflight count only. It does not approve a protocol, budget or live run."
 
 
 def consumed_live_attempts(bundles: list[Path]) -> dict[str, Any]:
-    """Count finished live attempts in audited bundles; every attempt counts (D11)."""
-    rows = []
+    """Count finished live attempts and their known spending in audited bundles."""
+    rows: list[dict[str, Any]] = []
+    attempts_total, cost_total, unknown_total = 0, 0.0, 0
     for bundle in bundles:
         verify_evidence(bundle)
-        attempts = 0
+        attempts, cost, unknown = 0, 0.0, 0
         for line in (bundle / "ledger.jsonl").read_text().splitlines():
             row = json.loads(line, object_pairs_hook=_pairs)
-            attempts += row["event"] == "finished" and row.get("backend_kind") == "live"
-        rows.append({"bundle": bundle.name, "live_attempts": attempts})
-    return {"bundles": rows, "total": sum(row["live_attempts"] for row in rows)}
+            if row["event"] != "finished" or row.get("backend_kind") != "live":
+                continue
+            attempts += 1
+            cost += row["usage"].get("cost") or 0.0
+            unknown += row["usage"].get("accounting_complete", True) is not True
+        attempts_total += attempts
+        cost_total += cost
+        unknown_total += unknown
+        rows.append(
+            {
+                "bundle": str(bundle.relative_to(bundle.parents[1])),
+                "live_attempts": attempts,
+                "known_cost": round(cost, 10),
+                "incomplete_accounting_runs": unknown,
+            }
+        )
+    return {
+        "bundles": rows,
+        "total": attempts_total,
+        "known_cost": round(cost_total, 10),
+        "incomplete_accounting_runs": unknown_total,
+    }
 
 
 def preflight(
@@ -66,7 +88,8 @@ def preflight(
     planned = len(keys)
     max_attempts = planned * protocol["retry"]["max_attempts"]
     used = consumed_live_attempts(consumed)
-    remaining = ceiling - used["total"]
+    max_cost = max_attempts * protocol["limits"]["max_cost"]
+    counts_toward_ceiling = suite.get("split") == "test"
     final_runs = 1
     for value in FINAL_MATRIX.values():
         final_runs *= value
@@ -86,22 +109,31 @@ def preflight(
         "planned_runs": planned,
         "maximum_attempts": max_attempts,
         "maximum_reported_cost": {
-            "amount": max_attempts * protocol["limits"]["max_cost"],
+            "amount": max_cost,
             "currency": protocol["limits"]["currency"],
             "basis": "attempts x per-attempt cost cap in the protocol",
         },
         "ceiling": {
             "runs": ceiling,
-            "consumed_live_attempts": used,
-            "remaining": remaining,
-            "fits_after_retries": max_attempts <= remaining,
-            "remaining_after_this_plan": remaining - max_attempts,
+            "scope": "frozen final benchmark only (D11, October 29, 2026)",
+            "counted_from_this_plan": max_attempts if counts_toward_ceiling else 0,
+            "fits": not counts_toward_ceiling or max_attempts <= ceiling,
+        },
+        "spending": {
+            "budget": BUDGET_USD,
+            "consumed_live": used,
+            "remaining_known": round(BUDGET_USD - used["known_cost"], 10),
+            "fits_after_this_plan": max_cost <= BUDGET_USD - used["known_cost"],
         },
         "final_matrix": {
             **FINAL_MATRIX,
             "runs": final_runs,
-            "fits_remaining_without_this_plan": final_runs <= remaining,
-            "fits_remaining_after_this_plan": final_runs <= remaining - max_attempts,
+            "fits_ceiling": final_runs <= ceiling,
+            "maximum_cost": final_runs * protocol["limits"]["max_cost"],
+            "fits_budget_without_this_plan": final_runs * protocol["limits"]["max_cost"]
+            <= BUDGET_USD - used["known_cost"],
+            "fits_budget_after_this_plan": final_runs * protocol["limits"]["max_cost"]
+            <= BUDGET_USD - used["known_cost"] - max_cost,
         },
         "notice": NOTICE,
     }

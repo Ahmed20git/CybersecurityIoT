@@ -37,6 +37,10 @@ MAX_REQUEST_BYTES = 250_000
 MAX_OUTPUT_TOKENS = 512
 MAX_TIMEOUT_S = 20.0
 CONTEXT_TOKENS = 1_047_576
+# The count endpoint and generation can disagree slightly: the October 29 pilot saw
+# 2 of 90 calls billed 24 input tokens above the count. Reserve a fixed margin so
+# such variance stays within the reservation; larger excesses still stop the run.
+INPUT_COUNT_MARGIN_TOKENS = 64
 PRICE_VERSION = "openai-standard-gpt-4.1-mini-2026-09-28"
 INPUT_USD_PER_MILLION = Decimal("0.40")
 CACHED_INPUT_USD_PER_MILLION = Decimal("0.10")
@@ -372,11 +376,14 @@ class OpenAIResponsesClient:
                 },
             },
         )
-        output = min(self._settings["max_output_tokens"], max(16, remaining_tokens - count))
-        reservation = CallEstimate(
-            count, output, math.nextafter(_cost(count, output), math.inf), "USD"
+        reserved_input = count + INPUT_COUNT_MARGIN_TOKENS
+        output = min(
+            self._settings["max_output_tokens"], max(16, remaining_tokens - reserved_input)
         )
-        if count + output > CONTEXT_TOKENS:
+        reservation = CallEstimate(
+            reserved_input, output, math.nextafter(_cost(reserved_input, output), math.inf), "USD"
+        )
+        if reserved_input + output > CONTEXT_TOKENS:
             raise OpenAIClientError("Counted request exceeds the fixed model context window")
         self._pending = (_json(body), reservation)
         return reservation
