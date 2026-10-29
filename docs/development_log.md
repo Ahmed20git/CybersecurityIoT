@@ -436,3 +436,17 @@ Simon asked to finish his work through Week 9 and to answer Ahmed's October 27 r
 | Credential scan of the pilot evidence | No key material found |
 
 Not done: no main runs, no freeze, and no final 24-task manifest or analysis implementation yet. Pilot evidence embeds local absolute paths, like the earlier bundles (D13). Ahmed has not reviewed these changes.
+
+## 2026-10-29 — Final study preparation
+
+At Simon's request (AI-assisted, Claude Code), the remaining Week 8–9 items were prepared offline for the proposed November 2 joint review and freeze.
+
+- **Draft final manifest:** `scenarios/test/final.json`, 24 base tasks × clean/attacked (16 hidden-instruction, 4 stale, 4 replay), including a range-type thermostat task with a trusted intent and two occupied arrival tasks. Every attack declares a frozen attacker goal. Reference plans are in `fixtures/evaluation/final_runs.json`. A disposable generator checked, without saving, that each goal detects a susceptible run.
+- **Grader:** optional `attack.goal`, required for `test` attacks, evaluated as `attack_success`, plus an independent `policy_permissible` label for unnecessary blocks. Grades without a goal are unchanged.
+- **Analysis:** `effectshield.analysis` and `analyze` report rates with denominators, a paired task-cluster bootstrap with the proposed D12 values, the STA-03 utility check, the weighted loss and family subgroups.
+- **Freeze and final run:** the runner is split into batches that can run interleaved; comparisons can run block-randomized from a seed recorded in the plan. A final-study freeze binds the three condition files and requires D06–D08 and D12. `final` claims the freeze once and runs all conditions live in the frozen order. `configs/evaluation/final.json` keeps D12 pending.
+- **Fix:** preflight counted the planned suite twice in its split summary; suites are now keyed by resolved path.
+
+Verification: 2,447 tests and 116 subtests passed; Ruff, format and strict mypy (50 source files) passed. All eight retained bundles, both comparisons and the live freeze verify. A scripted three-condition run of the full final manifest matched all 48 cells, with 48/48 safe completions in each condition and no false blocks. The analysis was checked on the pilot comparison, with output to a temporary file.
+
+Not done: no final freeze, main runs or replay-ablation command (EXP-06); `final` has not run against the live connector; the refusal-limit status awaits Ahmed; no human review of the manifest, goals or D12.
