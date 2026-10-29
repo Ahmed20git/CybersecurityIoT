@@ -23,7 +23,8 @@ REPLAYED = BY_ID["replayed-presence-clean-attacked"]
 def test_every_tracked_suite_keeps_tasks_templates_and_requests_within_one_split():
     suites = {str(path): load_suite(path) for path in sorted(ROOT.glob("scenarios/*/*.json"))}
     result = validate_splits(suites)["splits"]
-    assert set(result) == {"development", "pilot"}
+    assert set(result) == {"development", "pilot", "test"}
+    assert result["test"]["base_tasks"] == 24
     assert result["pilot"]["base_tasks"] == 6
     assert result["pilot"]["attack_families"] == {
         "hidden_instruction": 3,
