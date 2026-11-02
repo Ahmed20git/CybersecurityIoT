@@ -88,7 +88,7 @@ def verify_evidence(directory: str | Path) -> dict[str, Any]:
         if (
             digest(condition.to_dict()) != batch.get("condition_sha256")
             or condition.prompt_version != batch["protocol"]["prompt_version"]
-            or batch["mode"] not in ("baseline", "pilot")
+            or batch["mode"] not in ("baseline", "pilot", "final")
             or condition.requires_mediator != ("mediator_policy" in batch)
             or ("scripted_inputs_sha256" in batch) != (batch["mode"] == "baseline")
             or (

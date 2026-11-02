@@ -72,8 +72,9 @@ def preflight(
     if type(repetitions) is not int or repetitions < 1:
         raise ValueError("Repetitions must be a positive integer")
     suite = load_suite(suite_path)
-    loaded = {str(path): load_suite(path) for path in split_suites}
-    loaded.setdefault(str(suite_path), suite)
+    # Key by resolved path so the planned suite is never counted twice.
+    loaded = {str(Path(path).resolve()): load_suite(path) for path in split_suites}
+    loaded.setdefault(str(Path(suite_path).resolve()), suite)
     splits = validate_splits(loaded)
     conditions = sorted(load_conditions(condition_directory))
     keys = [

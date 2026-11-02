@@ -137,6 +137,17 @@ Proposed by Simon on October 29 for agreement with Ahmed. The joint review (Nove
 | Tue–Wed November 3–4 | Main runs (432 live attempts, at most USD 1.728) and offline replay ablations | Support runs; investigate faults through recorded deviations | Check run completeness |
 | Thu–Mon November 5–9 | Analysis with confidence intervals, report draft, dashboard, demo | Independent replay of results | Complete candidate by Monday November 9 |
 
+## Week 8–9 status, October 29
+
+| Planned item | Status |
+| --- | --- |
+| Run held-out pilot | Done October 29; see the pilot section above |
+| Final 24-task test manifest | Draft ready for joint review, with frozen attacker goals and the range-type thermostat task |
+| Grader, metrics and analysis fixtures | Attacker-goal grading, independent policy-permissibility label, and an `analyze` command with synthetic analysis tests; D12 values proposed |
+| Run budget | D11 decided; the final matrix needs at most USD 1.728 of USD 1.957 remaining |
+| Freeze | Final-study freeze binds conditions and requires D06–D08 and D12; the draft protocol keeps D12 pending |
+| Main experiments and trace ablations | Not started: they follow the joint freeze. The `final` command runs the frozen study once in block-randomized order. Replay ablations still need their command (EXP-06) |
+
 ## Phase gates
 
 | Phase | Active calendar window | Deliverable and lead | Entry conditions | Exit evidence |

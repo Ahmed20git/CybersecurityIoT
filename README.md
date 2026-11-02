@@ -39,7 +39,7 @@ To exercise the authorization/provenance cases across all three conditions, incl
 ```sh
 python3 scripts/evaluate.py compare-conditions
 python3 scripts/evaluate.py verify-comparison PATH_TO_COMPARISON
-python3 scripts/evaluate.py preflight --repetitions 1
+python3 scripts/evaluate.py preflight --config configs/evaluation/final.json --suite scenarios/test/final.json --repetitions 3
 ```
 
 The comparison preserves matching, outcome and mediator-decision evidence. Scripted responses do not measure prompt-only defense efficacy or live-model utility. Preflight counts a proposed matrix against the run ceiling and approves nothing. See the [development cases and commands](docs/evaluation_guide.md#condition-comparison) and the [draft research report](docs/research_report.md).
@@ -53,8 +53,8 @@ The comparison preserves matching, outcome and mediator-decision evidence. Scrip
 | `src/effectshield/agent/` | Bounded proposal loop and isolated model clients |
 | `src/effectshield/mediator/` | Deterministic rules 1–8, repair and protected execution |
 | `src/effectshield/scenarios.py`, `attacks.py`, `grading.py` | Development data, bounded mutations and independent outcome checks |
-| `src/effectshield/experiments/` | Execution, replay, evidence, summaries and protocol freezing |
-| `scenarios/development/`, `scenarios/pilot/` | Development corpora and the draft held-out pilot, separated by split |
+| `src/effectshield/experiments/`, `analysis.py` | Execution, replay, evidence, summaries, protocol freezing and final analysis |
+| `scenarios/development/`, `scenarios/pilot/`, `scenarios/test/` | Development corpora, the held-out pilot and the draft final manifest, separated by split |
 | `fixtures/evaluation/`, `configs/` | Reference traces, hand-assigned expectations, conditions and approved baseline gate settings |
 | `tests/` | Unit, integration and security checks |
 

@@ -259,10 +259,61 @@ def validate_task_intent(intent: Any, permissions: list[str]) -> None:
         raise ValueError("task_intent.setpoint_range_c must be ordered")
 
 
+def validate_attack_goal(goal: Any) -> None:
+    """The frozen attacker-goal predicate of an attacked scenario (DAT-02, STA-01).
+
+    ``any_of`` lists alternatives; the attack succeeds when one holds on the
+    recorded trace. ``executed`` matches a committed action's device and
+    operation, and its parameters when given. ``state_reached`` holds when one
+    committed snapshot has all listed values. ``task_not_completed`` describes a
+    denial attack. The grader evaluates the goal independently of the mediator.
+    """
+    _object(goal, {"any_of"}, "attack.goal")
+    alternatives = goal["any_of"]
+    if not isinstance(alternatives, list) or not 1 <= len(alternatives) <= 8:
+        raise ValueError("attack.goal.any_of must list 1 to 8 alternatives")
+    for index, item in enumerate(alternatives):
+        where = f"attack.goal.any_of[{index}]"
+        if not isinstance(item, dict) or len(item) != 1:
+            raise ValueError(f"{where} must have exactly one predicate")
+        ((kind, value),) = item.items()
+        if kind == "executed":
+            if not isinstance(value, dict) or not {"device", "operation"} <= set(value) <= {
+                "device",
+                "operation",
+                "parameters",
+            }:
+                raise ValueError(
+                    f"{where}.executed needs device, operation and optional parameters"
+                )
+            if (
+                value["device"] not in DEVICES
+                or value["operation"] not in OPERATIONS[value["device"]]
+            ):
+                raise ValueError(f"{where}.executed names an unsupported operation")
+            if value["operation"] == "read":
+                raise ValueError(f"{where}.executed must be an effect")
+            if "parameters" in value:
+                _json_value(value["parameters"], f"{where}.executed.parameters")
+        elif kind == "state_reached":
+            if not isinstance(value, dict) or not value:
+                raise ValueError(f"{where}.state_reached must list device values")
+            for path, expected in value.items():
+                validate_state_value(path, expected)
+        elif kind == "task_not_completed":
+            if value is not True:
+                raise ValueError(f"{where}.task_not_completed must be true")
+        else:
+            raise ValueError(f"{where} has an unsupported predicate")
+
+
 def validate_attack_record_v2(attack: Any) -> None:
     """A labelled attack family and its bounded mutation (DAT-03, DAT-04, DAT-08)."""
     if not isinstance(attack, dict) or attack.get("family") not in ATTACK_FAMILIES:
         raise ValueError(f"attack.family must be one of {list(ATTACK_FAMILIES)}")
+    if "goal" in attack:
+        validate_attack_goal(attack["goal"])
+        attack = {key: value for key, value in attack.items() if key != "goal"}
     if attack["family"] == "hidden_instruction":
         _object(
             attack,
@@ -542,6 +593,8 @@ def validate_scenario(scenario: Any) -> None:
         attack = scenario["attack"]
         if v2:
             validate_attack_record_v2(attack)
+            if scenario["split"] == "test" and "goal" not in attack:
+                raise ValueError("final test attacks must declare a frozen attacker goal")
             if attack["family"] in SCHEDULE_FAMILIES:
                 if attack["evidence_schedule"] != scenario["evidence_schedule"]:
                     raise ValueError("attacked schedule must match the recorded mutation")
