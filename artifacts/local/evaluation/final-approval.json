@@ -1,0 +1,24 @@
+{
+  "approved_by": "Simon K. Darota",
+  "approved_at": "2026-11-04T14:54:31+04:00",
+  "decisions": [
+    "D03",
+    "D04",
+    "D05",
+    "D09",
+    "D10",
+    "D11",
+    "D13",
+    "D06",
+    "D07",
+    "D08",
+    "D12"
+  ],
+  "notes": "Final-study freeze approved by Simon in the project session on 2026-11-04. Ahmed approved the final manifest, attacker goals, range-clamp label, D12 (with the primary comparison, exact bound and sensitivity additions) and PR #2 in his November message, relayed by Simon; that approval is not authenticated here.",
+  "conditions_sha256": "571be308055826fe7b274028370e250e58ede610cc2b7b2304ec42fc376ff25a",
+  "grader_cases_sha256": "015a01c929e1cc9afe44bd2c1990118573335bebcbd0db8de6962b3404203551",
+  "implementation_sha256": "f82c401277b2afac6d8a742d902c77d2fc9f5cd7cc1d9a1014c4f27bd55b2378",
+  "interface_sha256": "8b957f27820e9618659f6da92db57030c3c0c1930d388cf2ba14e1086ce9046b",
+  "protocol_sha256": "f748ce27e1ba89e98d4a41764749be6243022f9963b7994d6490121c8f8af540",
+  "suite_sha256": "5fc63ddbbc9b2f52187b26812c8e15545e4378d9d2b867ec16418d308d15b433"
+}
