@@ -112,6 +112,9 @@ def main(argv: list[str] | None = None) -> int:
     analysis.add_argument("--output", type=Path, help="New JSON file (default PATH/analysis.json)")
     analysis.add_argument("--replicates", type=int, default=10_000)
     analysis.add_argument("--seed", type=int, default=20261102)
+    ablation = commands.add_parser("ablate", help="Replay a batch through ablated mediators")
+    ablation.add_argument("path", type=Path, help="A verified condition batch directory")
+    ablation.add_argument("--output", type=Path, required=True, help="New JSON file")
     commands.add_parser("check-grader")
     args = parser.parse_args(argv)
     result: dict[str, Any]
@@ -207,6 +210,19 @@ def main(argv: list[str] | None = None) -> int:
                 "output": str(target.resolve()),
                 "security_comparisons": result["security_comparisons"],
                 "utility": result["utility"],
+            }
+        elif args.command == "ablate":
+            from .ablation import ablate
+            from .storage import write_json
+
+            if args.output.exists():
+                raise FileExistsError("Ablation output already exists; choose a new path")
+            report = ablate(args.path)
+            write_json(args.output, report)
+            result = {
+                "output": str(args.output.resolve()),
+                "eligible_runs": report["eligible_runs"],
+                "variants": report["variants"],
             }
         elif args.command == "check-grader":
             result = grader_selfcheck(ROOT / "fixtures/evaluation/grader_cases.json")
