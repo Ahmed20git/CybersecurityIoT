@@ -1,6 +1,6 @@
 # EffectShield phased project plan
 
-Updated 2026-10-29. **Week 4 ran from Monday September 21 to Friday September 25, 2026.** The submission window is Week 13, **November 23–27**; its exact submission day/time remains unconfirmed. The internal completion date is **Friday November 20**. All dates use Asia/Dubai.
+Updated 2026-11-04. **Week 4 ran from Monday September 21 to Friday September 25, 2026.** The submission window is Week 13, **November 23–27**; its exact submission day/time remains unconfirmed. The internal completion date is **Friday November 20**. All dates use Asia/Dubai.
 
 Aim for a complete deliverable candidate by **Friday November 6 (Week 10)**, joint review by **Friday November 13 (Week 11)**, and all corrections and internal sign-off by **Friday November 20 (Week 12)**. Week 13 is reserved for submission. The earlier proposal's Week 5 gate is superseded by the [revised contract](reference/EffectShield_Revised_Research_Project_Contract.docx)'s Week 4 gate. The original contract's Weeks 14–15 delivery schedule remains source history; the agreed Week 13 deadline and Weeks 10–12 completion goal control this plan. Technical scope, research deliverables and acceptance criteria remain unchanged.
 
@@ -147,6 +147,22 @@ Proposed by Simon on October 29 for agreement with Ahmed. The joint review (Nove
 | Run budget | D11 decided; the final matrix needs at most USD 1.728 of USD 1.957 remaining |
 | Freeze | Final-study freeze binds conditions and requires D06–D08 and D12; the draft protocol keeps D12 pending |
 | Main experiments and trace ablations | Not started: they follow the joint freeze. The `final` command runs the frozen study once in block-randomized order. Replay ablations still need their command (EXP-06) |
+
+## Final study, November 4
+
+Simon and Ahmed approved the final manifest, `final-v1`, the three condition definitions (continuation v2, PR #2) and D12, and the study was frozen on November 4 (freeze `200d6b0b…`, code `1ec6544`). It ran once from 10:54 to 11:19 UTC (14:54–15:19 +04:00) under block-randomized order. All 432 attempts are retained in `artifacts/local/evaluation/final-2026-11-04/`; all three bundles and the comparison verify. 97 attempts failed during a 3-minute provider transport outage before any model call and were not retried, as the frozen rules require. Known estimated cost: USD 0.1829.
+
+| Measure (task-level rate, evaluable runs) | Unprotected | Safety prompt only | EffectShield |
+| --- | --- | --- | --- |
+| Attacked unsafe effect | 0.583 (30/56) | 0.458 (24/56) | 0.000 (0/56); exact task-level upper bound 0.142 |
+| Attack success | 0.646 (33/56) | 0.500 (25/56) | 0.062 (3/56), all lockout goals |
+| Clean completion | 0.708 (40/55) | 0.708 (41/56) | 0.986 (55/56) |
+| Clean unsafe effect | 0.292 (15/55) | 0.250 (12/56) | 0.000 (0/56) |
+| Attacked completion | 0.521 | 0.542 | 0.868 |
+| Weighted loss (10U + B) | 570 | 480 | 2 (2 unnecessary blocks) |
+| Invalid runs (provider outage) | 33 | 32 | 32 |
+
+The primary comparison supports the reduction: −58.3 pp, 95% CI [−76.4, −38.9]. Analysis: `final-2026-11-04/analysis.json`; ablations: `final-2026-11-04-ablation-*.json`; discussion in the [research report](research_report.md#results-and-discussion). Next: Ahmed's independent replay, then the report, dashboard and demo for the November 9 candidate.
 
 ## Phase gates
 

@@ -464,3 +464,19 @@ Also reviewed Simon's `thermostat-range-clamp` label: correct. The request accep
 | `mypy` (strict) | No issues in 48 source files |
 
 Not run: no live model call. The protocol version change must be in the final freeze.
+
+## 2026-11-04 — PR #2, freeze approvals and the final study
+
+Simon asked to finish his part after Ahmed's freeze review. The work was AI-assisted (Claude Code).
+
+**Integration.** PR #2 (`wp-05-refusal-limit`: the refusal limit ends as `escalated`, continuation v2) was fast-forwarded. It broke verification of the five retained named-condition bundles and both comparisons, which record v1. `3d9ae2a` lets conditions record either version, while the runner requires v2 for new batches; a regression test covers both sides.
+
+**Ahmed's review items.** `3728121` adds them to the analysis: one primary comparison, Clopper-Pearson task-level upper bounds, a sensitivity line that counts invalid runs as failures, and clean-conditioned attack success for denial goals. `1ec6544` records the approvals of D12, `final-v1`, the three conditions and the range-clamp label.
+
+**Freeze and run.** Approval record `final-approval.json` (Simon, 14:54 +04:00; Ahmed's approval relayed). Freeze `200d6b0b…` binds implementation `f82c4012…`, which `1ec6544` reproduces exactly. `final` ran 432 attempts from 10:54 to 11:19 UTC. 97 consecutive attempts (10:59–11:02 UTC) failed at the token-count transport before any generation call and were not retried. The runner labels them `invalid_response` because the official usage check rejects a run with zero calls; an infrastructure error would be the clearer label. Known estimated cost: USD 0.1829. Results are in the [project plan](project_plan.md#final-study-november-4).
+
+**Ablations.** `experiments/ablation.py` and `ablate` (written during the run, imported by no worker, after the freeze) replay recorded proposals through the full mediator, `no_provenance` and `no_freshness_replay`. Replaying the live protected proposals reproduces their executed effects exactly.
+
+**Verification:** 2,455 tests and 116 subtests passed; Ruff, format and strict mypy passed. All eleven bundles, the three comparisons and both freezes verify. A credential scan of the new evidence found nothing.
+
+Not done: Ahmed's independent replay; the report draft beyond the results section; dashboard and demo.

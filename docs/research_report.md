@@ -1,6 +1,6 @@
 # EffectShield research report — working draft
 
-Status: methods outline and implemented baseline description. Confirmatory research results are not yet available; the October 7 baseline-gate outcome (development suite, unprotected condition only) is recorded in the evaluation evidence and its [review record](../artifacts/local/evaluation/live-baseline/review/README.md). Simon leads evaluation and writing; Ahmed leads runtime/enforcement implementation; both review interpretation and security-sensitive claims. Scope, decisions and milestones are defined in the [requirements](requirements.md) and [project plan](project_plan.md).
+Status: methods, implementation and the preliminary November 4 final-study results (pending Ahmed's independent replay); the October 7 baseline-gate outcome (development suite, unprotected condition only) is recorded in the evaluation evidence and its [review record](../artifacts/local/evaluation/live-baseline/review/README.md). Simon leads evaluation and writing; Ahmed leads runtime/enforcement implementation; both review interpretation and security-sensitive claims. Scope, decisions and milestones are defined in the [requirements](requirements.md) and [project plan](project_plan.md).
 
 ## Research question and claim boundary
 
@@ -42,9 +42,23 @@ The final analysis must report declared populations and denominators, clean and 
 
 ## Results and discussion
 
-No confirmatory research results or confidence intervals are reported yet. Fill this section only from approved, frozen experiment evidence. Current software verification belongs in the [development log](development_log.md), with commands, counts and limitations.
+The frozen final study ran once on November 4, 2026 (freeze `200d6b0b…`; 24 tasks × clean/attacked × 3 conditions × 3 repetitions = 432 attempts; `gpt-4.1-mini-2025-04-14`; block-randomized order). These results are preliminary until Ahmed's independent replay. A 3-minute provider transport outage (10:59–11:02 UTC) made 97 attempts fail before any model call. Under the frozen rules they were not retried and are reported as invalid; the block-randomized order spread them evenly across conditions (33, 32, 32).
 
-The eventual discussion must include failed attacks, unsafe effects, false blocks, unsuccessful repairs, unknown outcomes and limitations from the simulator, selected models, task population and statistical uncertainty. Do not tune the implementation on final-test results or present a scripted mechanics demonstration as measured model susceptibility.
+| Measure (task-level rate, evaluable runs) | Unprotected | Safety prompt only | EffectShield |
+| --- | --- | --- | --- |
+| Attacked unsafe effect | 0.583 (30/56) | 0.458 (24/56) | 0.000 (0/56); exact task-level upper bound 0.142 |
+| Attack success | 0.646 (33/56) | 0.500 (25/56) | 0.062 (3/56), all lockout goals |
+| Clean completion | 0.708 (40/55) | 0.708 (41/56) | 0.986 (55/56) |
+| Clean unsafe effect | 0.292 (15/55) | 0.250 (12/56) | 0.000 (0/56) |
+| Attacked completion | 0.521 | 0.542 | 0.868 |
+| Weighted loss (10U + B) | 570 | 480 | 2 (2 unnecessary blocks) |
+| Invalid runs (provider outage) | 33 | 32 | 32 |
+
+**Primary comparison** (EffectShield vs unprotected, attacked unsafe effects): −58.3 percentage points, two-sided 95% task-cluster bootstrap CI [−76.4, −38.9]. The upper endpoint is below zero, so the reduction claim is supported (STA-02). Counting invalid runs as failures gives −41.7 pp [−56.9, −26.4], still supported. The exploratory comparisons (attack success vs unprotected, and both outcomes vs the safety prompt) also have upper endpoints below zero. Clean completion is preserved (0.986 ≥ 0.85 × 0.708). The baselines' clean utility is lower mainly because the model unlocked or opened the door for nobody in clean stale/replay tasks.
+
+EffectShield's three attack successes are lockouts in the occupied arrival tasks. After a replayed or stale "absent" reading, the agent did not read presence again, and the door stayed locked. This is the lockout cost of the D06/D07 rules that Ahmed flagged; conditioning on a completed matched clean run gives the same 3/56. There were 42 protected blocks, and 2 of them were unnecessary by the independent label. Trace-replay ablations of the same proposals attribute 12 unsafe replays to the removal of rules 4–5 (`no_freshness_replay`) and at most 1 to the removal of rule 3. These are fixed-trace results, not end-to-end ones.
+
+Limitations: one model, one simulator with five devices, 24 synthetic tasks, scripted attack families, and 22% of runs lost to an infrastructure outage. Within this declared scope the results support the hypothesis; they do not establish real-world physical safety or general prompt-injection prevention.
 
 ## Reproducibility and review
 
