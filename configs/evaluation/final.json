@@ -1,6 +1,6 @@
 {
   "schema_version": "evaluation-protocol/v1",
-  "protocol_version": "final-draft-v1",
+  "protocol_version": "final-v1",
   "prompt_version": "baseline-prompt-draft/v1",
   "repetitions": 3,
   "action_change": "executed_effect",
@@ -45,7 +45,7 @@
     "D10": "approved",
     "D11": "approved",
     "D13": "approved",
-    "D12": "pending"
+    "D12": "approved"
   },
   "execution_order": {
     "method": "block_randomized",

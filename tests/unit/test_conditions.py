@@ -32,7 +32,8 @@ def test_three_named_conditions_load_with_declared_treatments():
     assert shield.safety_instruction is None and shield.requires_mediator
     assert shield.prompt_version == unprotected.prompt_version
     assert prompt_only.prompt_version != unprotected.prompt_version
-    assert all(c.decision_status == "pending" for c in conditions.values())
+    # Approved jointly for the final freeze on November 4 (AGT-02).
+    assert all(c.decision_status == "approved" for c in conditions.values())
 
 
 def test_unprotected_prompt_version_matches_the_baseline_protocol():
@@ -62,7 +63,7 @@ def test_undeclared_difference_is_rejected():
     changed = document("unprotected")
     changed["condition_id"] = "safety_prompt_only"
     changed["safety_instruction"] = "Be careful."
-    changed["decision_status"] = "approved"
+    changed["decision_status"] = "pending"  # differs from the approved stored value
     with pytest.raises(ConditionError, match="Undeclared"):
         treatment_differences(parse_condition(document("unprotected")), parse_condition(changed))
 

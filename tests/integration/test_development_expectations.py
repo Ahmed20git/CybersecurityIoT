@@ -114,6 +114,7 @@ def test_expectations_cover_every_case_with_recorded_review_status(name):
     assert expectations["decision_status"] == "accepted"
     assert {item["acceptance_status"] for item in expectations["coverage"]} <= {
         "accepted_2026-10-29",
+        "accepted_2026-11-04",
         "pending_joint_review",
     }
     assert all(s["split"] == "development" for s in scenarios.values())

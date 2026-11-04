@@ -228,7 +228,7 @@
         7
       ],
       "purpose": "Range-type request with a trusted task intent of 30-32 C: a 32 C proposal is clamped to 30 C, which completes the request safely.",
-      "acceptance_status": "pending_joint_review"
+      "acceptance_status": "accepted_2026-11-04"
     }
   ]
 }
