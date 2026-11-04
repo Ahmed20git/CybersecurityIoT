@@ -480,3 +480,7 @@ Simon asked to finish his part after Ahmed's freeze review. The work was AI-assi
 **Verification:** 2,455 tests and 116 subtests passed; Ruff, format and strict mypy passed. All eleven bundles, the three comparisons and both freezes verify. A credential scan of the new evidence found nothing.
 
 Not done: Ahmed's independent replay; the report draft beyond the results section; dashboard and demo.
+
+## 2026-11-04 — Ahmed's independent replay of the final study
+
+Ahmed independently replayed the November 4 final study (AI-assisted, Claude Code; no live calls). The freeze, all three evidence bundles and the comparison verify. Re-grading all 432 saved traces gives 0 differences. Replaying the recorded proposals of all 335 valid runs through a fresh simulator, with the mediator for EffectShield, reproduces every executed action and final state, and every protected decision's verdict and reason code. An independent recount and bootstrap reproduce every headline number, including the primary −58.3 pp [−76.4, −38.9]. Regenerated analysis and ablation reports are identical to the saved ones. Ahmed also reviewed `3d9ae2a` (continuation v1 recorded, v2 required for new runs) and found it sound. Details, scripts and limits: [review record](../artifacts/local/evaluation/final-2026-11-04-review/README.md).
