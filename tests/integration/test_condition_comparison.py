@@ -348,3 +348,18 @@ def test_credential_shaped_condition_is_rejected_before_saving_plan():
                 root / "blocked",
             )
         assert not (root / "blocked").exists()
+
+
+def test_retained_v1_conditions_verify_but_cannot_start_new_runs():
+    # continuation-draft/v2 (PR #2) must not invalidate evidence recorded under v1.
+    retained = ROOT / "artifacts/local/evaluation/pilot-2026-10-29"
+    assert verify_comparison(retained)["verified"]
+    old = load_json(retained / "effectshield" / "manifest.json")["condition"]
+    assert old["continuation_protocol"] == "continuation-draft/v1"
+    config = scripted_protocol(load_json(ROOT / "configs/evaluation/gate.json"))
+    config["prompt_version"] = old["prompt_version"]
+    with TemporaryDirectory() as temporary:
+        output = Path(temporary) / "blocked"
+        with pytest.raises(ValueError, match="current continuation protocol"):
+            run_suite(SUITE, config, output, mode="baseline", fixture_path=FIXTURES, condition=old)
+        assert not output.exists()

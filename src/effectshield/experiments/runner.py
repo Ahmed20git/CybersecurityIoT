@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from effectshield.agent.conditions import parse_condition
+from effectshield.agent.continuation import CONTINUATION_PROTOCOL_VERSION
 from effectshield.grading import grade
 from effectshield.scenarios import load_suite
 
@@ -591,6 +592,8 @@ def open_batch(
             or (mode in {"pilot", "final"} and backend_spec and not fixture_path)
         ):
             raise ValueError("Named conditions require scripted baseline, live pilot or final mode")
+        if parsed.continuation_protocol != CONTINUATION_PROTOCOL_VERSION:
+            raise ValueError("New runs require the current continuation protocol")
         if parsed.prompt_version != config["prompt_version"]:
             raise ValueError("Condition prompt version differs from the run protocol")
         if canonical(condition) != canonical(redact(condition)):

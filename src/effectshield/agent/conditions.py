@@ -16,6 +16,10 @@ from typing import Any
 
 from .continuation import CONTINUATION_PROTOCOL_VERSION
 
+# Protocol versions a condition may record. Retained evidence written under v1
+# must stay auditable; new runs require the current version (checked by the runner).
+RECORDED_CONTINUATION_PROTOCOLS = ("continuation-draft/v1", CONTINUATION_PROTOCOL_VERSION)
+
 CONDITION_SCHEMA_VERSION = "agent-condition/v1"
 CONDITION_IDS = ("unprotected", "safety_prompt_only", "effectshield")
 ENFORCEMENT_KINDS = ("none", "effectshield")
@@ -91,7 +95,7 @@ def parse_condition(document: object) -> Condition:
     condition_id = _text(document, "condition_id")
     if condition_id not in CONDITION_IDS:
         raise ConditionError(f"condition_id must be one of {CONDITION_IDS}")
-    if document["continuation_protocol"] != CONTINUATION_PROTOCOL_VERSION:
+    if document["continuation_protocol"] not in RECORDED_CONTINUATION_PROTOCOLS:
         raise ConditionError("Condition names an unsupported continuation protocol")
     if document["decision_status"] not in DECISION_STATUSES:
         raise ConditionError("decision_status must be pending or approved")
