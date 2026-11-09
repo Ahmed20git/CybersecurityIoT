@@ -1,0 +1,16 @@
+# Dashboard theme: the validated light palette surface and text tokens.
+[theme]
+base = "light"
+primaryColor = "#2a78d6"
+backgroundColor = "#fcfcfb"
+secondaryBackgroundColor = "#f2f1ed"
+textColor = "#0b0b0b"
+
+[browser]
+gatherUsageStats = false
+
+[server]
+headless = true
+
+[client]
+toolbarMode = "viewer"

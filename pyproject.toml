@@ -11,6 +11,8 @@ dependencies = []
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "mypy>=1.10", "ruff>=0.5"]
+# Pinned versions: requirements-dashboard.txt
+dashboard = ["streamlit>=1.67"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -36,3 +38,8 @@ extend-exclude = ["artifacts"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
+
+[[tool.mypy.overrides]]
+# The dashboard's pandas dependency ships no type information.
+module = ["pandas", "pandas.*"]
+ignore_missing_imports = true
