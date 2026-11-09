@@ -42,3 +42,6 @@ docs/review_and_decisions.md
 docs/baseline_tasks.md
 AGENTS.md
 docs/prompts_history.md
+
+# Rendered demonstration video: shared outside Git; regenerate with scripts/record_demo.py.
+docs/demo/*.mp4
