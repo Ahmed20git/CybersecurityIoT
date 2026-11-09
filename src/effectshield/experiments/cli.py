@@ -115,6 +115,17 @@ def main(argv: list[str] | None = None) -> int:
     ablation = commands.add_parser("ablate", help="Replay a batch through ablated mediators")
     ablation.add_argument("path", type=Path, help="A verified condition batch directory")
     ablation.add_argument("--output", type=Path, required=True, help="New JSON file")
+    timing = commands.add_parser("latency", help="Mediator-only and total task latency")
+    timing.add_argument("path", type=Path, help="A verified three-condition comparison")
+    timing.add_argument("--output", type=Path, required=True, help="New JSON file")
+    timing.add_argument("--repeats", type=int, default=5)
+    billing = commands.add_parser("billing", help="Reconcile estimated and billed live costs")
+    billing.add_argument("--output", type=Path, required=True, help="New JSON file")
+    billing.add_argument("--actual", type=Path, help="JSON mapping UTC dates to billed USD")
+    package = commands.add_parser("artifact-manifest", help="Checksum all retained evidence")
+    package.add_argument("--output", type=Path, required=True, help="New JSON file")
+    package_check = commands.add_parser("verify-artifact", help="Re-verify a packaged artifact")
+    package_check.add_argument("path", type=Path)
     commands.add_parser("check-grader")
     args = parser.parse_args(argv)
     result: dict[str, Any]
@@ -224,6 +235,56 @@ def main(argv: list[str] | None = None) -> int:
                 "eligible_runs": report["eligible_runs"],
                 "variants": report["variants"],
             }
+        elif args.command == "latency":
+            from .latency import latency_report
+            from .storage import write_json
+
+            if args.output.exists():
+                raise FileExistsError("Latency output already exists; choose a new path")
+            report = latency_report(args.path, repeats=args.repeats)
+            write_json(args.output, report)
+            result = {
+                "output": str(args.output.resolve()),
+                "mediator_only_latency": report["mediator_only_latency"],
+                "decision_mismatches": report["decision_mismatches_with_live_records"],
+            }
+        elif args.command == "billing":
+            from .billing import reconcile
+            from .storage import write_json
+
+            if args.output.exists():
+                raise FileExistsError("Billing output already exists; choose a new path")
+            retained = ROOT / "artifacts/local/evaluation"
+            bundles = [retained / name for name in LIVE] + [
+                retained / "final-2026-11-04" / name
+                for name in ("unprotected", "safety_prompt_only", "effectshield")
+            ]
+            report = reconcile(bundles, load_json(args.actual) if args.actual else None)
+            write_json(args.output, report)
+            result = {
+                "output": str(args.output.resolve()),
+                "status": report["status"],
+                "total": report["total"],
+                "days": report["days"],
+            }
+        elif args.command == "artifact-manifest":
+            from .artifact import build_manifest
+            from .storage import write_json
+
+            if args.output.exists():
+                raise FileExistsError("Artifact manifest already exists; choose a new path")
+            built = build_manifest(ROOT)
+            write_json(args.output, built)
+            result = {
+                "output": str(args.output.resolve()),
+                **{
+                    key: len(built[key]) for key in ("bundles", "comparisons", "freezes", "reports")
+                },
+            }
+        elif args.command == "verify-artifact":
+            from .artifact import verify_artifact
+
+            result = verify_artifact(ROOT, args.path)
         elif args.command == "check-grader":
             result = grader_selfcheck(ROOT / "fixtures/evaluation/grader_cases.json")
         else:

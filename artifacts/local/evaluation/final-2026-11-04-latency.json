@@ -1,0 +1,59 @@
+{
+  "decision_mismatches_with_live_records": 0,
+  "measurement_points": {
+    "mediator_only_latency": "Mediator.decide alone (time.perf_counter_ns), offline replay of the recorded protected proposals",
+    "total_task_latency": "runner wall time per attempt (time.monotonic), recorded live; valid runs only"
+  },
+  "mediator_only_latency": {
+    "max": 404.667,
+    "mean": 87.32488776978417,
+    "median": 81.625,
+    "min": 59.417,
+    "n": 695,
+    "p95": 112.166,
+    "p99": 218.292,
+    "unit": "us"
+  },
+  "notice": "Mediator latency comes from offline replay on the stated hardware, not from the live run; total task latency includes provider round trips.",
+  "repeats": 5,
+  "replayed_protected_runs": 112,
+  "runtime": {
+    "cpu_count": 10,
+    "machine": "arm64",
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "python": "3.14.6"
+  },
+  "schema_version": "latency-report/v1",
+  "total_task_latency": {
+    "effectshield": {
+      "max": 10.346830334048718,
+      "mean": 3.807417754906055,
+      "median": 3.5936393960146233,
+      "min": 2.1449864579481073,
+      "n": 112,
+      "p95": 5.443890375026967,
+      "p99": 9.25627600000007,
+      "unit": "s"
+    },
+    "safety_prompt_only": {
+      "max": 8.061635958962142,
+      "mean": 3.77782068939892,
+      "median": 3.3522527084860485,
+      "min": 1.2117357919923961,
+      "n": 112,
+      "p95": 6.292015165963676,
+      "p99": 7.903805834008381,
+      "unit": "s"
+    },
+    "unprotected": {
+      "max": 9.947567875031382,
+      "mean": 4.115419157710963,
+      "median": 3.7583860000013374,
+      "min": 2.17480004101526,
+      "n": 111,
+      "p95": 7.303071542002726,
+      "p99": 8.949995875009336,
+      "unit": "s"
+    }
+  }
+}
