@@ -1,6 +1,6 @@
 # Evaluation guide
 
-Updated 2026-10-29. The repository combines Ahmed's native simulator, gateway, runtime schemas and mediator with Simon's development scenarios, bounded attacks, independent grader and experiment evidence tools. Work progresses by component and requirement; filenames and commands describe their function.
+Updated 2026-11-06. The repository combines Ahmed's native simulator, gateway, runtime schemas and mediator with Simon's development scenarios, bounded attacks, independent grader and experiment evidence tools. Work progresses by component and requirement; filenames and commands describe their function.
 
 On October 7, 2026, after Simon's approval, a live rehearsal (11 attempts) and an approval-bound freeze (`953b4940…`), the official gate ran once. Benign completion was 30/30 (threshold 21/30), executed action change 3/3 (threshold 3/3), and all 33 attempts were automatically graded with no invalid traces, so all three criteria **passed** at baseline scope. Simon approved full scope and reported completed joint baseline protocol review on October 7; D14 records that full scope is retained. Execution, automated audit and an independent re-execution reproduction are complete, and Ahmed and Simon jointly accepted the results on October 7, as recorded in the [review record](../artifacts/local/evaluation/live-baseline/review/README.md#sign-off). See the [decision register](requirements.md#open-decisions); the [project plan](project_plan.md) retains the dated schedule.
 
@@ -13,8 +13,8 @@ On October 7, 2026, after Simon's approval, a live rehearsal (11 attempts) and a
 | Grader and evidence | Independent complete-trace grading, isolated attempts, ledger, reports, audit and approval-bound freeze |
 | Simulator replay | Recorded proposals executed by the existing native runtime, with complete history and read receipts |
 | Baseline agent | Provider-neutral bounded agent loop and scripted offline integration; a real provider is configured separately and needs credentials, a budget and protocol approvals |
-| Protected condition | Ahmed's mediator (WP-07 to WP-09, merged October 14) runs `effectshield` through the evaluation runner; its D04–D08 semantics are Proposed and pending joint review |
-| Final study | The final 24-task corpus, frozen protocol, analysis and dashboard remain later work |
+| Protected condition | Ahmed's mediator (WP-07 to WP-09, merged October 14) runs `effectshield` through the evaluation runner; D06–D08 were decided on October 29 |
+| Final study | Frozen and run once on November 4; analysis, ablations, latency, billing, report, dashboard and artifact manifest are described in [final results and reporting](#final-results-and-reporting) |
 
 The evaluator never creates a repair. In protected runs, the runner copies the mediator's executed repairs into `trace.repairs` as committed-transition references, and the grader judges their safety and task completion independently (EXP-03). The scenario suite and fixture outputs are implementation evidence; they are not final-study cases or empirical model results.
 
@@ -175,6 +175,22 @@ python3 scripts/evaluate.py ablate artifacts/local/evaluation/final-2026-11-04/u
 ```
 
 The proposals do not adapt to blocks, so ablation results describe enforcement on fixed traces, not live agent behaviour.
+
+## Final results and reporting
+
+The analysis (schema `effectshield-analysis/v2`) adds the STA-06 decision confusion table to the v1 fields. Each mediator decision on an effect is classified by its disposition (allowed, repaired, or blocked, which includes escalations and errors) and by the independent `policy_permissible` label of the proposal in the state version the mediator decided on. Proposals rejected at schema validation are counted separately. Repairs form their own row: the grader judges their executed outcome, so they are neither true nor false positives.
+
+```sh
+python3 scripts/evaluate.py analyze artifacts/local/evaluation/final-2026-11-04 --output artifacts/local/evaluation/final-2026-11-04/analysis-v2.json
+python3 scripts/evaluate.py latency artifacts/local/evaluation/final-2026-11-04 --output artifacts/local/evaluation/final-2026-11-04-latency.json
+python3 scripts/evaluate.py billing --output artifacts/local/evaluation/billing-2026-11-06.json [--actual BILLED_USD_BY_UTC_DAY.json]
+python3 scripts/evaluate.py artifact-manifest --output artifacts/local/evaluation/ARTIFACT_MANIFEST.json
+python3 scripts/evaluate.py verify-artifact artifacts/local/evaluation/ARTIFACT_MANIFEST.json
+```
+
+`latency` (LOG-03) replays every valid protected run offline through the full mediator and times each `Mediator.decide` call with a monotonic nanosecond clock (`perf_counter_ns`), five times per run. It reports the distribution with its sample count and runtime context. It also checks every replayed verdict against the retained `decisions.json`, and summarizes the recorded end-to-end task latency of every valid run separately. `billing` (LOG-04) totals attempts, generation calls, token categories, incomplete accounting and estimated cost per bundle and per UTC day, and labels the pricing basis. Estimated and actual amounts stay separate: without `--actual`, the status is "actual billing unavailable". `artifact-manifest` (LOG-05, LOG-07) checksums every retained bundle, comparison, freeze and report, and `verify-artifact` recomputes all of them and re-runs every audit.
+
+The report's numbers are macros in `docs/report/generated/results.tex`, written by `python3 scripts/report_tables.py`. The read-only dashboard is `src/effectshield/dashboard/`; its LOG-06 test checks that no evidence-derived text reaches a markup-rendering call. The [artifact guide](artifact.md) has the reproduction steps, the dashboard and demonstration commands, and the reproduction limits.
 
 ## Rehearsal and live integration
 

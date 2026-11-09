@@ -1,6 +1,6 @@
 # EffectShield phased project plan
 
-Updated 2026-11-04. **Week 4 ran from Monday September 21 to Friday September 25, 2026.** The submission window is Week 13, **November 23–27**; its exact submission day/time remains unconfirmed. The internal completion date is **Friday November 20**. All dates use Asia/Dubai.
+Updated 2026-11-06. **Week 4 ran from Monday September 21 to Friday September 25, 2026.** The submission window is Week 13, **November 23–27**; its exact submission day/time remains unconfirmed. The internal completion date is **Friday November 20**. All dates use Asia/Dubai.
 
 Aim for a complete deliverable candidate by **Friday November 6 (Week 10)**, joint review by **Friday November 13 (Week 11)**, and all corrections and internal sign-off by **Friday November 20 (Week 12)**. Week 13 is reserved for submission. The earlier proposal's Week 5 gate is superseded by the [revised contract](reference/EffectShield_Revised_Research_Project_Contract.docx)'s Week 4 gate. The original contract's Weeks 14–15 delivery schedule remains source history; the agreed Week 13 deadline and Weeks 10–12 completion goal control this plan. Technical scope, research deliverables and acceptance criteria remain unchanged.
 
@@ -162,7 +162,23 @@ Simon and Ahmed approved the final manifest, `final-v1`, the three condition def
 | Weighted loss (10U + B) | 570 | 480 | 2 (2 unnecessary blocks) |
 | Invalid runs (provider outage) | 33 | 32 | 32 |
 
-The primary comparison supports the reduction: −58.3 pp, 95% CI [−76.4, −38.9]. Analysis: `final-2026-11-04/analysis.json`; ablations: `final-2026-11-04-ablation-*.json`; discussion in the [research report](research_report.md#results-and-discussion). Next: Ahmed's independent replay, then the report, dashboard and demo for the November 9 candidate.
+The primary comparison supports the reduction: −58.3 pp, 95% CI [−76.4, −38.9]. Analysis: `final-2026-11-04/analysis.json`; ablations: `final-2026-11-04-ablation-*.json`; discussion in the [report summary](research_report.md#results). Ahmed's independent replay (`final-2026-11-04-review/`, merged November 6) re-graded all 432 traces and replayed all 335 valid runs with no differences.
+
+## Complete candidate, November 6
+
+The candidate planned for November 9 was ready on Friday November 6, the original Week 10 target. It awaits the joint review due November 13; nothing below has been accepted yet.
+
+| Deliverable | Status |
+| --- | --- |
+| Report (DEL-03) | Full report in [LaTeX](report/effectshield_report.tex) and [PDF](report/effectshield_report.pdf), 9 pages; every result number is generated from retained evidence |
+| Streamlit dashboard (DEL-03, LOG-06) | Read-only, eight pages over the verified final study; denominators and 95% intervals; untrusted text displayed only as plain data |
+| Five-minute demonstration (DEL-03) | Narrated recording of the dashboard, 4:35, shared outside Git; its subtitles and generated [script](demo/demo_script.md) are tracked; Simon and Ahmed may still record their own presentation |
+| Decision confusion (STA-06) | In `final-2026-11-04/analysis-v2.json`: 40 unsafe proposals blocked, 0 allowed, 2 unnecessary blocks, 5 repairs |
+| Latency (LOG-03) | `final-2026-11-04-latency.json`: mediator-only median 82 µs, separate from end-to-end task latency |
+| Billing (LOG-04) | `billing-2026-11-06.json`: estimated USD 0.2255 for all live attempts; actual billed amounts not yet supplied, so reconciliation remains open |
+| Artifact package (LOG-05, LOG-07) | `ARTIFACT_MANIFEST.json`, `verify-artifact` and the [artifact guide](artifact.md); the clean-environment regeneration is byte-identical |
+
+Next: joint review of the report's interpretation and security claims (DEL-04), Ahmed's installation and replay check of the package, demo rehearsal, and the billed amounts for LOG-04.
 
 ## Phase gates
 

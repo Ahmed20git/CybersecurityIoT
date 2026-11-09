@@ -2,7 +2,7 @@
 
 EffectShield studies whether deterministic checks between a tool-using language-model agent and a simulated smart home reduce unsafe effects while preserving useful task completion.
 
-The simulator, trusted gateway and typed runtime records are integrated with the development scenarios, bounded payload attacks, independent grader and experiment runner. A recorded-proposal replay exercises the actual simulator. The bounded baseline agent adapter uses the same runtime and supports a scripted test model plus a separate OpenAI connector. The approval-bound live baseline gate ran on October 7, 2026 with OpenAI `gpt-4.1-mini-2025-04-14` (see the [project plan](docs/project_plan.md#week-4-gate-and-fallback)); offline results do not establish model performance.
+The simulator, trusted gateway, typed runtime records and Ahmed's deterministic mediator are integrated with the scenarios, bounded payload attacks, independent grader and experiment runner. The frozen final study ran once on November 4, 2026 with OpenAI `gpt-4.1-mini-2025-04-14`: 432 attempts over 24 tasks, three conditions and three repetitions. EffectShield had no unsafe effect in 56 evaluable attacked runs, against 30 of 56 for the unprotected agent (primary difference −58.3 pp, 95% CI [−76.4, −38.9]), and clean completion was preserved. The claim is limited to this model, simulator and attack corpus. The [full report](docs/report/effectshield_report.pdf), its [summary](docs/research_report.md) and the [artifact guide](docs/artifact.md) describe the results and how to reproduce them.
 
 ## Run locally
 
@@ -42,7 +42,26 @@ python3 scripts/evaluate.py verify-comparison PATH_TO_COMPARISON
 python3 scripts/evaluate.py preflight --config configs/evaluation/final.json --suite scenarios/test/final.json --repetitions 3
 ```
 
-The comparison preserves matching, outcome and mediator-decision evidence. Scripted responses do not measure prompt-only defense efficacy or live-model utility. Preflight counts a proposed matrix against the run ceiling and approves nothing. See the [development cases and commands](docs/evaluation_guide.md#condition-comparison) and the [draft research report](docs/research_report.md).
+The comparison preserves matching, outcome and mediator-decision evidence. Scripted responses do not measure prompt-only defense efficacy or live-model utility. Preflight counts a proposed matrix against the run ceiling and approves nothing. See the [development cases and commands](docs/evaluation_guide.md#condition-comparison).
+
+## Final results, dashboard and demonstration
+
+Verify the retained evidence and regenerate every reported number offline, without credentials:
+
+```sh
+python3 scripts/evaluate.py verify-artifact artifacts/local/evaluation/ARTIFACT_MANIFEST.json
+python3 scripts/evaluate.py analyze artifacts/local/evaluation/final-2026-11-04 --output PATH_TO_OUTPUT
+python3 scripts/report_tables.py --check
+```
+
+The read-only results dashboard needs its pinned dependencies:
+
+```sh
+.venv/bin/python -m pip install -r requirements-dashboard.txt
+.venv/bin/streamlit run src/effectshield/dashboard/app.py
+```
+
+The narrated demonstration (4:35) records this dashboard. The video is shared outside Git; its [script](docs/demo/demo_script.md) and subtitles are tracked, and `scripts/record_demo.py` re-records it. The [artifact guide](docs/artifact.md) covers the ablation, latency and billing commands, the report build and re-recording the demonstration.
 
 ## Organization
 
@@ -53,17 +72,20 @@ The comparison preserves matching, outcome and mediator-decision evidence. Scrip
 | `src/effectshield/agent/` | Bounded proposal loop and isolated model clients |
 | `src/effectshield/mediator/` | Deterministic rules 1–8, repair and protected execution |
 | `src/effectshield/scenarios.py`, `attacks.py`, `grading.py` | Development data, bounded mutations and independent outcome checks |
-| `src/effectshield/experiments/`, `analysis.py` | Execution, replay, evidence, summaries, protocol freezing and final analysis |
+| `src/effectshield/experiments/`, `analysis.py` | Execution, replay, evidence, summaries, protocol freezing, final analysis, ablations, latency, billing and the artifact manifest |
+| `src/effectshield/dashboard/` | Read-only Streamlit results dashboard over verified evidence |
 | `scenarios/development/`, `scenarios/pilot/`, `scenarios/test/` | Development corpora, the held-out pilot and the draft final manifest, separated by split |
-| `fixtures/evaluation/`, `configs/` | Reference traces, hand-assigned expectations, conditions and approved baseline gate settings |
+| `fixtures/evaluation/`, `configs/` | Reference traces, hand-assigned expectations, conditions and approved protocol settings |
+| `artifacts/local/evaluation/` | Retained research evidence (D13), including the final study, its freeze, analyses and review |
+| `docs/report/`, `docs/demo/`, `scripts/` | Report source, generated tables and PDF; demonstration video and script; report, demo and command-line scripts |
 | `tests/` | Unit, integration and security checks |
 
 ## Documentation
 
 - [Setup and troubleshooting](docs/running.md)
-
 - [Evaluation commands and integration status](docs/evaluation_guide.md)
 - [Runtime interfaces](docs/interfaces.md), [mediator design](docs/mediator_design.md) and [evaluation records](docs/evaluation_interface.md)
+- [Full report (PDF)](docs/report/effectshield_report.pdf), [report summary](docs/research_report.md) and [artifact and reproduction guide](docs/artifact.md)
 - [Requirements](docs/requirements.md) and [project plan](docs/project_plan.md)
 - [Development and verification log](docs/development_log.md)
 - [Live baseline gate review record](artifacts/local/evaluation/live-baseline/review/README.md)
@@ -79,6 +101,6 @@ The [open decisions](docs/requirements.md#open-decisions) record the October 7 b
 | Simon | Scenarios, attacks, independent grading, experiments, analysis and reproducibility |
 | Both | Interface and security reviews, interpretation, report and demonstration |
 
-On October 7 the approval-bound live baseline gate (33 attempts, OpenAI `gpt-4.1-mini-2025-04-14`) passed all three criteria at baseline scope: 30/30 benign completions, 3/3 executed action changes and 33/33 attempts automatically graded with no invalid traces. D14 records that full scope is retained. Execution, automated audit and an independent re-execution reproduction are complete (see the [review record](artifacts/local/evaluation/live-baseline/review/README.md)). Ahmed and Simon jointly accepted these results on October 7, completing WP-06. Ahmed's mediator (WP-07 to WP-09) was merged on October 14, and the protected condition now runs offline through the evaluation runner with scripted proposals; its Proposed semantics await joint review, and no live protected result exists. The project plan preserves that checkpoint and records the outstanding work. Target a complete candidate by November 6, joint review by November 13 and internal completion by November 20. Submission remains November 23–27, with its exact due time pending.
+On October 7 the approval-bound live baseline gate (33 attempts, OpenAI `gpt-4.1-mini-2025-04-14`) passed all three criteria at baseline scope: 30/30 benign completions, 3/3 executed action changes and 33/33 attempts automatically graded with no invalid traces. D14 records that full scope is retained. Execution, automated audit and an independent re-execution reproduction are complete (see the [review record](artifacts/local/evaluation/live-baseline/review/README.md)). Ahmed and Simon jointly accepted these results on October 7, completing WP-06. Ahmed's mediator (WP-07 to WP-09) was merged on October 14. A held-out pilot ran on October 29, and the final study was frozen and run on November 4; Ahmed's independent replay found no differences. As of November 6 the report, dashboard, demonstration and artifact package form a complete candidate awaiting joint review by November 13. Internal completion is due November 20 and submission falls in November 23–27, with its exact due time pending. The [project plan](docs/project_plan.md) records the details.
 
 Implement and verify one coherent component at a time. Keep credentials in environment configuration, retain research evidence and commit related source, tests and documentation together. Use Git for source history; remove disposable verification outputs and tool caches after checks instead of keeping backup copies. No real devices or smart-home accounts are used.
