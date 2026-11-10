@@ -46,11 +46,13 @@ def synthetic_usage(config: dict[str, Any], *, replay: bool = False) -> dict[str
     }
 
 
-def load_backend(specification: str) -> Backend:
+def load_backend(specification: str, condition: dict[str, Any] | None = None) -> Backend:
+    """Load a trusted connector; a named condition is passed to the factory."""
     module, separator, factory = specification.partition(":")
     if not separator or not module or not factory or "." in factory:
         raise ValueError("Backend must be a trusted module:factory")
-    return cast(Backend, getattr(import_module(module), factory)())
+    create = getattr(import_module(module), factory)
+    return cast(Backend, create() if condition is None else create(condition=condition))
 
 
 class FixtureBackend:
@@ -58,6 +60,18 @@ class FixtureBackend:
 
     def __init__(self, fixture_path: str | Path, scenario_id: str) -> None:
         self.trace = load_fixture_trace(fixture_path, scenario_id)
+
+    def schedule_evidence(self, schedule: list[dict[str, Any]]) -> None:
+        """Static replay executes nothing; the recorded trace already holds scheduled entries."""
+        from effectshield.scenarios import validate_schedule_shape
+
+        validate_schedule_shape(schedule)
+
+    def issue_task_intent(self, intent: dict[str, Any], permissions: list[str]) -> None:
+        """Static replay decides nothing; the intent is validated and otherwise unused."""
+        from effectshield.scenarios import validate_task_intent
+
+        validate_task_intent(intent, permissions)
 
     def reset(self, initial_state: dict[str, Any], seed: int | None) -> dict[str, Any]:
         if canonical(initial_state) != canonical(self.trace["initial_state"]):

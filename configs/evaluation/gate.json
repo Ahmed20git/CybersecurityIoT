@@ -1,6 +1,6 @@
 {
   "schema_version": "evaluation-protocol/v1",
-  "protocol_version": "baseline-draft-v1",
+  "protocol_version": "baseline-approved-v1",
   "prompt_version": "baseline-prompt-draft/v1",
   "repetitions": 3,
   "action_change": "executed",
@@ -22,7 +22,7 @@
     "max_calls": 4,
     "max_tokens": 10240,
     "wall_timeout_s": 30,
-    "max_cost": 0.0,
+    "max_cost": 0.02,
     "currency": "USD"
   },
   "retry": {
@@ -35,12 +35,12 @@
     "kind": "live"
   },
   "decision_status": {
-    "D03": "pending",
-    "D04": "pending",
-    "D05": "pending",
-    "D09": "pending",
-    "D10": "pending",
-    "D11": "pending",
-    "D13": "pending"
+    "D03": "approved",
+    "D04": "approved",
+    "D05": "approved",
+    "D09": "approved",
+    "D10": "approved",
+    "D11": "approved",
+    "D13": "approved"
   }
 }

@@ -6,6 +6,7 @@ import sys
 import uuid
 from copy import deepcopy
 from pathlib import Path
+from typing import Any
 
 from .audit import verify_evidence
 from .checks import grader_selfcheck
@@ -14,6 +15,14 @@ from .runner import run_suite
 from .storage import load_json, now
 
 ROOT = Path(__file__).resolve().parents[3]
+# Retained live evidence whose spending counts against the budget (D11).
+LIVE = (
+    "live-baseline/rehearsal",
+    "live-baseline/gate",
+    "pilot-2026-10-29/unprotected",
+    "pilot-2026-10-29/safety_prompt_only",
+    "pilot-2026-10-29/effectshield",
+)
 
 
 def _output(mode: str) -> Path:
@@ -40,6 +49,10 @@ def main(argv: list[str] | None = None) -> int:
             sub.add_argument(
                 "--fixtures", type=Path, default=ROOT / "fixtures/evaluation/runs.json"
             )
+            if command == "baseline":
+                sub.add_argument(
+                    "--condition", type=Path, default=ROOT / "configs/conditions/unprotected.json"
+                )
             if command == "rehearsal":
                 sub.add_argument(
                     "--backend", help="Trusted module:factory; omit for fixture rehearsal"
@@ -47,6 +60,13 @@ def main(argv: list[str] | None = None) -> int:
         elif command == "freeze":
             sub.add_argument("--approval", type=Path, required=True)
             sub.add_argument("--output", type=Path, required=True)
+        if command in {"freeze", "approval-hashes"}:
+            sub.add_argument(
+                "--conditions", type=Path, help="Condition directory; required for a test suite"
+            )
+    final = commands.add_parser("final", help="Run the frozen final study once (live)")
+    final.add_argument("--freeze", type=Path, required=True)
+    final.add_argument("--output", type=Path)
     gate = commands.add_parser("gate")
     gate.add_argument("--freeze", type=Path, required=True)
     gate.add_argument("--output", type=Path)
@@ -54,31 +74,217 @@ def main(argv: list[str] | None = None) -> int:
     verify.add_argument("path", type=Path)
     evidence = commands.add_parser("verify-evidence")
     evidence.add_argument("path", type=Path)
+    comparison = commands.add_parser(
+        "compare-conditions", help="Run all three conditions on matched scripted inputs"
+    )
+    comparison.add_argument("--config", type=Path, default=ROOT / "configs/evaluation/gate.json")
+    comparison.add_argument(
+        "--suite", type=Path, default=ROOT / "scenarios/development/authorization.json"
+    )
+    comparison.add_argument(
+        "--fixtures", type=Path, default=ROOT / "fixtures/evaluation/authorization_runs.json"
+    )
+    comparison.add_argument("--conditions", type=Path, default=ROOT / "configs/conditions")
+    comparison.add_argument("--output", type=Path)
+    comparison.add_argument(
+        "--backend", help="Approved live module:factory; runs a non-official live pilot"
+    )
+    plan = commands.add_parser("preflight", help="Count a proposed run matrix against the ceiling")
+    plan.add_argument("--config", type=Path, default=ROOT / "configs/evaluation/gate.json")
+    plan.add_argument("--suite", type=Path, default=ROOT / "scenarios/pilot/pilot.json")
+    plan.add_argument("--conditions", type=Path, default=ROOT / "configs/conditions")
+    plan.add_argument("--repetitions", type=int, help="Defaults to the protocol's repetitions")
+    plan.add_argument(
+        "--consumed",
+        type=Path,
+        action="append",
+        help="Audited live evidence bundle counted against the ceiling (repeatable)",
+    )
+    comparison_check = commands.add_parser("verify-comparison")
+    comparison_check.add_argument("path", type=Path)
     visualize = commands.add_parser(
         "visualize", help="View saved evidence in an offline HTML report"
     )
     visualize.add_argument("path", type=Path)
     visualize.add_argument("--output", type=Path, help="New .html path outside the evidence bundle")
+    analysis = commands.add_parser("analyze", help="Metrics and paired bootstrap for a comparison")
+    analysis.add_argument("path", type=Path)
+    analysis.add_argument("--output", type=Path, help="New JSON file (default PATH/analysis.json)")
+    analysis.add_argument("--replicates", type=int, default=10_000)
+    analysis.add_argument("--seed", type=int, default=20261102)
+    ablation = commands.add_parser("ablate", help="Replay a batch through ablated mediators")
+    ablation.add_argument("path", type=Path, help="A verified condition batch directory")
+    ablation.add_argument("--output", type=Path, required=True, help="New JSON file")
+    timing = commands.add_parser("latency", help="Mediator-only and total task latency")
+    timing.add_argument("path", type=Path, help="A verified three-condition comparison")
+    timing.add_argument("--output", type=Path, required=True, help="New JSON file")
+    timing.add_argument("--repeats", type=int, default=5)
+    billing = commands.add_parser("billing", help="Reconcile estimated and billed live costs")
+    billing.add_argument("--output", type=Path, required=True, help="New JSON file")
+    billing.add_argument("--actual", type=Path, help="JSON mapping UTC dates to billed USD")
+    package = commands.add_parser("artifact-manifest", help="Checksum all retained evidence")
+    package.add_argument("--output", type=Path, required=True, help="New JSON file")
+    package_check = commands.add_parser("verify-artifact", help="Re-verify a packaged artifact")
+    package_check.add_argument("path", type=Path)
     commands.add_parser("check-grader")
     args = parser.parse_args(argv)
+    result: dict[str, Any]
     try:
         if args.command == "approval-hashes":
-            result = approval_hashes(ROOT, args.config, args.suite)
+            result = approval_hashes(ROOT, args.config, args.suite, args.conditions)
             result["notice"] = "Hashes only: not an approval. Obtain human review before freezing."
         elif args.command == "freeze":
             from effectshield.scenarios import load_suite
 
             load_suite(args.suite)
             grader_selfcheck(ROOT / "fixtures/evaluation/grader_cases.json")
-            result = freeze_protocol(args.config, args.suite, args.output, args.approval)
+            result = freeze_protocol(
+                args.config, args.suite, args.output, args.approval, args.conditions
+            )
+        elif args.command == "final":
+            from .final import run_final
+
+            output = args.output or _output("final")
+            summary = run_final(
+                args.freeze,
+                output,
+                invocation=[
+                    sys.executable,
+                    "scripts/evaluate.py",
+                    *(sys.argv[1:] if argv is None else argv),
+                ],
+            )
+            result = {
+                "output": str(output.resolve()),
+                "status": summary["status"],
+                "matched_cells": len(summary["matched_cells"]),
+            }
         elif args.command == "verify-freeze":
             result = verify_freeze(args.path)
         elif args.command == "verify-evidence":
             result = verify_evidence(args.path)
+        elif args.command == "compare-conditions":
+            from .comparison import run_comparison
+
+            output = args.output or _output("pilot" if args.backend else "comparison")
+            summary = run_comparison(
+                args.suite,
+                None if args.backend else args.fixtures,
+                load_json(args.config),
+                args.conditions,
+                output,
+                backend_spec=args.backend,
+                invocation=[
+                    sys.executable,
+                    "scripts/evaluate.py",
+                    *(sys.argv[1:] if argv is None else argv),
+                ],
+            )
+            result = {
+                "output": str(output.resolve()),
+                "status": summary["status"],
+                "conditions": summary["conditions"],
+                "notice": summary["notice"],
+            }
+        elif args.command == "preflight":
+            from .preflight import preflight
+
+            config = load_json(args.config)
+            result = preflight(
+                args.suite,
+                config,
+                args.conditions,
+                repetitions=args.repetitions or config["repetitions"],
+                consumed=args.consumed
+                or [ROOT / "artifacts/local/evaluation" / name for name in LIVE],
+                split_suites=sorted((ROOT / "scenarios").glob("*/*.json")),
+            )
+        elif args.command == "verify-comparison":
+            from .comparison import verify_comparison
+
+            result = verify_comparison(args.path)
         elif args.command == "visualize":
             from .visualize import write_visualization
 
             result = write_visualization(args.path, args.output)
+        elif args.command == "analyze":
+            from effectshield.analysis import analyze
+
+            from .storage import write_json
+
+            target = args.output or args.path / "analysis.json"
+            if target.exists():
+                raise FileExistsError("Analysis output already exists; choose a new path")
+            result = analyze(args.path, replicates=args.replicates, seed=args.seed)
+            write_json(target, result)
+            result = {
+                "output": str(target.resolve()),
+                "security_comparisons": result["security_comparisons"],
+                "utility": result["utility"],
+            }
+        elif args.command == "ablate":
+            from .ablation import ablate
+            from .storage import write_json
+
+            if args.output.exists():
+                raise FileExistsError("Ablation output already exists; choose a new path")
+            report = ablate(args.path)
+            write_json(args.output, report)
+            result = {
+                "output": str(args.output.resolve()),
+                "eligible_runs": report["eligible_runs"],
+                "variants": report["variants"],
+            }
+        elif args.command == "latency":
+            from .latency import latency_report
+            from .storage import write_json
+
+            if args.output.exists():
+                raise FileExistsError("Latency output already exists; choose a new path")
+            report = latency_report(args.path, repeats=args.repeats)
+            write_json(args.output, report)
+            result = {
+                "output": str(args.output.resolve()),
+                "mediator_only_latency": report["mediator_only_latency"],
+                "decision_mismatches": report["decision_mismatches_with_live_records"],
+            }
+        elif args.command == "billing":
+            from .billing import reconcile
+            from .storage import write_json
+
+            if args.output.exists():
+                raise FileExistsError("Billing output already exists; choose a new path")
+            retained = ROOT / "artifacts/local/evaluation"
+            bundles = [retained / name for name in LIVE] + [
+                retained / "final-2026-11-04" / name
+                for name in ("unprotected", "safety_prompt_only", "effectshield")
+            ]
+            report = reconcile(bundles, load_json(args.actual) if args.actual else None)
+            write_json(args.output, report)
+            result = {
+                "output": str(args.output.resolve()),
+                "status": report["status"],
+                "total": report["total"],
+                "days": report["days"],
+            }
+        elif args.command == "artifact-manifest":
+            from .artifact import build_manifest
+            from .storage import write_json
+
+            if args.output.exists():
+                raise FileExistsError("Artifact manifest already exists; choose a new path")
+            built = build_manifest(ROOT)
+            write_json(args.output, built)
+            result = {
+                "output": str(args.output.resolve()),
+                **{
+                    key: len(built[key]) for key in ("bundles", "comparisons", "freezes", "reports")
+                },
+            }
+        elif args.command == "verify-artifact":
+            from .artifact import verify_artifact
+
+            result = verify_artifact(ROOT, args.path)
         elif args.command == "check-grader":
             result = grader_selfcheck(ROOT / "fixtures/evaluation/grader_cases.json")
         else:
@@ -116,12 +322,19 @@ def main(argv: list[str] | None = None) -> int:
                         "seed": 0,
                         "seed_status": "supported",
                     }
+            condition = None
+            if args.command == "baseline":
+                from effectshield.agent.conditions import load_condition
+
+                condition = load_condition(args.condition).to_dict()
+                config["prompt_version"] = condition["prompt_version"]
             output = args.output or _output(args.command)
             summary = run_suite(
                 suite,
                 config,
                 output,
                 mode=args.command,
+                condition=condition,
                 backend_spec=backend,
                 fixture_path=fixture,
                 freeze_path=freeze_path,
@@ -132,6 +345,7 @@ def main(argv: list[str] | None = None) -> int:
                 ],
             )
             result = {
+                **({"condition": condition["condition_id"]} if condition else {}),
                 "output": str(output.resolve()),
                 "mode": summary["mode"],
                 "attempts": summary["attempts"],

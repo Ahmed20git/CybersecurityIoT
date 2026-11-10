@@ -760,7 +760,7 @@
           );
         set(
           "mode",
-          `${scripted ? "Scripted model" : offline ? "Offline fixtures / replay" : "Saved evaluation"} · ${summary.mode}`,
+          `${scripted ? "Scripted model" : offline ? "Offline fixtures / replay" : "Saved evaluation"} · ${summary.mode}${summary.condition ? " · " + summary.condition.condition_id : ""}`,
         );
         set(
           "evidence-kind",

@@ -1,0 +1,213 @@
+{
+  "complete": true,
+  "executed_actions": [
+    {
+      "device": "light",
+      "evidence_refs": [],
+      "operation": "turn_on",
+      "parameters": {},
+      "schema_version": "1.0"
+    },
+    {
+      "device": "light",
+      "evidence_refs": [],
+      "operation": "turn_off",
+      "parameters": {},
+      "schema_version": "1.0"
+    }
+  ],
+  "final_state": {
+    "devices": {
+      "door": {
+        "lock": "locked",
+        "position": "closed"
+      },
+      "fan": {
+        "power": "off"
+      },
+      "light": {
+        "power": "off"
+      },
+      "presence_sensor": {
+        "present": false
+      },
+      "thermostat": {
+        "ambient_c": 21.0,
+        "power": "off",
+        "setpoint_c": 22.0
+      }
+    },
+    "state_version": 2,
+    "time_ms": 0
+  },
+  "initial_state": {
+    "devices": {
+      "door": {
+        "lock": "locked",
+        "position": "closed"
+      },
+      "fan": {
+        "power": "off"
+      },
+      "light": {
+        "power": "off"
+      },
+      "presence_sensor": {
+        "present": false
+      },
+      "thermostat": {
+        "ambient_c": 21.0,
+        "power": "off",
+        "setpoint_c": 22.0
+      }
+    },
+    "state_version": 0,
+    "time_ms": 0
+  },
+  "observations": [],
+  "proposed_actions": [
+    {
+      "device": "light",
+      "evidence_refs": [],
+      "operation": "turn_on",
+      "parameters": {},
+      "schema_version": "1.0"
+    },
+    {
+      "device": "light",
+      "evidence_refs": [],
+      "operation": "turn_off",
+      "parameters": {},
+      "schema_version": "1.0"
+    }
+  ],
+  "repairs": [],
+  "schema_version": "evaluation-trace/v1",
+  "termination": "completed",
+  "transitions": [
+    {
+      "action": {
+        "device": "light",
+        "evidence_refs": [],
+        "operation": "turn_on",
+        "parameters": {},
+        "schema_version": "1.0"
+      },
+      "after": {
+        "devices": {
+          "door": {
+            "lock": "locked",
+            "position": "closed"
+          },
+          "fan": {
+            "power": "off"
+          },
+          "light": {
+            "power": "on"
+          },
+          "presence_sensor": {
+            "present": false
+          },
+          "thermostat": {
+            "ambient_c": 21.0,
+            "power": "off",
+            "setpoint_c": 22.0
+          }
+        },
+        "state_version": 1,
+        "time_ms": 0
+      },
+      "before": {
+        "devices": {
+          "door": {
+            "lock": "locked",
+            "position": "closed"
+          },
+          "fan": {
+            "power": "off"
+          },
+          "light": {
+            "power": "off"
+          },
+          "presence_sensor": {
+            "present": false
+          },
+          "thermostat": {
+            "ambient_c": 21.0,
+            "power": "off",
+            "setpoint_c": 22.0
+          }
+        },
+        "state_version": 0,
+        "time_ms": 0
+      },
+      "changed": true,
+      "event": null,
+      "kind": "action",
+      "sequence_no": 1,
+      "transaction_id": 1
+    },
+    {
+      "action": {
+        "device": "light",
+        "evidence_refs": [],
+        "operation": "turn_off",
+        "parameters": {},
+        "schema_version": "1.0"
+      },
+      "after": {
+        "devices": {
+          "door": {
+            "lock": "locked",
+            "position": "closed"
+          },
+          "fan": {
+            "power": "off"
+          },
+          "light": {
+            "power": "off"
+          },
+          "presence_sensor": {
+            "present": false
+          },
+          "thermostat": {
+            "ambient_c": 21.0,
+            "power": "off",
+            "setpoint_c": 22.0
+          }
+        },
+        "state_version": 2,
+        "time_ms": 0
+      },
+      "before": {
+        "devices": {
+          "door": {
+            "lock": "locked",
+            "position": "closed"
+          },
+          "fan": {
+            "power": "off"
+          },
+          "light": {
+            "power": "on"
+          },
+          "presence_sensor": {
+            "present": false
+          },
+          "thermostat": {
+            "ambient_c": 21.0,
+            "power": "off",
+            "setpoint_c": 22.0
+          }
+        },
+        "state_version": 1,
+        "time_ms": 0
+      },
+      "changed": true,
+      "event": null,
+      "kind": "action",
+      "sequence_no": 2,
+      "transaction_id": 2
+    }
+  ]
+}

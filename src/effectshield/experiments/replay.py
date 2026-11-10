@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from effectshield.domain.actions import ActionProposal, parse_action
-from effectshield.domain.context import Permission
+from effectshield.domain.context import Observation, Permission
 from effectshield.domain.devices import (
     DeviceId,
     DoorPosition,
@@ -29,9 +29,10 @@ from effectshield.domain.devices import (
     ThermostatState,
 )
 from effectshield.domain.errors import ActionSchemaError
+from effectshield.domain.events import SetAmbientTemperature, SetPresence
 from effectshield.environment import RunEnvironment, create_run
 from effectshield.gateway.observations import with_payload_changes
-from effectshield.scenarios import validate_state
+from effectshield.scenarios import validate_schedule_shape, validate_state, validate_task_intent
 
 from .backends import load_fixture_trace, synthetic_usage
 from .storage import canonical
@@ -66,6 +67,33 @@ class NativeEvaluationBackend:
         self.environment: RunEnvironment | None = None
         self._emitted_history = 0
         self._started = False
+        self._schedule: list[dict[str, Any]] | None = None
+        self._task_intent: dict[str, Any] | None = None
+
+    def issue_task_intent(self, intent: dict[str, Any], permissions: list[str]) -> None:
+        """Accept the scenario's trusted task intent (v2 scenarios, Proposed D05/D08).
+
+        Called by the harness after ``reset`` and before ``run``, like the
+        evidence schedule. It is trusted harness input that is never shown to
+        the agent; only a protected backend uses it, to decide whether a clamp
+        repair preserves the task. Unprotected runs receive the same scenario
+        and ignore it, so the conditions stay matched.
+        """
+        if self.environment is None or self._started or self._task_intent is not None:
+            raise ValueError("Issue the task intent once, after a fresh reset and before the run")
+        validate_task_intent(intent, permissions)
+        self._task_intent = deepcopy(intent)
+
+    def schedule_evidence(self, schedule: list[dict[str, Any]]) -> None:
+        """Accept the scenario's trusted pre-agent evidence schedule (v2 scenarios).
+
+        Called by the harness after ``reset`` and before ``run``. It is trusted
+        harness input, never shown to the agent except through its deliveries.
+        """
+        if self.environment is None or self._started or self._schedule is not None:
+            raise ValueError("Schedule evidence once, after a fresh reset and before the run")
+        validate_schedule_shape(schedule)
+        self._schedule = deepcopy(schedule)
 
     def reset(self, initial_state: dict[str, Any], seed: int | None) -> dict[str, Any]:
         if initial_state.get("state_version") != 0:
@@ -75,6 +103,8 @@ class NativeEvaluationBackend:
         )
         self._emitted_history = 0
         self._started = False
+        self._schedule = None
+        self._task_intent = None
         return self.environment.simulator.snapshot().to_dict()
 
     def _history_events(self) -> Iterator[dict[str, Any]]:
@@ -116,15 +146,59 @@ class NativeEvaluationBackend:
         )
         if canonical(issued.to_dict()) != canonical(request):
             raise ValueError("Trusted request differs from the native request registry record")
+        self._bind_request(issued.request_id)
         yield {"type": "message", "role": "user", "content": issued.to_dict()}
-        for expected in observations:
-            observed = run.gateway.observe(DeviceId(expected["envelope"]["device"]))
-            # The one permitted attack changes only message text. Fact fields and
-            # the full gateway envelope must still match the issued native record.
-            delivered = with_payload_changes(observed, {"message": expected["payload"]["message"]})
+        schedule = self._schedule
+        if schedule is None:
+            # v1: every initial observation is one fresh read at reset time.
+            schedule = [
+                {"step": "observe", "device": item["envelope"]["device"]} for item in observations
+            ]
+        delivered_by_id: dict[str, Observation] = {}
+        remaining = iter(observations)
+        for step in schedule:
+            kind = step["step"]
+            if kind == "advance_clock":
+                run.simulator.advance_clock(step["delta_ms"], capability=run.environment_capability)
+                continue
+            if kind in {"set_presence", "set_ambient_temperature"}:
+                event = (
+                    SetPresence(step["present"])
+                    if kind == "set_presence"
+                    else SetAmbientTemperature(step["ambient_c"])
+                )
+                run.simulator.apply_environment(event, capability=run.environment_capability)
+                continue
+            expected = next(remaining, None)
+            if expected is None:
+                raise ValueError("Evidence schedule delivers more observations than declared")
+            if kind == "redeliver":
+                # Replay of an issued envelope; the gateway rejects anything it never issued.
+                original = delivered_by_id.get(step["observation_id"])
+                if original is None:
+                    raise ValueError("A replay must repeat an observation already delivered")
+                delivered = run.gateway.redeliver(original)
+            else:
+                observed = run.gateway.observe(DeviceId(step["device"]))
+                # Attacks change only designated message text or the delivery
+                # schedule. Facts and the gateway envelope must match the native record.
+                delivered = with_payload_changes(
+                    observed, {"message": expected["payload"]["message"]}
+                )
+                delivered_by_id[delivered.envelope.observation_id] = delivered
             if canonical(delivered.to_agent_dict()) != canonical(expected):
                 raise ValueError("Initial observation changed protected gateway metadata or facts")
+            delivered = self._deliver(delivered)
             yield {"type": "message", "role": "tool", "content": delivered.to_agent_dict()}
+        if next(remaining, None) is not None:
+            raise ValueError("Declared observations were not produced by the evidence schedule")
+
+    def _bind_request(self, request_id: str) -> None:
+        """Hook: a protected backend binds the run's issued request. Unprotected runs do nothing."""
+
+    def _deliver(self, observation: Observation) -> Observation:
+        """Hook: a protected backend ingests every observation placed in the agent's context."""
+        return observation
 
     def _execute(self, proposal: ActionProposal) -> Generator[dict[str, Any], None, dict[str, Any]]:
         assert self.environment is not None

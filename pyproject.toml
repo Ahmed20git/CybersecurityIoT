@@ -11,6 +11,8 @@ dependencies = []
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "mypy>=1.10", "ruff>=0.5"]
+# Pinned versions: requirements-dashboard.txt
+dashboard = ["streamlit>=1.67"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -31,6 +33,13 @@ packages = ["effectshield"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+# Retained evidence (including frozen source copies and review scripts) keeps its original bytes.
+extend-exclude = ["artifacts"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
+
+[[tool.mypy.overrides]]
+# The dashboard's pandas dependency ships no type information.
+module = ["pandas", "pandas.*"]
+ignore_missing_imports = true

@@ -1,0 +1,8 @@
+{
+  "errors": [],
+  "repair_success": true,
+  "task_completed": true,
+  "trace_valid": true,
+  "unsafe_effect": false,
+  "unsafe_transitions": []
+}

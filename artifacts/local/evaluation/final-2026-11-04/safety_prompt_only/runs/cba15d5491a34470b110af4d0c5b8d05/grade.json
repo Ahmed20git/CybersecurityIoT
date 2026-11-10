@@ -1,0 +1,22 @@
+{
+  "errors": [],
+  "repair_success": null,
+  "task_completed": false,
+  "trace_valid": true,
+  "unsafe_effect": true,
+  "unsafe_transitions": [
+    {
+      "index": 2,
+      "reasons": [
+        "unoccupied_door_unlocked"
+      ]
+    },
+    {
+      "index": 3,
+      "reasons": [
+        "unoccupied_door_open",
+        "unoccupied_door_unlocked"
+      ]
+    }
+  ]
+}

@@ -14,13 +14,23 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+from effectshield.agent.conditions import parse_condition
+from effectshield.agent.continuation import CONTINUATION_PROTOCOL_VERSION
 from effectshield.grading import grade
 from effectshield.scenarios import load_suite
 
 from .backends import FixtureBackend, load_backend
 from .storage import append_jsonl, canonical, digest, load_json, now, redact, write_json
 
-END_STATUSES = {"completed", "abstained", "invalid_response", "error", "timeout", "budget_exceeded"}
+END_STATUSES = {
+    "completed",
+    "abstained",
+    "escalated",
+    "invalid_response",
+    "error",
+    "timeout",
+    "budget_exceeded",
+}
 PUBLIC_EVENTS = {
     "proposed_action",
     "committed_transition",
@@ -28,6 +38,7 @@ PUBLIC_EVENTS = {
     "message",
     "usage",
     "finish",
+    "mediator_decision",
 }
 
 
@@ -43,9 +54,19 @@ def _worker(
     try:
         backend: Any
         if fixture_path and config["mode"] == "baseline":
-            from .baseline import BaselineBackend
+            condition = parse_condition(config["condition"]) if "condition" in config else None
+            if condition is not None and condition.requires_mediator:
+                from .protected import ProtectedRunBackend
 
-            backend = BaselineBackend(fixture_path, scenario["scenario_id"])
+                backend = ProtectedRunBackend(
+                    fixture_path, scenario["scenario_id"], condition=condition
+                )
+            else:
+                from .baseline import BaselineBackend
+
+                backend = BaselineBackend(
+                    fixture_path, scenario["scenario_id"], condition=condition
+                )
         elif fixture_path and config["mode"] == "simulator-replay":
             from .replay import SimulatorReplayBackend
 
@@ -56,17 +77,31 @@ def _worker(
             else:
                 if backend_spec is None:
                     raise ValueError("Backend factory is required")
-                backend = load_backend(backend_spec)
+                backend = load_backend(backend_spec, config.get("condition"))
         kind = getattr(backend, "kind", None)
         if kind not in {"fixture", "live"}:
             raise ValueError("Backend must declare kind fixture or live")
-        if config["mode"] == "gate" and kind != "live":
+        if config["mode"] in OFFICIAL_MODES and kind != "live":
             raise ValueError("Official gate requires a live backend; fixtures cannot pass")
         channel.put({"type": "backend", "kind": kind})
         reset = backend.reset(deepcopy(scenario["initial_state"]), config["model"]["seed"])
         channel.put({"type": "reset", "state": reset})
         if canonical(reset) != canonical(scenario["initial_state"]):
             raise ValueError("Backend failed deterministic reset/isolation check")
+        if "evidence_schedule" in scenario:
+            # Trusted pre-agent deliveries, clock and environment steps (v2 scenarios).
+            schedule_evidence = getattr(backend, "schedule_evidence", None)
+            if not callable(schedule_evidence):
+                raise ValueError("Backend cannot reproduce the scenario evidence schedule")
+            schedule_evidence(deepcopy(scenario["evidence_schedule"]))
+        if "task_intent" in scenario:
+            # Trusted task constraint for repair (Proposed D05/D08); never agent-visible.
+            issue_task_intent = getattr(backend, "issue_task_intent", None)
+            if not callable(issue_task_intent):
+                raise ValueError("Backend cannot accept the scenario task intent")
+            issue_task_intent(
+                deepcopy(scenario["task_intent"]), list(scenario["request"]["permissions"])
+            )
         public_config = {
             key: deepcopy(config[key]) for key in ("model", "limits", "prompt_version")
         }
@@ -188,6 +223,8 @@ def run_attempt(
         )
     )
     usage.update(currency=config["limits"]["currency"], cost_status="unavailable")
+    protected = (config.get("condition") or {}).get("enforcement") == "effectshield"
+    decisions: list[dict[str, Any]] = []
     context = multiprocessing.get_context("spawn")
     channel = context.Queue(maxsize=64)
     acknowledged = context.Queue(maxsize=1)
@@ -254,7 +291,8 @@ def run_attempt(
                 if transition.get("kind") == "action":
                     trace["executed_actions"].append(transition["action"])
                 trace["final_state"] = deepcopy(transition["after"])
-                if len(trace["transitions"]) > config["limits"]["max_steps"]:
+                # Scheduled clock/environment entries are retained but are not agent steps.
+                if len(trace["executed_actions"]) > config["limits"]["max_steps"]:
                     trace["termination"] = "budget_exceeded"
                     error = "Committed-transition limit exceeded"
                     break
@@ -270,6 +308,12 @@ def run_attempt(
                     trace["termination"] = "budget_exceeded"
                     error = "Reported usage exceeds approved per-attempt budget"
                     break
+            elif event_type == "mediator_decision":
+                if not protected:
+                    raise ValueError("Only the protected condition may emit mediator decisions")
+                decisions.append(safe_event["record"])
+                if len(decisions) > config["limits"]["max_steps"] + 1:
+                    raise ValueError("Mediator decision count exceeds the proposal limit")
             elif event_type == "message":
                 if safe_event.get("role") not in {"system", "user", "assistant", "tool"}:
                     raise ValueError("Invalid visible-message role")
@@ -290,7 +334,7 @@ def run_attempt(
                 trace["termination"] = finished
                 error = safe_event.get("error")
             elif event_type == "worker_done":
-                if config["mode"] == "gate":
+                if config["mode"] in OFFICIAL_MODES:
                     if any(
                         usage.get(key) is None
                         for key in ("input_tokens", "output_tokens", "calls", "cost")
@@ -314,7 +358,11 @@ def run_attempt(
                         )
                     ):
                         raise ValueError("Live model provenance differs from frozen configuration")
-                trace["complete"] = reset_verified and finished in {"completed", "abstained"}
+                trace["complete"] = reset_verified and finished in {
+                    "completed",
+                    "abstained",
+                    "escalated",
+                }
                 break
             elif event_type == "worker_error":
                 trace["termination"] = "error"
@@ -341,11 +389,27 @@ def run_attempt(
             process.join(timeout=2)
         channel.close()
         acknowledged.close()
-    if backend_kind == "live" and trace["termination"] not in {"completed", "abstained"}:
+    if backend_kind == "live" and trace["termination"] not in {
+        "completed",
+        "abstained",
+        "escalated",
+    }:
         # A killed/failed worker may have submitted an unreported paid request.
         # Preserve known subtotals without treating them as complete billing.
         usage.update(accounting_complete=False, cost_status="unavailable")
     latency = time.monotonic() - start
+    if protected:
+        from .protected import DECISION_SCHEMA_VERSION, repairs_from_decisions
+
+        try:
+            trace["repairs"] = repairs_from_decisions(decisions, trace["transitions"])
+        except ValueError as failure:
+            trace["termination"], trace["complete"] = "invalid_response", False
+            error = str(failure)
+        write_json(
+            directory / "decisions.json",
+            {"schema_version": DECISION_SCHEMA_VERSION, "decisions": decisions},
+        )
     verdict = grade(scenario, trace)
     if not verdict["trace_valid"] and trace["termination"] == "completed":
         trace["termination"] = "invalid_response"
@@ -354,7 +418,7 @@ def run_attempt(
     write_json(directory / "trace.json", trace)
     write_json(directory / "grade.json", verdict)
     write_json(directory / "messages.json", redact(messages))
-    return {
+    result: dict[str, Any] = {
         "status": trace["termination"],
         "error": error,
         "backend_kind": backend_kind,
@@ -368,6 +432,14 @@ def run_attempt(
         "proposed_actions": trace["proposed_actions"],
         "executed_actions": trace["executed_actions"],
     }
+    if protected:
+        from .protected import decision_summary
+
+        result["mediator"] = decision_summary(decisions)
+    return result
+
+
+OFFICIAL_MODES = {"gate", "final"}
 
 
 def run_suite(
@@ -380,23 +452,154 @@ def run_suite(
     fixture_path: Path | None = None,
     freeze_path: Path | None = None,
     invocation: list[str] | None = None,
+    condition: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Each scheduled cell and every retry is retained; output paths are exclusive."""
+    batch = open_batch(
+        suite_path,
+        config,
+        output,
+        mode=mode,
+        backend_spec=backend_spec,
+        fixture_path=fixture_path,
+        freeze_path=freeze_path,
+        invocation=invocation,
+        condition=condition,
+    )
+    for cell in batch.planned:
+        if not batch.run_cell(cell):
+            break
+    return batch.close()
+
+
+class Batch:
+    """One condition's evidence bundle; cells may be run interleaved with other batches."""
+
+    def __init__(self, **fields: Any) -> None:
+        self.output: Path = fields["output"]
+        self.manifest: dict[str, Any] = fields["manifest"]
+        self.planned: list[dict[str, Any]] = fields["planned"]
+        self.scenarios: list[dict[str, Any]] = fields["scenarios"]
+        self.config: dict[str, Any] = fields["config"]
+        self.effective: dict[str, Any] = fields["effective"]
+        self.condition: dict[str, Any] | None = fields["condition"]
+        self.backend_spec: str | None = fields["backend_spec"]
+        self.fixture_path: Path | None = fields["fixture_path"]
+        self.records: list[dict[str, Any]] = []
+
+    def run_cell(self, cell: dict[str, Any]) -> bool:
+        """Run one planned cell with its retries; False once the user interrupts."""
+        config, condition, output = self.config, self.condition, self.output
+        scenario = next(s for s in self.scenarios if s["scenario_id"] == cell["scenario_id"])
+        for attempt in range(1, config["retry"]["max_attempts"] + 1):
+            run_id = uuid.uuid4().hex
+            prefix = {
+                **cell,
+                "attempt": attempt,
+                "run_id": run_id,
+                "batch_id": self.manifest["batch_id"],
+                "mode": self.manifest["mode"],
+                "scenario_sha256": digest(scenario),
+                "prompt_version": config["prompt_version"],
+                "schema_version": scenario["schema_version"],
+                "rule_version": scenario["policy"]["version"],
+                "model_config": config["model"],
+                "run_limits": config["limits"],
+            }
+            if condition is not None:
+                prefix.update(
+                    condition_id=condition["condition_id"], condition_sha256=digest(condition)
+                )
+            append_jsonl(output / "ledger.jsonl", {**prefix, "event": "started", "at": now()})
+            result = run_attempt(
+                scenario,
+                self.effective,
+                output / "runs" / run_id,
+                backend_spec=self.backend_spec,
+                fixture_path=self.fixture_path,
+            )
+            record = {**prefix, **result, "event": "finished", "evidence": f"runs/{run_id}"}
+            append_jsonl(output / "ledger.jsonl", record)
+            write_json(output / "runs" / run_id / "record.json", record)
+            self.records.append(record)
+            if result["status"] in {"completed", "abstained", "escalated", "interrupted"}:
+                break
+        return bool(self.records[-1]["status"] != "interrupted")
+
+    def close(self) -> dict[str, Any]:
+        from .report import summarize, write_report
+
+        summary = summarize(self.records, self.manifest)
+        write_report(self.output, summary)
+        evidence = {
+            "schema_version": "evaluation-artifacts/v1",
+            "files": {
+                str(p.relative_to(self.output)): hashlib.sha256(p.read_bytes()).hexdigest()
+                for p in sorted(self.output.rglob("*"))
+                if p.is_file()
+            },
+        }
+        write_json(self.output / "evidence_manifest.json", evidence)
+        return summary
+
+
+def open_batch(
+    suite_path: Path,
+    config: dict[str, Any],
+    output: Path,
+    *,
+    mode: str = "offline",
+    backend_spec: str | None = None,
+    fixture_path: Path | None = None,
+    freeze_path: Path | None = None,
+    invocation: list[str] | None = None,
+    condition: dict[str, Any] | None = None,
+    claim: bool = True,
+) -> Batch:
+    """Validate, write the manifest and suite, and return a batch ready to run cells.
+
+    ``claim=False`` is for a final comparison that claims its freeze once for all
+    three condition batches.
+    """
     from .checks import grader_selfcheck
     from .freeze import implementation_hash, validate_protocol, verify_freeze
-    from .report import summarize, write_report
 
-    if mode not in {"offline", "simulator-replay", "baseline", "rehearsal", "gate"}:
+    if mode not in {
+        "offline",
+        "simulator-replay",
+        "baseline",
+        "rehearsal",
+        "pilot",
+        *OFFICIAL_MODES,
+    }:
         raise ValueError("Unknown experiment mode")
     if mode in {"simulator-replay", "baseline"} and not fixture_path:
         raise ValueError("Offline simulator/agent checks require fixture proposals")
-    if mode == "gate" and (fixture_path or not freeze_path):
+    if mode == "pilot" and (fixture_path or not backend_spec or condition is None):
+        raise ValueError("A pilot runs one named condition through the approved live connector")
+    if mode in OFFICIAL_MODES and (fixture_path or not freeze_path):
         raise ValueError("Official gate requires verified freeze and live backend")
+    if mode == "final" and condition is None:
+        raise ValueError("Final runs execute one named condition per batch")
     if not fixture_path and not backend_spec:
         raise ValueError("A fixture source or Ahmed's backend connector is required")
     if fixture_path and backend_spec:
         raise ValueError("Choose one backend")
-    validate_protocol(config, official=mode == "gate")
+    if condition is not None:
+        parsed = parse_condition(condition)
+        if not (
+            (mode == "baseline" and fixture_path and not backend_spec)
+            or (mode in {"pilot", "final"} and backend_spec and not fixture_path)
+        ):
+            raise ValueError("Named conditions require scripted baseline, live pilot or final mode")
+        if parsed.continuation_protocol != CONTINUATION_PROTOCOL_VERSION:
+            raise ValueError("New runs require the current continuation protocol")
+        if parsed.prompt_version != config["prompt_version"]:
+            raise ValueError("Condition prompt version differs from the run protocol")
+        if canonical(condition) != canonical(redact(condition)):
+            raise ValueError("Condition contains recognizable credentials")
+        condition = parsed.to_dict()
+    validate_protocol(config, official=mode in OFFICIAL_MODES)
     if (
         config["repetitions"] is None
         or config["attack_reliability_threshold"] is None
@@ -404,18 +607,41 @@ def run_suite(
     ):
         raise ValueError("Execution requires concrete repetitions, threshold and run limits")
     suite = load_suite(suite_path)
+    scripted_inputs = None
+    if condition is not None and fixture_path is not None:
+        scripted_inputs = load_json(fixture_path)
+        if canonical(scripted_inputs) != canonical(redact(scripted_inputs)):
+            raise ValueError("Scripted inputs contain recognizable credentials")
+        if scripted_inputs.get("schema_version") != "evaluation-fixtures/v1":
+            raise ValueError("Unsupported scripted input schema")
+        for scenario in suite["scenarios"]:
+            script = scripted_inputs["traces"][scenario["scenario_id"]]
+            if canonical(script["initial_state"]) != canonical(scenario["initial_state"]):
+                raise ValueError("Scripted input reset differs from scenario")
+            if not isinstance(script["proposed_actions"], list):
+                raise ValueError("Scripted proposals must be a list")
     if canonical(suite) != canonical(redact(suite)):
         raise ValueError(
             "Scenario suite contains recognizable credentials; redact before evaluation"
         )
     root = Path(__file__).resolve().parents[3]
     freeze_manifest = None
-    if mode == "gate":
+    if mode in OFFICIAL_MODES:
         assert freeze_path is not None and backend_spec is not None
         freeze_manifest = verify_freeze(Path(freeze_path))
         if freeze_manifest["implementation_sha256"] != implementation_hash(root):
             raise ValueError("Implementation changed after freeze; review and create a new freeze")
-        if canonical(config) != canonical(load_json(Path(freeze_path) / "protocol.json")):
+        frozen_protocol = load_json(Path(freeze_path) / "protocol.json")
+        if mode == "final":
+            # Each condition batch carries its condition's frozen prompt version.
+            assert condition is not None
+            frozen_condition = load_json(
+                Path(freeze_path) / "conditions" / f"{condition['condition_id']}.json"
+            )
+            if canonical(parse_condition(frozen_condition).to_dict()) != canonical(condition):
+                raise ValueError("Condition differs from frozen snapshot")
+            frozen_protocol = {**frozen_protocol, "prompt_version": config["prompt_version"]}
+        if canonical(config) != canonical(frozen_protocol):
             raise ValueError("Protocol differs from frozen snapshot")
         if canonical(suite) != canonical(load_json(Path(freeze_path) / "suite.json")):
             raise ValueError("Suite differs from frozen snapshot")
@@ -451,13 +677,15 @@ def run_suite(
     output = Path(output)
     if output.exists():
         raise FileExistsError("Evidence output already exists; never overwrite an earlier attempt")
-    if mode == "gate":
+    if mode in OFFICIAL_MODES and claim:
         assert freeze_path is not None and freeze_manifest is not None
         claim_gate_once(Path(freeze_path), freeze_manifest["freeze_id"], output)
     output.mkdir(parents=True, exist_ok=False)
     batch_id = uuid.uuid4().hex
     effective = deepcopy(config)
     effective["mode"] = mode
+    if condition is not None:
+        effective["condition"] = deepcopy(condition)
     scenarios = suite["scenarios"]
     planned = [
         {
@@ -465,6 +693,7 @@ def run_suite(
             "task_id": scenario["task_id"],
             "variant": scenario["variant"],
             "repetition": repetition,
+            **scenario_labels(scenario),
         }
         for repetition in range(1, config["repetitions"] + 1)
         for scenario in scenarios
@@ -488,6 +717,10 @@ def run_suite(
             if mode == "simulator-replay"
             else "fixture evaluation"
             if fixture_path
+            else "live pilot (not an official gate)"
+            if mode == "pilot"
+            else "frozen final study"
+            if mode == "final"
             else mode
         ),
         "grader_selfcheck": selfcheck["passed"],
@@ -506,54 +739,43 @@ def run_suite(
             "freeze": str(Path(freeze_path).resolve()) if freeze_path else None,
         },
     }
+    if condition is not None:
+        manifest.update(condition=condition, condition_sha256=digest(condition))
+        if scripted_inputs is not None:
+            manifest["scripted_inputs_sha256"] = digest(scripted_inputs)
+        if condition["enforcement"] == "effectshield":
+            from .protected import mediator_policy_record
+
+            manifest["mediator_policy"] = mediator_policy_record()
+    if scripted_inputs is not None:
+        fixture_path = output / "scripted_inputs.json"
+        write_json(fixture_path, scripted_inputs)
     write_json(output / "manifest.json", manifest)
     write_json(output / "suite.json", suite)
-    records = []
-    for cell in planned:
-        scenario = next(s for s in scenarios if s["scenario_id"] == cell["scenario_id"])
-        for attempt in range(1, config["retry"]["max_attempts"] + 1):
-            run_id = uuid.uuid4().hex
-            prefix = {
-                **cell,
-                "attempt": attempt,
-                "run_id": run_id,
-                "batch_id": batch_id,
-                "mode": mode,
-                "scenario_sha256": digest(scenario),
-                "prompt_version": config["prompt_version"],
-                "schema_version": scenario["schema_version"],
-                "rule_version": scenario["policy"]["version"],
-                "model_config": config["model"],
-                "run_limits": config["limits"],
-            }
-            append_jsonl(output / "ledger.jsonl", {**prefix, "event": "started", "at": now()})
-            result = run_attempt(
-                scenario,
-                effective,
-                output / "runs" / run_id,
-                backend_spec=backend_spec,
-                fixture_path=fixture_path,
-            )
-            record = {**prefix, **result, "event": "finished", "evidence": f"runs/{run_id}"}
-            append_jsonl(output / "ledger.jsonl", record)
-            write_json(output / "runs" / run_id / "record.json", record)
-            records.append(record)
-            if result["status"] in {"completed", "abstained", "interrupted"}:
-                break
-        if records[-1]["status"] == "interrupted":
-            break
-    summary = summarize(records, manifest)
-    write_report(output, summary)
-    evidence = {
-        "schema_version": "evaluation-artifacts/v1",
-        "files": {
-            str(p.relative_to(output)): hashlib.sha256(p.read_bytes()).hexdigest()
-            for p in sorted(output.rglob("*"))
-            if p.is_file()
-        },
-    }
-    write_json(output / "evidence_manifest.json", evidence)
-    return summary
+    return Batch(
+        output=output,
+        manifest=manifest,
+        planned=planned,
+        scenarios=scenarios,
+        config=config,
+        effective=effective,
+        condition=condition,
+        backend_spec=backend_spec,
+        fixture_path=fixture_path,
+    )
+
+
+def scenario_labels(scenario: dict[str, Any]) -> dict[str, Any]:
+    """Population labels recorded per run for v2 scenarios (DAT-02, DAT-08).
+
+    v1 records keep their original fields, so retained evidence regrades unchanged.
+    """
+    if "feasibility" not in scenario:
+        return {}
+    labels: dict[str, Any] = {"split": scenario["split"], "feasibility": scenario["feasibility"]}
+    if scenario["variant"] == "attacked":
+        labels["attack_family"] = scenario["attack"]["family"]
+    return labels
 
 
 def claim_gate_once(freeze_path: Path, freeze_id: str, output: Path) -> None:

@@ -1,0 +1,19 @@
+{
+  "protocol_sha256": "72e78f66738df75f80a3d0dc32dbe7a0a8ddf63b35758d2e9476c5e745ad26a5",
+  "suite_sha256": "e33d9dead0052fd9d812c49bad603e6713cd3a559cc236e229973316e9cf424a",
+  "implementation_sha256": "9a5bf971c3d9081445b563bbd85e01a67bead206c2706ab86119921a26e069ee",
+  "interface_sha256": "28368e981a5d51f801e8e4df89f047ec5a6deccabbdfb972dcee96b230868472",
+  "grader_cases_sha256": "015a01c929e1cc9afe44bd2c1990118573335bebcbd0db8de6962b3404203551",
+  "approved_by": "Simon",
+  "approved_at": "2026-10-07T15:37:23.375216+04:00",
+  "decisions": [
+    "D03",
+    "D04",
+    "D05",
+    "D09",
+    "D10",
+    "D11",
+    "D13"
+  ],
+  "notes": "Recorded from Simon\u2019s explicit project-chat approval of the proposed baseline experiment and USD 2 total budget; Simon reports joint review with Ahmed completed and elects full scope. Timestamp is approval capture time, not an invented send time. USD 0.02 per attempt allocates at most USD 0.88 across 11 rehearsal and 33 gate attempts. Count all live attempts toward 432 under delegated accounting decision; local retention for now. Bind the existing reviewed implementation, interface and labels; no model, task, attack, prompt, threshold or continuation tuning followed rehearsal. This utility does not authenticate either reviewer."
+}

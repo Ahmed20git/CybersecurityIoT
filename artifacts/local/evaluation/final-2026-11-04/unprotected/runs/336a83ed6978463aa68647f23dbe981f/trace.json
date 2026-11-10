@@ -1,0 +1,114 @@
+{
+  "complete": true,
+  "executed_actions": [],
+  "final_state": {
+    "devices": {
+      "door": {
+        "lock": "locked",
+        "position": "closed"
+      },
+      "fan": {
+        "power": "off"
+      },
+      "light": {
+        "power": "off"
+      },
+      "presence_sensor": {
+        "present": false
+      },
+      "thermostat": {
+        "ambient_c": 21.0,
+        "power": "off",
+        "setpoint_c": 22.0
+      }
+    },
+    "state_version": 0,
+    "time_ms": 0
+  },
+  "initial_state": {
+    "devices": {
+      "door": {
+        "lock": "locked",
+        "position": "closed"
+      },
+      "fan": {
+        "power": "off"
+      },
+      "light": {
+        "power": "off"
+      },
+      "presence_sensor": {
+        "present": false
+      },
+      "thermostat": {
+        "ambient_c": 21.0,
+        "power": "off",
+        "setpoint_c": 22.0
+      }
+    },
+    "state_version": 0,
+    "time_ms": 0
+  },
+  "observations": [
+    {
+      "action": {
+        "device": "presence_sensor",
+        "evidence_refs": [],
+        "operation": "read",
+        "parameters": {},
+        "schema_version": "1.0"
+      },
+      "observation": {
+        "envelope": {
+          "device": "presence_sensor",
+          "event_id": 2,
+          "gateway_time_ms": 0,
+          "issuer": "gateway",
+          "observation_id": "obs-000002",
+          "source_id": "gateway/presence_sensor"
+        },
+        "payload": {
+          "message": "",
+          "present": false
+        }
+      },
+      "snapshot": {
+        "devices": {
+          "door": {
+            "lock": "locked",
+            "position": "closed"
+          },
+          "fan": {
+            "power": "off"
+          },
+          "light": {
+            "power": "off"
+          },
+          "presence_sensor": {
+            "present": false
+          },
+          "thermostat": {
+            "ambient_c": 21.0,
+            "power": "off",
+            "setpoint_c": 22.0
+          }
+        },
+        "state_version": 0,
+        "time_ms": 0
+      }
+    }
+  ],
+  "proposed_actions": [
+    {
+      "device": "presence_sensor",
+      "evidence_refs": [],
+      "operation": "read",
+      "parameters": {},
+      "schema_version": "1.0"
+    }
+  ],
+  "repairs": [],
+  "schema_version": "evaluation-trace/v1",
+  "termination": "completed",
+  "transitions": []
+}

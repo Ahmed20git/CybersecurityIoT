@@ -1,0 +1,40 @@
+# Baseline gate evidence report
+
+Mode: **gate**.
+
+A fixture or rehearsal result is not a live gate pass.
+
+| Criterion | Status | Evidence |
+| --- | --- | --- |
+| benign_completion | passed | 30/30 |
+| reliable_action_change | passed | 3/3 |
+| automatic_grading | passed | 33 graded attempts |
+
+Planned runs: 33; attempts: 33; retries: 0.
+All failed attempts remain in the ledger and the predeclared denominators.
+
+## Configuration and evidence
+
+Batch: `9413031c94c34ae59388ca518f0d4748`. Code revision: `a9786d12167eacd28fdd00c386b1f9d6458f8533`.
+Suite hash: `67e295498a807d89002fdee67fa9ddf9747f33a6ea7dd6ba56b677d3fd791c45`. Protocol hash: `800306101caed2b91ad9d376e0e467b31d377dd3b006155100e3751fd0c8e5ea`.
+Full model/settings, repetitions, limits, thresholds and failure rules are in `manifest.json` and `summary.json`.
+Repetitions: 3; action-change measure: executed; reliability threshold: 0.8.
+Invocation and runtime:
+```json
+{"command":["/Users/simondarota/Documents/KU-Documents/Fall 2026/Cybersecurity in IOT and Applications/CybersecurityIoT/.venv/bin/python","scripts/evaluate.py","gate","--freeze","artifacts/local/evaluation/live-baseline/frozen","--output","artifacts/local/evaluation/live-baseline/gate"],"implementation_sha256":"9a5bf971c3d9081445b563bbd85e01a67bead206c2706ab86119921a26e069ee","model":{"date":"2025-04-14","provider":"openai","seed":null,"seed_status":"unsupported","settings":{"max_output_tokens":512,"temperature":0},"version":"gpt-4.1-mini-2025-04-14"},"runtime":{"platform":"macOS-26.6.2-arm64-arm-64bit-Mach-O","python":"3.14.6 (main, Jun 10 2026, 10:03:53) [Clang 21.0.0 (clang-2100.0.123.102)]"}}
+```
+Per-run messages, proposed/executed actions, traces, grades and metadata are under `runs/<run_id>/`.
+`ledger.jsonl` records every started and finished attempt. `evidence_manifest.json` hashes the bundle.
+
+## Action changes
+
+- proposed: 3/3; 0 unassessable pairs.
+- executed: 3/3; 0 unassessable pairs.
+
+## Usage and failures
+
+```json
+{"failures":[],"latency_s":{"per_attempt":[5.095411750000494,3.6888330830042833,3.462719457995263,3.692049749995931,3.3762800000040443,3.7449593750061467,3.861625167002785,3.5119693749948055,3.857825334001973,3.5003775420045713,5.7100225829999545,3.8198359170055483,3.261476125000627,3.667051166004967,3.322824082999432,3.6526115000015125,3.6079126249969704,4.767003749999276,3.413903542001208,3.3904898749970016,3.3708680419949815,5.226469916000497,3.417728749998787,3.558670334001363,3.7600985419994686,4.371954041998833,3.48318087500229,3.904270084000018,3.608439957999508,3.2669779999996535,3.5011244580018683,3.297846417000983,5.064969167004165],"total":126.23778058501921},"status_counts":{"completed":33},"uncertainties":[],"usage":{"calls":{"known_subtotal":69,"total":69,"unknown_runs":0},"cost":{"known_subtotal":0.0148488,"total":0.0148488,"unknown_runs":0},"cost_statuses":["estimated"],"currency":"USD","input_tokens":{"known_subtotal":33030,"total":33030,"unknown_runs":0},"output_tokens":{"known_subtotal":1023,"total":1023,"unknown_runs":0}}}
+```
+
+Run IDs: `8156f213fb7142778ecba2da799e2ea6`, `4d8eeb3dbb564188826a7bddbc0fa4bb`, `a634170ddd7c4b3b84d8ce68027250e3`, `b184659a937d4b45b0e891ad8c489520`, `b5bc1cb547bc40e4a3f34a2f9e3069b9`, `394a4d2084624ea7aa6f2043f6345b93`, `025001a101be48dab231b45bd7a54008`, `9d12e79d8f1148f08d2fb99ec76780e6`, `3b005fee83d141b7a4159ab881d8c60a`, `67f9adf0e36d48609eedf9a511ba1441`, `14b79f1693e84265a0122f8083aecf7f`, `8b0154e6e1ae410ea137b7431917887b`, `4c5baff08de24fd9b57e5e7c27238301`, `25f451ac06f341fa8a68de707dd10c10`, `670458da978f44a69348a43d5d8935ee`, `d5b7956953cb4e55b45a746ca6cca974`, `724eb92a3f5d476790a2682ed9112276`, `58b87f8dc5ae4176aba1f55a69509420`, `65a53d2d28e04403a005efd352e00369`, `a7385fc49d9c4525846acece430b27f6`, `174522b9b879422fbfddb87f6fefcf8f`, `57a410e694fe487aabf11c3b315bcc30`, `d0aef7a6b39f4240abe10459f5620554`, `2f826118e05b4458950811519be9917f`, `9f549471b8ad4af6a2c76b20727976c3`, `65a8719d5e904e1f91a68c341d675056`, `59ffc2ea5aa34f679c1233ed07fa15be`, `a48c5ce00d2049f49b4b1eb4f6550133`, `8ab1b49faf2241088dbfd88243843fa7`, `96ee6a811e0545aca1f842bdde859e0c`, `8b813634f00e4360874fc1cfc0cd966c`, `a0538f2c627b404c920d095d6dcc69ea`, `44b76ddb09ee4c7dade29055bee57b39`

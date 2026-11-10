@@ -1,0 +1,287 @@
+"""CLI for fixtures, rehearsal, human-approved freezing and later live gates."""
+
+import argparse
+import json
+import sys
+import uuid
+from copy import deepcopy
+from pathlib import Path
+from typing import Any
+
+from .audit import verify_evidence
+from .checks import grader_selfcheck
+from .freeze import approval_hashes, freeze_protocol, verify_freeze
+from .runner import run_suite
+from .storage import load_json, now
+
+ROOT = Path(__file__).resolve().parents[3]
+# Retained live evidence whose spending counts against the budget (D11).
+LIVE = (
+    "live-baseline/rehearsal",
+    "live-baseline/gate",
+    "pilot-2026-10-29/unprotected",
+    "pilot-2026-10-29/safety_prompt_only",
+    "pilot-2026-10-29/effectshield",
+)
+
+
+def _output(mode: str) -> Path:
+    date = now().split("T")[0]
+    return ROOT / "artifacts/local/evaluation" / f"{mode}-{date}-{uuid.uuid4().hex[:8]}"
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    commands = parser.add_subparsers(dest="command", required=True)
+    for command in (
+        "offline",
+        "simulator-replay",
+        "baseline",
+        "rehearsal",
+        "freeze",
+        "approval-hashes",
+    ):
+        sub = commands.add_parser(command)
+        sub.add_argument("--config", type=Path, default=ROOT / "configs/evaluation/gate.json")
+        sub.add_argument("--suite", type=Path, default=ROOT / "scenarios/development/baseline.json")
+        if command in {"offline", "simulator-replay", "baseline", "rehearsal"}:
+            sub.add_argument("--output", type=Path)
+            sub.add_argument(
+                "--fixtures", type=Path, default=ROOT / "fixtures/evaluation/runs.json"
+            )
+            if command == "baseline":
+                sub.add_argument(
+                    "--condition", type=Path, default=ROOT / "configs/conditions/unprotected.json"
+                )
+            if command == "rehearsal":
+                sub.add_argument(
+                    "--backend", help="Trusted module:factory; omit for fixture rehearsal"
+                )
+        elif command == "freeze":
+            sub.add_argument("--approval", type=Path, required=True)
+            sub.add_argument("--output", type=Path, required=True)
+        if command in {"freeze", "approval-hashes"}:
+            sub.add_argument(
+                "--conditions", type=Path, help="Condition directory; required for a test suite"
+            )
+    final = commands.add_parser("final", help="Run the frozen final study once (live)")
+    final.add_argument("--freeze", type=Path, required=True)
+    final.add_argument("--output", type=Path)
+    gate = commands.add_parser("gate")
+    gate.add_argument("--freeze", type=Path, required=True)
+    gate.add_argument("--output", type=Path)
+    verify = commands.add_parser("verify-freeze")
+    verify.add_argument("path", type=Path)
+    evidence = commands.add_parser("verify-evidence")
+    evidence.add_argument("path", type=Path)
+    comparison = commands.add_parser(
+        "compare-conditions", help="Run all three conditions on matched scripted inputs"
+    )
+    comparison.add_argument("--config", type=Path, default=ROOT / "configs/evaluation/gate.json")
+    comparison.add_argument(
+        "--suite", type=Path, default=ROOT / "scenarios/development/authorization.json"
+    )
+    comparison.add_argument(
+        "--fixtures", type=Path, default=ROOT / "fixtures/evaluation/authorization_runs.json"
+    )
+    comparison.add_argument("--conditions", type=Path, default=ROOT / "configs/conditions")
+    comparison.add_argument("--output", type=Path)
+    comparison.add_argument(
+        "--backend", help="Approved live module:factory; runs a non-official live pilot"
+    )
+    plan = commands.add_parser("preflight", help="Count a proposed run matrix against the ceiling")
+    plan.add_argument("--config", type=Path, default=ROOT / "configs/evaluation/gate.json")
+    plan.add_argument("--suite", type=Path, default=ROOT / "scenarios/pilot/pilot.json")
+    plan.add_argument("--conditions", type=Path, default=ROOT / "configs/conditions")
+    plan.add_argument("--repetitions", type=int, help="Defaults to the protocol's repetitions")
+    plan.add_argument(
+        "--consumed",
+        type=Path,
+        action="append",
+        help="Audited live evidence bundle counted against the ceiling (repeatable)",
+    )
+    comparison_check = commands.add_parser("verify-comparison")
+    comparison_check.add_argument("path", type=Path)
+    visualize = commands.add_parser(
+        "visualize", help="View saved evidence in an offline HTML report"
+    )
+    visualize.add_argument("path", type=Path)
+    visualize.add_argument("--output", type=Path, help="New .html path outside the evidence bundle")
+    analysis = commands.add_parser("analyze", help="Metrics and paired bootstrap for a comparison")
+    analysis.add_argument("path", type=Path)
+    analysis.add_argument("--output", type=Path, help="New JSON file (default PATH/analysis.json)")
+    analysis.add_argument("--replicates", type=int, default=10_000)
+    analysis.add_argument("--seed", type=int, default=20261102)
+    commands.add_parser("check-grader")
+    args = parser.parse_args(argv)
+    result: dict[str, Any]
+    try:
+        if args.command == "approval-hashes":
+            result = approval_hashes(ROOT, args.config, args.suite, args.conditions)
+            result["notice"] = "Hashes only: not an approval. Obtain human review before freezing."
+        elif args.command == "freeze":
+            from effectshield.scenarios import load_suite
+
+            load_suite(args.suite)
+            grader_selfcheck(ROOT / "fixtures/evaluation/grader_cases.json")
+            result = freeze_protocol(
+                args.config, args.suite, args.output, args.approval, args.conditions
+            )
+        elif args.command == "final":
+            from .final import run_final
+
+            output = args.output or _output("final")
+            summary = run_final(
+                args.freeze,
+                output,
+                invocation=[
+                    sys.executable,
+                    "scripts/evaluate.py",
+                    *(sys.argv[1:] if argv is None else argv),
+                ],
+            )
+            result = {
+                "output": str(output.resolve()),
+                "status": summary["status"],
+                "matched_cells": len(summary["matched_cells"]),
+            }
+        elif args.command == "verify-freeze":
+            result = verify_freeze(args.path)
+        elif args.command == "verify-evidence":
+            result = verify_evidence(args.path)
+        elif args.command == "compare-conditions":
+            from .comparison import run_comparison
+
+            output = args.output or _output("pilot" if args.backend else "comparison")
+            summary = run_comparison(
+                args.suite,
+                None if args.backend else args.fixtures,
+                load_json(args.config),
+                args.conditions,
+                output,
+                backend_spec=args.backend,
+                invocation=[
+                    sys.executable,
+                    "scripts/evaluate.py",
+                    *(sys.argv[1:] if argv is None else argv),
+                ],
+            )
+            result = {
+                "output": str(output.resolve()),
+                "status": summary["status"],
+                "conditions": summary["conditions"],
+                "notice": summary["notice"],
+            }
+        elif args.command == "preflight":
+            from .preflight import preflight
+
+            config = load_json(args.config)
+            result = preflight(
+                args.suite,
+                config,
+                args.conditions,
+                repetitions=args.repetitions or config["repetitions"],
+                consumed=args.consumed
+                or [ROOT / "artifacts/local/evaluation" / name for name in LIVE],
+                split_suites=sorted((ROOT / "scenarios").glob("*/*.json")),
+            )
+        elif args.command == "verify-comparison":
+            from .comparison import verify_comparison
+
+            result = verify_comparison(args.path)
+        elif args.command == "visualize":
+            from .visualize import write_visualization
+
+            result = write_visualization(args.path, args.output)
+        elif args.command == "analyze":
+            from effectshield.analysis import analyze
+
+            from .storage import write_json
+
+            target = args.output or args.path / "analysis.json"
+            if target.exists():
+                raise FileExistsError("Analysis output already exists; choose a new path")
+            result = analyze(args.path, replicates=args.replicates, seed=args.seed)
+            write_json(target, result)
+            result = {
+                "output": str(target.resolve()),
+                "security_comparisons": result["security_comparisons"],
+                "utility": result["utility"],
+            }
+        elif args.command == "check-grader":
+            result = grader_selfcheck(ROOT / "fixtures/evaluation/grader_cases.json")
+        else:
+            if args.command == "gate":
+                verify_freeze(args.freeze)
+                config = load_json(args.freeze / "protocol.json")
+                suite = args.freeze / "suite.json"
+                fixture = None
+                backend = config["backend_approval"]["module"]
+                freeze_path = args.freeze
+            else:
+                config = deepcopy(load_json(args.config))
+                suite = args.suite
+                backend = getattr(args, "backend", None)
+                fixture = None if backend else args.fixtures
+                freeze_path = None
+                if fixture:
+                    config["model"] = {
+                        "provider": (
+                            "scripted-model"
+                            if args.command == "baseline"
+                            else "simulator-replay"
+                            if args.command == "simulator-replay"
+                            else "static-fixtures"
+                        ),
+                        "version": (
+                            "scripted-model-v1"
+                            if args.command == "baseline"
+                            else "recorded-proposals-v1"
+                            if args.command == "simulator-replay"
+                            else "static-fixture-v1"
+                        ),
+                        "date": "2026-09-28",
+                        "settings": {},
+                        "seed": 0,
+                        "seed_status": "supported",
+                    }
+            condition = None
+            if args.command == "baseline":
+                from effectshield.agent.conditions import load_condition
+
+                condition = load_condition(args.condition).to_dict()
+                config["prompt_version"] = condition["prompt_version"]
+            output = args.output or _output(args.command)
+            summary = run_suite(
+                suite,
+                config,
+                output,
+                mode=args.command,
+                condition=condition,
+                backend_spec=backend,
+                fixture_path=fixture,
+                freeze_path=freeze_path,
+                invocation=[
+                    sys.executable,
+                    "scripts/evaluate.py",
+                    *(sys.argv[1:] if argv is None else argv),
+                ],
+            )
+            result = {
+                **({"condition": condition["condition_id"]} if condition else {}),
+                "output": str(output.resolve()),
+                "mode": summary["mode"],
+                "attempts": summary["attempts"],
+                "criteria": summary["criteria"],
+            }
+        print(json.dumps(result, indent=2, sort_keys=True))
+        return 0
+    except (ValueError, OSError, KeyError, ImportError) as error:
+        from .storage import redact
+
+        print(redact(f"Blocked: {error}"), file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

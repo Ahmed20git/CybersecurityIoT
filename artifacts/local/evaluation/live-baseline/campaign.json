@@ -1,0 +1,16 @@
+{
+  "captured_at": "2026-10-07T15:37:23.375216+04:00",
+  "approval_source": "Simon in project conversation; reports joint review with Ahmed completed",
+  "model": "gpt-4.1-mini-2025-04-14",
+  "permission": "Synthetic project data may be sent to OpenAI",
+  "total_authorized_usd": 2,
+  "per_attempt_cap_usd": 0.02,
+  "rehearsal_attempts": 11,
+  "gate_attempts": 33,
+  "planned_maximum_usd": 0.88,
+  "automatic_retries": false,
+  "study_run_ceiling": 432,
+  "counting": "All live rehearsal, gate and failed attempts count; offline fixtures do not. Final study matrix must fit remaining capacity or obtain revised approval.",
+  "scope": "Full scope retained by explicit user instruction despite missed original deadline; documented deviation, not a retroactive gate pass.",
+  "retention": "Retain locally for now; no automatic deletion; sharing and release deferred."
+}
